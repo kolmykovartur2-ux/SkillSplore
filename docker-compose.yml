@@ -1,0 +1,110 @@
+# ---------------------------------------------------------------------------
+# Learnfolk — local demonstration infrastructure.
+#
+# Everything needed to run the full demonstration with no paid or proprietary
+# services: the app, PostgreSQL, S3-compatible object storage (MinIO) and a
+# local email-capture service (Mailpit).
+#
+#   docker compose up --build
+#   docker compose exec app npm run demo:seed
+#
+# Then open http://localhost:4000
+# ---------------------------------------------------------------------------
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: learnfolk
+      POSTGRES_PASSWORD: learnfolk
+      POSTGRES_DB: learnfolk
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U learnfolk -d learnfolk"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # S3-compatible object storage for avatars and private qualification docs.
+  storage:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: learnfolk
+      MINIO_ROOT_PASSWORD: learnfolk-secret
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # web console
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Creates the bucket on first boot so the app has somewhere to write.
+  storage-init:
+    image: minio/mc:latest
+    depends_on:
+      storage:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://storage:9000 learnfolk learnfolk-secret;
+      mc mb --ignore-existing local/learnfolk;
+      echo 'bucket ready';
+      "
+
+  # Local email capture. No mail leaves the machine. Web UI on :8025.
+  mail:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # web UI
+    environment:
+      MP_MAX_MESSAGES: "500"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      mail:
+        condition: service_started
+    environment:
+      APP_ENV: demo
+      API_PORT: "4000"
+      WEB_ORIGIN: http://localhost:4000
+      DATABASE_URL: postgresql://learnfolk:learnfolk@db:5432/learnfolk?schema=public
+      SESSION_SECRET: demo-compose-session-secret-change-for-any-real-use
+      SMTP_HOST: mail
+      SMTP_PORT: "1025"
+      MAIL_FROM: "Learnfolk Demo <no-reply@learnfolk.local>"
+      STORAGE_DRIVER: s3
+      S3_ENDPOINT: http://storage:9000
+      S3_REGION: us-east-1
+      S3_BUCKET: learnfolk
+      S3_ACCESS_KEY: learnfolk
+      S3_SECRET_KEY: learnfolk-secret
+      S3_FORCE_PATH_STYLE: "1"
+      SHOW_DEMO_BANNER: "1"
+      ENABLE_DEMO_LOGIN: "1"
+    ports:
+      - "4000:4000"
+    # On boot: apply migrations, then serve. Seed manually with:
+    #   docker compose exec app npm run demo:seed
+    command: sh -c "npm run migrate:deploy -w @learnfolk/api && node apps/api/dist/index.js"
+
+volumes:
+  pg-data:
+  minio-data:

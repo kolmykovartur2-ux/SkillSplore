@@ -1,0 +1,497 @@
+// Learnfolk data model.
+// Standard PostgreSQL. Portable, migratable, no proprietary provider features.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Role {
+  STUDENT
+  TUTOR
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum EmailTokenType {
+  VERIFY_EMAIL
+  RESET_PASSWORD
+}
+
+// ONLINE / IN_PERSON / BOTH. For student requests, BOTH means "either".
+enum DeliveryMode {
+  ONLINE
+  IN_PERSON
+  BOTH
+}
+
+enum TutorProfileStatus {
+  DRAFT
+  PENDING
+  CHANGES_REQUESTED
+  APPROVED
+  REJECTED
+  SUSPENDED
+  PAUSED
+}
+
+enum RequestStatus {
+  DRAFT
+  OPEN
+  PAUSED
+  CLOSED
+}
+
+enum ResponseStatus {
+  PENDING
+  WITHDRAWN
+  DECLINED
+  ACCEPTED
+}
+
+enum EngagementStatus {
+  ARRANGED
+  COMPLETED
+  CANCELLED
+}
+
+enum ReviewStatus {
+  PUBLISHED
+  HIDDEN
+}
+
+enum ReportStatus {
+  OPEN
+  INVESTIGATING
+  DISMISSED
+  RESOLVED
+}
+
+enum ReportEntityType {
+  TUTOR_PROFILE
+  REQUEST
+  MESSAGE
+  REVIEW
+  USER
+}
+
+enum ConversationContext {
+  DIRECT_ENQUIRY
+  REQUEST_RESPONSE
+}
+
+// ---------------------------------------------------------------------------
+// Accounts
+// ---------------------------------------------------------------------------
+
+model User {
+  id              Int        @id @default(autoincrement())
+  email           String     @unique
+  passwordHash    String
+  displayName     String
+  bio             String?
+  avatarKey       String?
+  roles           Role[]     @default([STUDENT])
+  status          UserStatus @default(ACTIVE)
+  emailVerifiedAt DateTime?
+  termsAcceptedAt DateTime?
+  suspendedAt     DateTime?
+  suspendedReason String?
+  deletedAt       DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  tutorProfile             TutorProfile?
+  requests                 TutoringRequest[]
+  savedTutors              SavedTutor[]
+  notifications            Notification[]
+  emailTokens              EmailToken[]
+  messages                 Message[]
+  conversationParticipants ConversationParticipant[]
+  engagements              Engagement[]
+  reviewsWritten           Review[]
+  reportsMade              Report[]
+  blocksMade               Block[]                   @relation("Blocker")
+  blocksReceived           Block[]                   @relation("Blocked")
+
+  @@index([status])
+}
+
+model EmailToken {
+  id        Int            @id @default(autoincrement())
+  userId    Int
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      EmailTokenType
+  tokenHash String         @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime       @default(now())
+
+  @@index([userId, type])
+}
+
+// ---------------------------------------------------------------------------
+// Taxonomy
+// ---------------------------------------------------------------------------
+
+model Category {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  slug     String    @unique
+  subjects Subject[]
+}
+
+model Subject {
+  id         Int      @id @default(autoincrement())
+  name       String   @unique
+  slug       String   @unique
+  categoryId Int?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  tutorSubjects TutorSubject[]
+  requests      TutoringRequest[]
+  engagements   Engagement[]
+
+  @@index([categoryId])
+}
+
+model TeachingLevel {
+  id        Int    @id @default(autoincrement())
+  name      String @unique
+  slug      String @unique
+  sortOrder Int    @default(0)
+
+  tutorProfiles TutorProfile[] @relation("TutorLevels")
+  requests      TutoringRequest[]
+}
+
+// ---------------------------------------------------------------------------
+// Tutor profiles
+// ---------------------------------------------------------------------------
+
+model TutorProfile {
+  id             Int                @id @default(autoincrement())
+  userId         Int                @unique
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  headline       String?
+  experience     String?
+  teachingStyle  String?
+  status         TutorProfileStatus @default(DRAFT)
+  deliveryMode   DeliveryMode       @default(ONLINE)
+  country        String?
+  city           String?
+  locationNote   String?
+  travelRadiusKm Int?
+  availabilityNote String?
+  hourlyRateCents Int?
+  currency       String             @default("NZD")
+  yearsExperience Int?
+
+  averageRating  Float              @default(0)
+  ratingCount    Int                @default(0)
+
+  submittedAt    DateTime?
+  approvedAt     DateTime?
+  reviewedById   Int?
+  changeRequestNote String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  subjects       TutorSubject[]
+  levels         TeachingLevel[]    @relation("TutorLevels")
+  availability   AvailabilitySlot[]
+  qualifications Qualification[]
+  reviews        Review[]
+  responses      RequestResponse[]
+  savedBy        SavedTutor[]
+  engagements    Engagement[]
+
+  @@index([status])
+  @@index([country, city])
+}
+
+model TutorSubject {
+  id             Int          @id @default(autoincrement())
+  tutorProfileId Int
+  tutorProfile   TutorProfile @relation(fields: [tutorProfileId], references: [id], onDelete: Cascade)
+  subjectId      Int
+  subject        Subject      @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  priceCents     Int?
+
+  @@unique([tutorProfileId, subjectId])
+  @@index([subjectId])
+}
+
+model AvailabilitySlot {
+  id             Int          @id @default(autoincrement())
+  tutorProfileId Int
+  tutorProfile   TutorProfile @relation(fields: [tutorProfileId], references: [id], onDelete: Cascade)
+  dayOfWeek      Int // 0 = Sunday .. 6 = Saturday
+  startMinute    Int // minutes from midnight
+  endMinute      Int
+
+  @@index([tutorProfileId])
+}
+
+model Qualification {
+  id             Int          @id @default(autoincrement())
+  tutorProfileId Int
+  tutorProfile   TutorProfile @relation(fields: [tutorProfileId], references: [id], onDelete: Cascade)
+  title          String
+  institution    String?
+  year           Int?
+  // Private object-storage key. Never publicly served; access is authorised.
+  documentKey    String?
+  documentName   String?
+  verifiedAt     DateTime?
+  verifiedById   Int?
+  createdAt      DateTime     @default(now())
+
+  @@index([tutorProfileId])
+}
+
+model SavedTutor {
+  id             Int          @id @default(autoincrement())
+  studentId      Int
+  student        User         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  tutorProfileId Int
+  tutorProfile   TutorProfile @relation(fields: [tutorProfileId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+
+  @@unique([studentId, tutorProfileId])
+}
+
+// ---------------------------------------------------------------------------
+// Student requests + tutor responses
+// ---------------------------------------------------------------------------
+
+model TutoringRequest {
+  id           Int           @id @default(autoincrement())
+  studentId    Int
+  student      User          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subjectId    Int
+  subject      Subject       @relation(fields: [subjectId], references: [id])
+  levelId      Int?
+  level        TeachingLevel? @relation(fields: [levelId], references: [id], onDelete: SetNull)
+  title        String
+  description  String
+  deliveryMode DeliveryMode  @default(BOTH)
+  country      String?
+  city         String?
+  locationNote String?
+  budgetMinCents Int?
+  budgetMaxCents Int?
+  currency     String        @default("NZD")
+  timing       String?
+  status       RequestStatus @default(DRAFT)
+  hiddenAt     DateTime?
+  publishedAt  DateTime?
+  closedAt     DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  responses    RequestResponse[]
+  engagements  Engagement[]
+
+  @@index([status, subjectId])
+  @@index([studentId])
+}
+
+model RequestResponse {
+  id               Int             @id @default(autoincrement())
+  requestId        Int
+  request          TutoringRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  tutorProfileId   Int
+  tutorProfile     TutorProfile    @relation(fields: [tutorProfileId], references: [id], onDelete: Cascade)
+  introduction     String
+  proposedRateCents Int?
+  availabilityNote String?
+  status           ResponseStatus  @default(PENDING)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  // One active response per tutor per request.
+  @@unique([requestId, tutorProfileId])
+  @@index([tutorProfileId])
+}
+
+// ---------------------------------------------------------------------------
+// Conversations + messaging
+// ---------------------------------------------------------------------------
+
+model Conversation {
+  id             Int                 @id @default(autoincrement())
+  context        ConversationContext @default(DIRECT_ENQUIRY)
+  tutorProfileId Int?
+  requestId      Int?
+  lastMessageAt  DateTime            @default(now())
+  createdAt      DateTime            @default(now())
+
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  @@index([lastMessageAt])
+}
+
+model ConversationParticipant {
+  id             Int          @id @default(autoincrement())
+  conversationId Int
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         Int
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastReadAt     DateTime?
+  archivedAt     DateTime?
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id             Int          @id @default(autoincrement())
+  conversationId Int
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       Int
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  body           String
+  hiddenAt       DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+model Block {
+  id        Int      @id @default(autoincrement())
+  blockerId Int
+  blocker   User     @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedId Int
+  blocked   User     @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+}
+
+// ---------------------------------------------------------------------------
+// Engagements + reviews
+// ---------------------------------------------------------------------------
+
+model Engagement {
+  id             Int              @id @default(autoincrement())
+  studentId      Int
+  student        User             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  tutorProfileId Int
+  tutorProfile   TutorProfile     @relation(fields: [tutorProfileId], references: [id], onDelete: Cascade)
+  subjectId      Int?
+  subject        Subject?         @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  requestId      Int?
+  request        TutoringRequest? @relation(fields: [requestId], references: [id], onDelete: SetNull)
+  conversationId Int?
+  title          String
+  note           String?
+  status         EngagementStatus @default(ARRANGED)
+  createdAt      DateTime         @default(now())
+  completedAt    DateTime?
+  cancelledAt    DateTime?
+
+  review         Review?
+
+  @@index([studentId])
+  @@index([tutorProfileId])
+}
+
+model Review {
+  id               Int          @id @default(autoincrement())
+  // One review per engagement. Guarantees reviews tie to a real, completed
+  // engagement (no unrelated reviews) and cannot be duplicated.
+  engagementId     Int          @unique
+  engagement       Engagement   @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  tutorProfileId   Int
+  tutorProfile     TutorProfile @relation(fields: [tutorProfileId], references: [id], onDelete: Cascade)
+  studentId        Int
+  student          User         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  rating           Int
+  title            String?
+  body             String
+  categoryRatings  Json?
+  status           ReviewStatus @default(PUBLISHED)
+  hiddenReason     String?
+  tutorResponse    String?
+  tutorRespondedAt DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([tutorProfileId, status])
+}
+
+// ---------------------------------------------------------------------------
+// Reports, moderation notes, notifications, audit
+// ---------------------------------------------------------------------------
+
+model Report {
+  id             Int              @id @default(autoincrement())
+  reporterId     Int
+  reporter       User             @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  entityType     ReportEntityType
+  entityId       Int
+  reason         String
+  details        String?
+  status         ReportStatus     @default(OPEN)
+  resolutionNote String?
+  handledById    Int?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([status])
+  @@index([entityType, entityId])
+}
+
+// Generic internal note used for tutor-review notes and moderation notes.
+model AdminNote {
+  id         Int      @id @default(autoincrement())
+  authorId   Int
+  entityType String
+  entityId   Int
+  body       String
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+}
+
+model Notification {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  body      String?
+  linkUrl   String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, readAt])
+}
+
+// Append-only audit trail. Actor kept as a plain id so audit survives deletes.
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  actorId    Int?
+  action     String
+  entityType String?
+  entityId   Int?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}

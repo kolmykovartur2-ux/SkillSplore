@@ -1,0 +1,36 @@
+{
+  "name": "learnfolk",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Learnfolk — a sovereign, self-hostable tutoring marketplace (MVP).",
+  "license": "SEE docs/LICENSES.md",
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,magenta \"npm run dev -w @learnfolk/api\" \"npm run dev -w @learnfolk/web\"",
+    "build": "npm run build -w @learnfolk/api && npm run build -w @learnfolk/web",
+    "start": "npm run start -w @learnfolk/api",
+    "lint": "npm run lint -w @learnfolk/api && npm run lint -w @learnfolk/web",
+    "typecheck": "npm run typecheck -w @learnfolk/api && npm run typecheck -w @learnfolk/web",
+    "test": "npm run test -w @learnfolk/api",
+    "migrate": "prisma migrate dev --schema apps/api/prisma/schema.prisma",
+    "migrate:deploy": "prisma migrate deploy --schema apps/api/prisma/schema.prisma",
+    "prisma:generate": "prisma generate --schema apps/api/prisma/schema.prisma",
+    "demo:seed": "npm run demo:seed -w @learnfolk/api",
+    "demo:reset": "npm run demo:reset -w @learnfolk/api",
+    "demo:accounts": "npm run demo:accounts -w @learnfolk/api",
+    "export": "npm run export -w @learnfolk/api"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.14.0",
+    "concurrently": "^9.1.0",
+    "eslint": "^9.14.0",
+    "globals": "^15.12.0",
+    "typescript-eslint": "^8.13.0"
+  }
+}

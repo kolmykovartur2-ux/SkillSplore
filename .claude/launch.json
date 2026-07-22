@@ -1,0 +1,10 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "learnfolk-demo",
+      "url": "http://localhost:4000",
+      "port": 4000
+    }
+  ]
+}

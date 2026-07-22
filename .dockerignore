@@ -1,0 +1,17 @@
+node_modules
+**/node_modules
+**/dist
+**/build
+.git
+.env
+.env.*
+!.env.example
+backups
+exports
+storage-data
+storage-test
+minio-data
+pg-data
+*.log
+coverage
+apps/web/dist
