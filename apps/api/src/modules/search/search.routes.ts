@@ -12,6 +12,7 @@ export const searchRouter = Router();
 const searchSchema = z.object({
   q: z.string().max(120).optional(),
   subjectId: z.coerce.number().int().positive().optional(),
+  categoryId: z.coerce.number().int().positive().optional(),
   levelId: z.coerce.number().int().positive().optional(),
   country: z.string().max(80).optional(),
   city: z.string().max(120).optional(),
@@ -38,6 +39,7 @@ searchRouter.get(
     const and: Prisma.TutorProfileWhereInput[] = [];
 
     if (qp.subjectId) and.push({ subjects: { some: { subjectId: qp.subjectId } } });
+    if (qp.categoryId) and.push({ subjects: { some: { subject: { categoryId: qp.categoryId } } } });
     if (qp.levelId) and.push({ levels: { some: { id: qp.levelId } } });
     if (qp.country) and.push({ country: { contains: qp.country, mode: 'insensitive' } });
     if (qp.city) and.push({ city: { contains: qp.city, mode: 'insensitive' } });

@@ -5,13 +5,13 @@ import { useApi } from '../../lib/useApi.js';
 import { useToast } from '../../lib/toast.js';
 import { Alert, Button, Card, Field, Input, Select, Textarea } from '../../components/ui.js';
 
-interface Subject { id: number; name: string }
+interface Category { id: number; name: string; subjects: Array<{ id: number; name: string }> }
 interface Level { id: number; name: string }
 
 export function CreateRequest() {
   const navigate = useNavigate();
   const toast = useToast();
-  const { data: subs } = useApi<{ subjects: Subject[] }>('/taxonomy/subjects');
+  const { data: cats } = useApi<{ categories: Category[] }>('/taxonomy/categories');
   const { data: lvls } = useApi<{ levels: Level[] }>('/taxonomy/levels');
   const [form, setForm] = useState({ subjectId: '', levelId: '', title: '', description: '', deliveryMode: 'BOTH', country: '', city: '', budgetMin: '', budgetMax: '', timing: '' });
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +54,11 @@ export function CreateRequest() {
           <Field label="Subject">
             <Select value={form.subjectId} onChange={(e) => set({ subjectId: e.target.value })} required>
               <option value="">Choose a subject…</option>
-              {subs?.subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              {cats?.categories.map((c) => (
+                <optgroup key={c.id} label={c.name}>
+                  {c.subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </optgroup>
+              ))}
             </Select>
           </Field>
           <Field label="Level (optional)">

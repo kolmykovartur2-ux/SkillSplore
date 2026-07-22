@@ -5,7 +5,7 @@ import type { PageMeta, SearchResult } from '../lib/types.js';
 import { TutorCard } from '../components/TutorCard.js';
 import { EmptyState, Field, Input, Select, Spinner, Button } from '../components/ui.js';
 
-interface Subject { id: number; name: string }
+interface Category { id: number; name: string; subjects: Array<{ id: number; name: string }> }
 interface Level { id: number; name: string }
 
 export function Search() {
@@ -13,6 +13,7 @@ export function Search() {
   const [filters, setFilters] = useState({
     q: urlParams.get('q') ?? '',
     subjectId: urlParams.get('subjectId') ?? '',
+    categoryId: urlParams.get('category') ?? '',
     levelId: '',
     country: '',
     city: '',
@@ -23,13 +24,14 @@ export function Search() {
     page: 1,
   });
 
-  const { data: tax } = useApi<{ subjects: Subject[] }>('/taxonomy/subjects');
+  const { data: tax } = useApi<{ categories: Category[] }>('/taxonomy/categories');
   const { data: levelData } = useApi<{ levels: Level[] }>('/taxonomy/levels');
 
   const path = useMemo(() => {
     const p = new URLSearchParams();
     if (filters.q) p.set('q', filters.q);
     if (filters.subjectId) p.set('subjectId', filters.subjectId);
+    if (filters.categoryId) p.set('categoryId', filters.categoryId);
     if (filters.levelId) p.set('levelId', filters.levelId);
     if (filters.country) p.set('country', filters.country);
     if (filters.city) p.set('city', filters.city);
@@ -46,20 +48,32 @@ export function Search() {
   // Reset to page 1 when a filter (other than page) changes.
   useEffect(() => {
     setFilters((f) => (f.page === 1 ? f : { ...f, page: 1 }));
-  }, [filters.q, filters.subjectId, filters.levelId, filters.country, filters.city, filters.mode, filters.maxPrice, filters.availableOnly, filters.sort]);
+  }, [filters.q, filters.subjectId, filters.categoryId, filters.levelId, filters.country, filters.city, filters.mode, filters.maxPrice, filters.availableOnly, filters.sort]);
 
   const set = (patch: Partial<typeof filters>) => setFilters((f) => ({ ...f, ...patch }));
 
+  const activeCategory = tax?.categories.find((c) => String(c.id) === filters.categoryId);
+
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 24, alignItems: 'start' }} className="search-layout">
+    <div style={{ display: 'grid', gridTemplateColumns: '270px 1fr', gap: 24, alignItems: 'start' }} className="search-layout">
       <aside className="card">
         <div className="card-body">
           <h3 className="mt-0">Filters</h3>
           <Field label="Keyword"><Input value={filters.q} onChange={(e) => set({ q: e.target.value })} placeholder="Subject, name…" /></Field>
+          <Field label="Category">
+            <Select value={filters.categoryId} onChange={(e) => set({ categoryId: e.target.value, subjectId: '' })}>
+              <option value="">Any category</option>
+              {tax?.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </Select>
+          </Field>
           <Field label="Subject">
             <Select value={filters.subjectId} onChange={(e) => set({ subjectId: e.target.value })}>
               <option value="">Any subject</option>
-              {tax?.subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              {(activeCategory ? [activeCategory] : tax?.categories ?? []).map((c) => (
+                <optgroup key={c.id} label={c.name}>
+                  {c.subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </optgroup>
+              ))}
             </Select>
           </Field>
           <Field label="Level">
@@ -88,13 +102,13 @@ export function Search() {
             <input type="checkbox" checked={filters.availableOnly} onChange={(e) => set({ availableOnly: e.target.checked })} />
             <span>Has availability listed</span>
           </label>
-          <Button className="btn-block" onClick={() => setFilters({ q: '', subjectId: '', levelId: '', country: '', city: '', mode: '', maxPrice: '', availableOnly: false, sort: 'relevance', page: 1 })}>Clear filters</Button>
+          <Button className="btn-block" onClick={() => setFilters({ q: '', subjectId: '', categoryId: '', levelId: '', country: '', city: '', mode: '', maxPrice: '', availableOnly: false, sort: 'relevance', page: 1 })}>Clear filters</Button>
         </div>
       </aside>
 
       <div>
         <div className="section-title">
-          <h2 className="mt-0">{data ? `${data.meta.total} tutor${data.meta.total === 1 ? '' : 's'}` : 'Tutors'}</h2>
+          <h2 className="mt-0">{data ? `${data.meta.total} tutor${data.meta.total === 1 ? '' : 's'}` : 'Tutors'}{activeCategory ? ` in ${activeCategory.name}` : ''}</h2>
           <Select value={filters.sort} onChange={(e) => set({ sort: e.target.value })} style={{ width: 'auto' }}>
             <option value="relevance">Most relevant</option>
             <option value="rating">Highest rated</option>

@@ -6,6 +6,7 @@
  * qualifications or biographies are used. Refuses to run when APP_ENV=production.
  */
 import { prisma, guardDemoCommand, truncateAll, hash, DEMO_PASSWORD, DEMO_ACCOUNTS } from './_demo.js';
+import { TAXONOMY, TOTAL_SUBJECTS } from './taxonomy.data.js';
 import type { DeliveryMode } from '@prisma/client';
 
 const dollars = (n: number) => Math.round(n * 100);
@@ -17,30 +18,16 @@ async function main() {
   await truncateAll();
 
   // --- Taxonomy ------------------------------------------------------------
-  console.log('Seeding taxonomy...');
-  const categoryNames = ['Academic', 'Sciences & Engineering', 'Music', 'Languages', 'Technical & Software'];
-  const categories: Record<string, number> = {};
-  for (const name of categoryNames) {
-    const c = await prisma.category.create({ data: { name, slug: slug(name) } });
-    categories[name] = c.id;
-  }
-
-  const subjectDefs: Array<[string, string]> = [
-    ['Thermodynamics', 'Sciences & Engineering'],
-    ['Engineering mathematics', 'Sciences & Engineering'],
-    ['NCEA calculus', 'Academic'],
-    ['English', 'Languages'],
-    ['Russian', 'Languages'],
-    ['Vietnamese', 'Languages'],
-    ['Saxophone', 'Music'],
-    ['Piano', 'Music'],
-    ['Programming', 'Technical & Software'],
-    ['SolidWorks', 'Technical & Software'],
-  ];
+  console.log(`Seeding taxonomy (${TAXONOMY.length} categories, ${TOTAL_SUBJECTS} subjects)...`);
   const subjects: Record<string, number> = {};
-  for (const [name, cat] of subjectDefs) {
-    const s = await prisma.subject.create({ data: { name, slug: slug(name), categoryId: categories[cat] } });
-    subjects[name] = s.id;
+  for (const cat of TAXONOMY) {
+    const category = await prisma.category.create({ data: { name: cat.name, slug: slug(cat.name), icon: cat.icon } });
+    for (const subjectName of cat.subjects) {
+      // Subject names are unique across the catalogue; skip accidental dupes.
+      if (subjects[subjectName]) continue;
+      const s = await prisma.subject.create({ data: { name: subjectName, slug: slug(subjectName), categoryId: category.id } });
+      subjects[subjectName] = s.id;
+    }
   }
 
   const levelDefs = ['Primary', 'Intermediate', 'NCEA Level 1', 'NCEA Level 2', 'NCEA Level 3', 'Undergraduate', 'Postgraduate', 'Adult / Hobby'];

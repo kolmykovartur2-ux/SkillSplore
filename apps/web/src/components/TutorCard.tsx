@@ -5,7 +5,7 @@ import { Avatar, Badge, Stars } from './ui.js';
 
 export function TutorCard({ t }: { t: SearchResult }) {
   return (
-    <Link to={`/tutors/${t.id}`} className="card" style={{ display: 'block', color: 'inherit', textDecoration: 'none' }}>
+    <Link to={`/tutors/${t.id}`} className="card card-hover" style={{ display: 'block', color: 'inherit', textDecoration: 'none' }}>
       <div className="card-body">
         <div className="row" style={{ alignItems: 'flex-start' }}>
           <Avatar name={t.displayName} url={t.avatarUrl} size={52} />

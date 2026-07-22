@@ -143,6 +143,7 @@ function SubjectsStep({ profile, onSaved }: { profile: OwnProfile; onSaved: () =
   );
   const [levelIds, setLevelIds] = useState<Set<number>>(new Set(profile.levels.map((l) => l.id)));
   const [busy, setBusy] = useState(false);
+  const [filter, setFilter] = useState('');
 
   const toggle = (id: number) => setSelected((s) => { const n = { ...s }; if (id in n) delete n[id]; else n[id] = ''; return n; });
   const toggleLevel = (id: number) => setLevelIds((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
@@ -157,17 +158,35 @@ function SubjectsStep({ profile, onSaved }: { profile: OwnProfile; onSaved: () =
     finally { setBusy(false); }
   };
 
+  const q = filter.trim().toLowerCase();
+  const visible = (subs?.subjects ?? []).filter((s) => !q || s.name.toLowerCase().includes(q) || selected[s.id] !== undefined);
+  const byCategory = new Map<string, Subject[]>();
+  for (const s of visible) {
+    const key = s.category?.name ?? 'Other';
+    if (!byCategory.has(key)) byCategory.set(key, []);
+    byCategory.get(key)!.push(s);
+  }
+
   return (
     <Card><div className="card-body">
       <h3 className="mt-0">Subjects you teach</h3>
       <p className="muted">Tick your subjects. Leave the price blank to use your default rate, or set a subject-specific price.</p>
-      <div className="stack-sm">
-        {subs?.subjects.map((s) => (
-          <div key={s.id} className="row" style={{ justifyContent: 'space-between' }}>
-            <label className="check"><input type="checkbox" checked={s.id in selected} onChange={() => toggle(s.id)} /><span>{s.name} <span className="muted">· {s.category?.name}</span></span></label>
-            {s.id in selected && <Input type="number" min={0} placeholder="default" value={selected[s.id]} onChange={(e) => setSelected((x) => ({ ...x, [s.id]: e.target.value }))} style={{ width: 120 }} />}
+      <Field label="Filter subjects"><Input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Search subjects, e.g. “piano” or “programming”…" /></Field>
+      <div className="stack">
+        {[...byCategory.entries()].map(([cat, list]) => (
+          <div key={cat}>
+            <div className="muted" style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', margin: '10px 0 6px' }}>{cat}</div>
+            <div className="stack-sm">
+              {list.map((s) => (
+                <div key={s.id} className="row" style={{ justifyContent: 'space-between' }}>
+                  <label className="check"><input type="checkbox" checked={s.id in selected} onChange={() => toggle(s.id)} /><span>{s.name}</span></label>
+                  {s.id in selected && <Input type="number" min={0} placeholder="default" value={selected[s.id]} onChange={(e) => setSelected((x) => ({ ...x, [s.id]: e.target.value }))} style={{ width: 120 }} />}
+                </div>
+              ))}
+            </div>
           </div>
         ))}
+        {visible.length === 0 && <p className="muted">No subjects match “{filter}”.</p>}
       </div>
       <div className="divider" />
       <h3>Teaching levels</h3>

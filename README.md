@@ -99,5 +99,7 @@ learnfolk/
   business logic.
 - **Sessions** persist in PostgreSQL (no Redis or proprietary realtime service).
 
-See [`docs/FEATURES.md`](docs/FEATURES.md) for the full feature list and
-[`docs/OWNERSHIP_TRANSFER.md`](docs/OWNERSHIP_TRANSFER.md) for taking ownership.
+See [`docs/FEATURES.md`](docs/FEATURES.md) for the full feature list,
+[`docs/PRODUCT_COMPARISON.md`](docs/PRODUCT_COMPARISON.md) for how the product and design compare
+to the profi.ru reference, and [`docs/OWNERSHIP_TRANSFER.md`](docs/OWNERSHIP_TRANSFER.md) for taking
+ownership.
