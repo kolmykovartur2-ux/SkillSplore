@@ -31,6 +31,8 @@ import { ReportDetail } from './pages/admin/ReportDetail.js';
 import { AdminReviews } from './pages/admin/AdminReviews.js';
 import { AdminTaxonomy } from './pages/admin/AdminTaxonomy.js';
 import { AdminAudit } from './pages/admin/AdminAudit.js';
+import { Terms } from './pages/legal/Terms.js';
+import { Privacy } from './pages/legal/Privacy.js';
 
 function RequireAuth({ children, role }: { children: ReactNode; role?: 'TUTOR' | 'ADMIN' }) {
   const { user, loading, hasRole } = useAuth();
@@ -57,6 +59,8 @@ export function App() {
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
 
         <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
         <Route path="/account" element={<RequireAuth><Account /></RequireAuth>} />

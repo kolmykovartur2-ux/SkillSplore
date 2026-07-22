@@ -46,7 +46,7 @@ export function Register() {
             </Field>
             <label className="check" style={{ marginBottom: 14 }}>
               <input type="checkbox" checked={form.acceptTerms} onChange={(e) => setForm({ ...form, acceptTerms: e.target.checked })} required />
-              <span>I accept the <Link to="/">terms of service</Link> and <Link to="/">privacy policy</Link>.</span>
+              <span>I accept the <Link to="/terms" target="_blank">terms of service</Link> and <Link to="/privacy" target="_blank">privacy policy</Link>.</span>
             </label>
             <Button type="submit" variant="primary" className="btn-block" loading={busy}>Create account</Button>
           </form>

@@ -88,6 +88,26 @@ export function Layout({ children }: { children: ReactNode }) {
       <main className="page">
         <div className="container">{children}</div>
       </main>
+      <footer className="site-footer">
+        <div className="container">
+          <div className="footer-inner">
+            <div>
+              <span className="brand" style={{ fontSize: '1.05rem' }}><span className="dot" /> Learnfolk</span>
+              <p className="muted" style={{ fontSize: '0.85rem', margin: '8px 0 0', maxWidth: 360 }}>
+                A marketplace connecting students with independent tutors. Lessons are arranged and paid
+                directly between students and tutors — Learnfolk does not process payments.
+              </p>
+            </div>
+            <nav className="footer-links">
+              <Link to="/search">Find tutors</Link>
+              <Link to="/tutor/onboarding">Become a tutor</Link>
+              <Link to="/terms">Terms of Service</Link>
+              <Link to="/privacy">Privacy Policy</Link>
+            </nav>
+          </div>
+          <div className="footer-bottom muted">© {new Date().getFullYear()} Learnfolk</div>
+        </div>
+      </footer>
     </>
   );
 }

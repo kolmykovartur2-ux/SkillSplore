@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './lib/auth.js';
 import { ToastProvider } from './lib/toast.js';
 import { App } from './App.js';
+import '@fontsource-variable/inter';
 import './styles.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

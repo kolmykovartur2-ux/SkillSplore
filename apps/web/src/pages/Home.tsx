@@ -30,9 +30,10 @@ export function Home() {
   return (
     <div className="stack">
       <section className="hero">
-        <h1>Find the right tutor for you</h1>
+        <div className="eyebrow">Learnfolk</div>
+        <h1>Find your perfect tutor</h1>
         <p className="sub">
-          Learnfolk connects students with independent tutors across New Zealand and Australia — from
+          Connect with verified independent tutors across New Zealand and Australia — from
           {overview ? ` ${overview.totalSubjects}+ subjects` : ' academic subjects'} to music, languages and technical skills.
         </p>
         <form className="searchbar" onSubmit={submit}>
@@ -96,7 +97,7 @@ export function Home() {
         <div className="card"><div className="card-body">
           <h3>For students</h3>
           <p className="muted">Search verified tutors, message them directly, or post a request and let tutors come to you. Arrange lessons and pay the tutor directly.</p>
-          <Link className="btn btn-primary" to="/requests/new">Post a request</Link>
+          <Link className="btn btn-gradient" to="/requests/new">Post a request</Link>
         </div></div>
         <div className="card"><div className="card-body">
           <h3>For tutors</h3>
