@@ -152,7 +152,7 @@ export function TutorProfile() {
           </div>
           <Button variant="primary" className="btn-block" onClick={() => (user ? setContactOpen(true) : requireLogin())}>Contact tutor</Button>
           <Button className="btn-block" onClick={toggleSave}>{p.isSaved ? '★ Saved' : '☆ Save tutor'}</Button>
-          <div className="alert alert-info" style={{ fontSize: '0.8rem', margin: 0 }}>Lessons are arranged and paid directly between you and the tutor. Learnfolk does not process payments.</div>
+          <div className="alert alert-info" style={{ fontSize: '0.8rem', margin: 0 }}>Lessons are arranged and paid directly between you and the tutor. SkillSplore does not process payments.</div>
         </div></Card>
 
         <Card><div className="card-body">

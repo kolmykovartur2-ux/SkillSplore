@@ -48,7 +48,7 @@ export function createApp() {
   const sessionPool = new Pool({ connectionString: env.DATABASE_URL });
   app.use(
     session({
-      name: 'learnfolk.sid',
+      name: 'skillsplore.sid',
       store: new PgStore({ pool: sessionPool, tableName: 'user_sessions', createTableIfMissing: true }),
       secret: env.SESSION_SECRET,
       resave: false,

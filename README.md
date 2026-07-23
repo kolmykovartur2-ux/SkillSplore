@@ -1,4 +1,4 @@
-# Learnfolk
+# SkillSplore
 
 A sovereign, self-hostable tutoring marketplace connecting students with independent tutors
 (built for New Zealand and Australia in the demo, but not locked to any region).
@@ -23,7 +23,7 @@ inbox (Mailpit). No external accounts needed.
 
 ```bash
 git clone <repository>
-cd learnfolk
+cd skillsplore
 cp .env.example .env
 docker compose up --build
 # in another terminal, once the app is healthy:
@@ -33,7 +33,7 @@ docker compose exec app npm run demo:seed
 Then open **http://localhost:4000**. Supporting UIs:
 
 - Mailpit (captured emails): http://localhost:8025
-- MinIO console (object storage): http://localhost:9001 (`learnfolk` / `learnfolk-secret`)
+- MinIO console (object storage): http://localhost:9001 (`skillsplore` / `skillsplore-secret`)
 
 ## Quick start — local development (no Docker)
 
@@ -55,10 +55,10 @@ production disables demo login entirely. List them any time with `npm run demo:a
 
 | Role          | Email                                | Password         |
 | ------------- | ------------------------------------ | ---------------- |
-| Administrator | `admin@demo.learnfolk.local`         | `learnfolk-demo` |
-| Student       | `student@demo.learnfolk.local`       | `learnfolk-demo` |
-| Approved tutor| `tutor@demo.learnfolk.local`         | `learnfolk-demo` |
-| Pending tutor | `pending.tutor@demo.learnfolk.local` | `learnfolk-demo` |
+| Administrator | `admin@demo.skillsplore.local`         | `skillsplore-demo` |
+| Student       | `student@demo.skillsplore.local`       | `skillsplore-demo` |
+| Approved tutor| `tutor@demo.skillsplore.local`         | `skillsplore-demo` |
+| Pending tutor | `pending.tutor@demo.skillsplore.local` | `skillsplore-demo` |
 
 The login page also offers one-click demo shortcuts (demo mode only).
 
@@ -80,7 +80,7 @@ The login page also offers one-click demo shortcuts (demo mode only).
 ## Architecture
 
 ```
-learnfolk/
+skillsplore/
 ├── apps/
 │   ├── api/           Express + TypeScript + Prisma (business logic, auth, REST API)
 │   │   ├── prisma/    schema, migrations, seed/reset/accounts/export scripts

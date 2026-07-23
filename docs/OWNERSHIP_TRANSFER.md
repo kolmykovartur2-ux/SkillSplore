@@ -1,7 +1,7 @@
 # Ownership transfer
 
 This document lets a future owner (a new developer, an acquiring company, or an investor's technical
-team) take **full control** of Learnfolk. The platform is deliberately built so that no personal
+team) take **full control** of SkillSplore. The platform is deliberately built so that no personal
 account, proprietary service, or original author is required to run, host, modify or sell it.
 
 ## What you receive
@@ -14,7 +14,7 @@ account, proprietary service, or original author is required to run, host, modif
 
 ## Nothing proprietary is required
 
-Learnfolk runs on:
+SkillSplore runs on:
 
 - **PostgreSQL** (standard, any host or managed service)
 - **Generic SMTP** for email (any provider)

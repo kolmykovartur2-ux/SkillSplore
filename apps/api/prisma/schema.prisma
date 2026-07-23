@@ -1,4 +1,4 @@
-// Learnfolk data model.
+// SkillSplore data model.
 // Standard PostgreSQL. Portable, migratable, no proprietary provider features.
 
 generator client {

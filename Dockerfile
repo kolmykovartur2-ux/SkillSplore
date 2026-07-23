@@ -1,5 +1,5 @@
 # ---------------------------------------------------------------------------
-# Learnfolk production/demo image.
+# SkillSplore production/demo image.
 # Multi-stage: build the web client and API, then ship a lean runtime that
 # serves the built React app as static files from the API process.
 # ---------------------------------------------------------------------------
@@ -14,9 +14,9 @@ RUN npm install
 
 # Copy sources and build both workspaces.
 COPY . .
-RUN npm run build -w @learnfolk/web \
- && npx --workspace @learnfolk/api prisma generate \
- && npm run build -w @learnfolk/api
+RUN npm run build -w @skillsplore/web \
+ && npx --workspace @skillsplore/api prisma generate \
+ && npm run build -w @skillsplore/api
 
 # --- runtime ----------------------------------------------------------------
 FROM node:20-bookworm-slim AS runtime

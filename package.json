@@ -1,8 +1,8 @@
 {
-  "name": "learnfolk",
+  "name": "skillsplore",
   "version": "0.1.0",
   "private": true,
-  "description": "Learnfolk — a sovereign, self-hostable tutoring marketplace (MVP).",
+  "description": "SkillSplore — a sovereign, self-hostable tutoring marketplace (MVP).",
   "license": "SEE docs/LICENSES.md",
   "workspaces": [
     "apps/api",
@@ -12,19 +12,19 @@
     "node": ">=20"
   },
   "scripts": {
-    "dev": "concurrently -n api,web -c blue,magenta \"npm run dev -w @learnfolk/api\" \"npm run dev -w @learnfolk/web\"",
-    "build": "npm run build -w @learnfolk/api && npm run build -w @learnfolk/web",
-    "start": "npm run start -w @learnfolk/api",
-    "lint": "npm run lint -w @learnfolk/api && npm run lint -w @learnfolk/web",
-    "typecheck": "npm run typecheck -w @learnfolk/api && npm run typecheck -w @learnfolk/web",
-    "test": "npm run test -w @learnfolk/api",
+    "dev": "concurrently -n api,web -c blue,magenta \"npm run dev -w @skillsplore/api\" \"npm run dev -w @skillsplore/web\"",
+    "build": "npm run build -w @skillsplore/api && npm run build -w @skillsplore/web",
+    "start": "npm run start -w @skillsplore/api",
+    "lint": "npm run lint -w @skillsplore/api && npm run lint -w @skillsplore/web",
+    "typecheck": "npm run typecheck -w @skillsplore/api && npm run typecheck -w @skillsplore/web",
+    "test": "npm run test -w @skillsplore/api",
     "migrate": "prisma migrate dev --schema apps/api/prisma/schema.prisma",
     "migrate:deploy": "prisma migrate deploy --schema apps/api/prisma/schema.prisma",
     "prisma:generate": "prisma generate --schema apps/api/prisma/schema.prisma",
-    "demo:seed": "npm run demo:seed -w @learnfolk/api",
-    "demo:reset": "npm run demo:reset -w @learnfolk/api",
-    "demo:accounts": "npm run demo:accounts -w @learnfolk/api",
-    "export": "npm run export -w @learnfolk/api"
+    "demo:seed": "npm run demo:seed -w @skillsplore/api",
+    "demo:reset": "npm run demo:reset -w @skillsplore/api",
+    "demo:accounts": "npm run demo:accounts -w @skillsplore/api",
+    "export": "npm run export -w @skillsplore/api"
   },
   "devDependencies": {
     "@eslint/js": "^9.14.0",

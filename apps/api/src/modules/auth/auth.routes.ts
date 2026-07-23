@@ -64,7 +64,7 @@ authRouter.post(
   '/logout',
   asyncHandler(async (req, res) => {
     await new Promise<void>((resolve) => req.session.destroy(() => resolve()));
-    res.clearCookie('learnfolk.sid');
+    res.clearCookie('skillsplore.sid');
     res.json({ ok: true });
   }),
 );

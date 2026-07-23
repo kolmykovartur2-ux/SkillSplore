@@ -1,7 +1,7 @@
 # Security
 
 This document describes the security measures implemented in the MVP and the reviews that remain
-before accepting real users. **Learnfolk is not yet security-certified, legally approved, or
+before accepting real users. **SkillSplore is not yet security-certified, legally approved, or
 production-certified.** Do not describe it as such until the outstanding reviews below have occurred.
 
 ## Implemented

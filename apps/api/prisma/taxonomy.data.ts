@@ -1,4 +1,4 @@
-// Learnfolk subject catalogue — a hierarchical taxonomy inspired by the depth of
+// SkillSplore subject catalogue — a hierarchical taxonomy inspired by the depth of
 // large services marketplaces (profi.ru lists ~1,900 tutoring subjects). This is
 // a realistic starter catalogue; administrators can extend it at runtime.
 //

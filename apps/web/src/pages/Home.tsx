@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useApi } from '../lib/useApi.js';
 import type { SearchResult } from '../lib/types.js';
@@ -8,19 +8,28 @@ import { Spinner } from '../components/ui.js';
 interface OverviewSubject { id: number; name: string; slug: string; tutorCount: number }
 interface OverviewCategory { id: number; name: string; icon: string | null; subjectCount: number; tutorCount: number; subjects: OverviewSubject[] }
 interface Overview { categories: OverviewCategory[]; totalSubjects: number; totalApprovedTutors: number }
+interface FeaturedReview { id: number; rating: number; body: string; student: string; tutor: string; tutorProfileId: number; subject: string | null }
 
-const PROPS: Array<{ icon: string; title: string; body: string }> = [
-  { icon: '📝', title: 'Post once, tutors reply', body: 'Describe what you need — approved tutors send you tailored proposals with their price.' },
-  { icon: '💸', title: 'Compare and choose', body: 'See real proposed rates side by side. The cheapest option isn’t automatically flagged as best.' },
-  { icon: '🛡️', title: 'Verified tutors', body: 'We ask tutors to submit qualifications, which our team checks before they go live.' },
-  { icon: '⭐', title: 'Real reviews only', body: 'A review can only be left after a real, completed engagement — never fabricated.' },
+const STEPS: Array<{ title: string; body: string }> = [
+  { title: 'Describe what you need', body: 'Post a request in a couple of minutes — subject, level, and how you like to learn.' },
+  { title: 'Tutors send proposals', body: 'Approved tutors reply with a tailored introduction and their own rate — you never see it forced on you.' },
+  { title: 'Compare and choose', body: 'Weigh profiles, reviews and price side by side, then message and arrange lessons directly.' },
 ];
 
 export function Home() {
   const navigate = useNavigate();
   const [q, setQ] = useState('');
-  const { data: overview, loading: loadingOverview } = useApi<Overview>('/taxonomy/overview');
+  const { data: overview } = useApi<Overview>('/taxonomy/overview');
   const { data: top, loading: loadingTop } = useApi<{ results: SearchResult[] }>('/search?sort=rating&pageSize=6');
+  const { data: featured } = useApi<{ reviews: FeaturedReview[] }>('/reviews/featured');
+
+  const popularSubjects = useMemo(() => {
+    if (!overview) return [];
+    return overview.categories
+      .flatMap((c) => c.subjects)
+      .sort((a, b) => b.tutorCount - a.tutorCount)
+      .slice(0, 16);
+  }, [overview]);
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -28,64 +37,69 @@ export function Home() {
   };
 
   return (
-    <div className="stack">
+    <div>
       <section className="hero">
-        <div className="eyebrow">Learnfolk</div>
-        <h1>Find your perfect tutor</h1>
+        <div className="blob blob-1" />
+        <div className="blob blob-2" />
+        <div className="eyebrow">✦ {overview ? `${overview.totalApprovedTutors} approved tutors` : 'A better way to learn'}</div>
+        <h1>Learn something new from a <span className="gradient-text">real</span> expert</h1>
         <p className="sub">
-          Connect with verified independent tutors across New Zealand and Australia — from
-          {overview ? ` ${overview.totalSubjects}+ subjects` : ' academic subjects'} to music, languages and technical skills.
+          SkillSplore matches students with verified independent tutors across {overview ? `${overview.totalSubjects}+ subjects` : 'academics, music, languages and tech'}.
+          Post once, compare real proposals, and choose who you learn from.
         </p>
+        <div className="cta-row">
+          <Link className="btn btn-primary btn-lg" to="/requests/new">Post a request — it’s free</Link>
+          <Link className="btn btn-outline btn-lg" to="/search">Browse tutors</Link>
+        </div>
         <form className="searchbar" onSubmit={submit}>
-          <input placeholder="Try “calculus”, “piano”, “programming”…" value={q} onChange={(e) => setQ(e.target.value)} />
-          <button className="btn btn-primary btn-lg" type="submit">Search</button>
+          <input placeholder="Search “piano”, “calculus”, “Python”…" value={q} onChange={(e) => setQ(e.target.value)} />
+          <button className="btn btn-gradient" type="submit">Search</button>
         </form>
         {overview && (
-          <p className="trust-line">
-            <strong>{overview.totalApprovedTutors}</strong> approved tutors across <strong>{overview.totalSubjects}</strong> subjects
-          </p>
-        )}
-      </section>
-
-      <section className="props">
-        {PROPS.map((p) => (
-          <div className="prop" key={p.title}>
-            <div className="prop-icon">{p.icon}</div>
-            <h4>{p.title}</h4>
-            <p>{p.body}</p>
-          </div>
-        ))}
-      </section>
-
-      <section>
-        <div className="section-title"><h2 className="mt-0">Browse by subject</h2></div>
-        {loadingOverview ? <Spinner /> : (
-          <div className="cat-grid">
-            {overview?.categories.map((c) => (
-              <div key={c.id} className="cat-tile">
-                <div className="cat-head">
-                  <span className="cat-icon">{c.icon ?? '📘'}</span>
-                  <div>
-                    <h3>{c.name}</h3>
-                    <div className="cat-count">{c.tutorCount} tutor{c.tutorCount === 1 ? '' : 's'} · {c.subjectCount} subjects</div>
-                  </div>
-                </div>
-                <div className="cat-links">
-                  {c.subjects.slice(0, 5).map((s) => (
-                    <Link key={s.id} to={`/search?subjectId=${s.id}`}>{s.name}</Link>
-                  ))}
-                  {c.subjectCount > 5 && (
-                    <Link className="cat-more" to={`/search?category=${c.id}`}>All {c.subjectCount} subjects →</Link>
-                  )}
-                </div>
-              </div>
-            ))}
+          <div className="stat-strip">
+            <div className="stat"><span className="num">{overview.totalApprovedTutors}</span><span className="label">Verified tutors</span></div>
+            <div className="stat"><span className="num">{overview.totalSubjects}+</span><span className="label">Subjects</span></div>
+            <div className="stat"><span className="num">2</span><span className="label">Countries</span></div>
+            <div className="stat"><span className="num">0%</span><span className="label">Platform fees</span></div>
           </div>
         )}
       </section>
 
-      <section>
-        <div className="section-title"><h2 className="mt-0">Top-rated tutors</h2><Link to="/search">Browse all →</Link></div>
+      <section className="section">
+        <div className="section-title" style={{ display: 'block', textAlign: 'center' }}>
+          <span className="kicker">How it works</span>
+          <h2 className="mt-0">Three steps to your first lesson</h2>
+        </div>
+        <div className="steps-row">
+          {STEPS.map((s, i) => (
+            <div className="step-card" key={s.title}>
+              <div className="step-num">{String(i + 1).padStart(2, '0')}</div>
+              <h3>{s.title}</h3>
+              <p>{s.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="section-tight">
+        <div className="section-title">
+          <div><span className="kicker">Popular</span><h2 className="mt-0">Subjects students are searching</h2></div>
+          <Link to="/search">All subjects →</Link>
+        </div>
+        <div className="pill-cloud">
+          {popularSubjects.map((s) => (
+            <Link key={s.id} to={`/search?subjectId=${s.id}`} className="subject-pill">
+              {s.name} {s.tutorCount > 0 && <span className="pill-count">· {s.tutorCount}</span>}
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="section-title">
+          <div><span className="kicker">Top rated</span><h2 className="mt-0">Tutors students love</h2></div>
+          <Link to="/search">Browse all →</Link>
+        </div>
         {loadingTop ? <Spinner /> : (
           <div className="grid grid-cards">
             {top?.results.map((t) => <TutorCard key={t.id} t={t} />)}
@@ -93,17 +107,42 @@ export function Home() {
         )}
       </section>
 
-      <section className="grid grid-2">
-        <div className="card"><div className="card-body">
-          <h3>For students</h3>
-          <p className="muted">Search verified tutors, message them directly, or post a request and let tutors come to you. Arrange lessons and pay the tutor directly.</p>
-          <Link className="btn btn-gradient" to="/requests/new">Post a request</Link>
-        </div></div>
-        <div className="card"><div className="card-body">
-          <h3>For tutors</h3>
-          <p className="muted">Create a profile, get approved, appear in search, and respond to student requests. You set your own rates.</p>
-          <Link className="btn btn-outline" to="/tutor/onboarding">Become a tutor</Link>
-        </div></div>
+      {featured && featured.reviews.length > 0 && (
+        <section className="section-tight">
+          <div className="section-title" style={{ display: 'block', textAlign: 'center' }}>
+            <span className="kicker">Real reviews</span>
+            <h2 className="mt-0">What students say</h2>
+          </div>
+          <div className="grid grid-cards">
+            {featured.reviews.slice(0, 3).map((r) => (
+              <div className="testimonial-card" key={r.id}>
+                <span className="quote-mark">“</span>
+                <p>{r.body}</p>
+                <div className="who">
+                  <div>
+                    <div className="who-name">{r.student}</div>
+                    <div className="who-sub">on {r.tutor}{r.subject ? ` · ${r.subject}` : ''}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section className="section">
+        <div className="grid grid-2">
+          <div className="card"><div className="card-body">
+            <h3>For students</h3>
+            <p className="muted">Search verified tutors, message them directly, or post a request and let tutors come to you. Arrange lessons and pay the tutor directly — no platform fees, ever.</p>
+            <Link className="btn btn-gradient" to="/requests/new">Post a request</Link>
+          </div></div>
+          <div className="card"><div className="card-body">
+            <h3>For tutors</h3>
+            <p className="muted">Create a profile, get approved, appear in search, and respond to student requests. You set your own rates and keep 100% of what you earn.</p>
+            <Link className="btn btn-outline" to="/tutor/onboarding">Become a tutor</Link>
+          </div></div>
+        </div>
       </section>
     </div>
   );

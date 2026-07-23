@@ -206,7 +206,7 @@ adminRouter.post(
       { status: 'APPROVED', approvedAt: new Date(), reviewedById: req.user!.id, changeRequestNote: null },
       'tutor.approved',
       'Your tutor profile is approved',
-      'Congratulations — your Learnfolk tutor profile is now live and searchable.',
+      'Congratulations — your SkillSplore tutor profile is now live and searchable.',
     );
     res.json({ ok: true });
   }),

@@ -10,6 +10,41 @@ import { recomputeTutorRating } from './reviews.service.js';
 
 export const reviewsRouter = Router();
 
+// Public, unauthenticated: a handful of genuine, highest-rated published
+// reviews for homepage social proof. Never fabricated — sourced from real
+// reviews left after a completed engagement.
+reviewsRouter.get(
+  '/featured',
+  asyncHandler(async (_req, res) => {
+    const reviews = await prisma.review.findMany({
+      where: { status: 'PUBLISHED', rating: { gte: 4 }, body: { not: '' } },
+      orderBy: [{ rating: 'desc' }, { createdAt: 'desc' }],
+      take: 6,
+      include: {
+        student: { select: { displayName: true } },
+        tutorProfile: {
+          select: {
+            id: true,
+            user: { select: { displayName: true } },
+            subjects: { take: 1, select: { subject: { select: { name: true } } } },
+          },
+        },
+      },
+    });
+    res.json({
+      reviews: reviews.map((r) => ({
+        id: r.id,
+        rating: r.rating,
+        body: r.body,
+        student: r.student.displayName,
+        tutor: r.tutorProfile.user.displayName,
+        tutorProfileId: r.tutorProfile.id,
+        subject: r.tutorProfile.subjects[0]?.subject.name ?? null,
+      })),
+    });
+  }),
+);
+
 const createSchema = z.object({
   engagementId: z.number().int().positive(),
   rating: z.number().int().min(1).max(5),

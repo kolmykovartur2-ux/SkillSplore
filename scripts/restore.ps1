@@ -1,5 +1,5 @@
 # Windows restore helper. Restores a dump into DATABASE_URL using pg_restore.
-# Usage:  $env:DATABASE_URL="postgres://..."; ./scripts/restore.ps1 backups/learnfolk-YYYYMMDD-HHMMSS.dump
+# Usage:  $env:DATABASE_URL="postgres://..."; ./scripts/restore.ps1 backups/skillsplore-YYYYMMDD-HHMMSS.dump
 param([Parameter(Mandatory = $true)][string]$File)
 
 if (-not $env:DATABASE_URL) { Write-Error "Set DATABASE_URL first."; exit 1 }

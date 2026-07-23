@@ -55,7 +55,7 @@ usersRouter.delete(
   requireAuth,
   asyncHandler(async (req, res) => {
     const id = req.user!.id;
-    const anonEmail = `deleted+${id}-${crypto.randomBytes(6).toString('hex')}@deleted.learnfolk.local`;
+    const anonEmail = `deleted+${id}-${crypto.randomBytes(6).toString('hex')}@deleted.skillsplore.local`;
     const avatarKey = req.user!.avatarKey;
 
     await prisma.$transaction(async (tx) => {

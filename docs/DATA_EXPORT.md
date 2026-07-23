@@ -1,6 +1,6 @@
 # Data export, backup & restore
 
-Learnfolk stores all data in standard PostgreSQL plus object storage (avatars and private
+SkillSplore stores all data in standard PostgreSQL plus object storage (avatars and private
 qualification documents). Everything can be exported, backed up and restored with portable tooling.
 
 ## 1. Portable JSON export
@@ -9,7 +9,7 @@ A provider-independent snapshot of every table:
 
 ```bash
 npm run export
-# writes exports/learnfolk-export-<timestamp>.json
+# writes exports/skillsplore-export-<timestamp>.json
 ```
 
 Useful for migrations, inspection, or handing data to another system. (Binary files themselves live
@@ -24,7 +24,7 @@ in object storage — back those up separately, below.)
 DATABASE_URL=postgres://user:pass@host:5432/db ./scripts/backup.sh
 
 # Restore into an (existing) target database
-DATABASE_URL=postgres://user:pass@host:5432/target ./scripts/restore.sh backups/learnfolk-<ts>.dump
+DATABASE_URL=postgres://user:pass@host:5432/target ./scripts/restore.sh backups/skillsplore-<ts>.dump
 ```
 
 On Windows, equivalent helpers are provided:
@@ -32,7 +32,7 @@ On Windows, equivalent helpers are provided:
 ```powershell
 $env:DATABASE_URL = "postgres://user:pass@localhost:5432/db"
 ./scripts/backup.ps1
-./scripts/restore.ps1 backups/learnfolk-<ts>.dump
+./scripts/restore.ps1 backups/skillsplore-<ts>.dump
 ```
 
 ### Docker
@@ -40,11 +40,11 @@ $env:DATABASE_URL = "postgres://user:pass@localhost:5432/db"
 ```bash
 # Backup
 docker compose exec -T db pg_dump --format=custom --no-owner --no-privileges \
-  -U learnfolk learnfolk > backups/learnfolk-$(date +%F).dump
+  -U skillsplore skillsplore > backups/skillsplore-$(date +%F).dump
 
 # Restore into a fresh database
 docker compose exec -T db pg_restore --clean --if-exists --no-owner --no-privileges \
-  -U learnfolk -d learnfolk < backups/learnfolk-<ts>.dump
+  -U skillsplore -d skillsplore < backups/skillsplore-<ts>.dump
 ```
 
 ## 3. Object storage

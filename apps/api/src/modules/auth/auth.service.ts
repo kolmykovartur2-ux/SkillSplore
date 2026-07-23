@@ -47,7 +47,7 @@ export async function register(input: {
   });
   await sendMail({
     to: user.email,
-    subject: 'Confirm your Learnfolk email',
+    subject: 'Confirm your SkillSplore email',
     text: verificationEmail(user.displayName, link('/verify-email', token)),
   });
   await writeAudit({ actorId: user.id, action: 'user.register', entityType: 'User', entityId: user.id });
@@ -94,7 +94,7 @@ export async function requestPasswordReset(email: string): Promise<void> {
   });
   await sendMail({
     to: user.email,
-    subject: 'Reset your Learnfolk password',
+    subject: 'Reset your SkillSplore password',
     text: `Reset your password using this link (valid for one hour):\n${link('/reset-password', token)}\n\nIf you did not request this, you can ignore it.`,
   });
 }
@@ -122,10 +122,10 @@ export async function resetPassword(token: string, newPassword: string): Promise
 // Guarded by env.demoLoginEnabled at the route layer (off in production).
 export async function findDemoUser(role: 'admin' | 'student' | 'tutor' | 'pending_tutor'): Promise<User> {
   const emailByRole: Record<typeof role, string> = {
-    admin: 'admin@demo.learnfolk.local',
-    student: 'student@demo.learnfolk.local',
-    tutor: 'tutor@demo.learnfolk.local',
-    pending_tutor: 'pending.tutor@demo.learnfolk.local',
+    admin: 'admin@demo.skillsplore.local',
+    student: 'student@demo.skillsplore.local',
+    tutor: 'tutor@demo.skillsplore.local',
+    pending_tutor: 'pending.tutor@demo.skillsplore.local',
   } as const;
   const user = await prisma.user.findUnique({ where: { email: emailByRole[role] } });
   if (!user) throw badRequest('Demo accounts are not seeded. Run "npm run demo:seed".');

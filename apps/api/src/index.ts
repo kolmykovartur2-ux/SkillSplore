@@ -23,7 +23,7 @@ async function main() {
         storage: env.STORAGE_DRIVER,
         secureCookies: env.secureCookies,
       },
-      `Learnfolk API listening on port ${env.API_PORT} (${env.APP_ENV} mode)`,
+      `SkillSplore API listening on port ${env.API_PORT} (${env.APP_ENV} mode)`,
     );
   });
 

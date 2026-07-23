@@ -45,7 +45,7 @@ export function Layout({ children }: { children: ReactNode }) {
       {config?.showDemoBanner && <div className="demo-banner">{config.demoBannerText}</div>}
       <header className="nav">
         <div className="container nav-inner">
-          <Link to="/" className="brand"><span className="dot" /> Learnfolk</Link>
+          <Link to="/" className="brand"><span className="dot" /> SkillSplore</Link>
           <nav className="nav-links">
             <NavLink to="/search" className="nav-link">Find tutors</NavLink>
             {user && <NavLink to="/dashboard" className="nav-link">Dashboard</NavLink>}
@@ -92,10 +92,10 @@ export function Layout({ children }: { children: ReactNode }) {
         <div className="container">
           <div className="footer-inner">
             <div>
-              <span className="brand" style={{ fontSize: '1.05rem' }}><span className="dot" /> Learnfolk</span>
+              <span className="brand" style={{ fontSize: '1.05rem' }}><span className="dot" /> SkillSplore</span>
               <p className="muted" style={{ fontSize: '0.85rem', margin: '8px 0 0', maxWidth: 360 }}>
                 A marketplace connecting students with independent tutors. Lessons are arranged and paid
-                directly between students and tutors — Learnfolk does not process payments.
+                directly between students and tutors — SkillSplore does not process payments.
               </p>
             </div>
             <nav className="footer-links">
@@ -105,7 +105,7 @@ export function Layout({ children }: { children: ReactNode }) {
               <Link to="/privacy">Privacy Policy</Link>
             </nav>
           </div>
-          <div className="footer-bottom muted">© {new Date().getFullYear()} Learnfolk</div>
+          <div className="footer-bottom muted">© {new Date().getFullYear()} SkillSplore</div>
         </div>
       </footer>
     </>

@@ -1,7 +1,7 @@
 /**
  * Development & demonstration seed.
  *
- * Creates a plausible, clearly fictional Learnfolk marketplace so every primary
+ * Creates a plausible, clearly fictional SkillSplore marketplace so every primary
  * user journey can be tested. No real individuals' identities, photos,
  * qualifications or biographies are used. Refuses to run when APP_ENV=production.
  */
@@ -67,8 +67,8 @@ async function main() {
   }
 
   const demoStudent = await student(DEMO_ACCOUNTS.student, 'Ava Thompson', true);
-  const liam = await student('liam.student@demo.learnfolk.local', 'Liam Wilson');
-  const mia = await student('mia.student@demo.learnfolk.local', 'Mia Chen');
+  const liam = await student('liam.student@demo.skillsplore.local', 'Liam Wilson');
+  const mia = await student('mia.student@demo.skillsplore.local', 'Mia Chen');
   const students = [demoStudent, liam, mia];
 
   // --- Tutors --------------------------------------------------------------
@@ -101,7 +101,7 @@ async function main() {
       quals: [{ title: 'BE (Hons) Mechanical Engineering', institution: 'University of Auckland', year: 2016, withDoc: true, verified: true }],
     },
     {
-      email: 'charlotte.tutor@demo.learnfolk.local', name: 'Charlotte Nguyen', country: 'New Zealand', city: 'Wellington', mode: 'IN_PERSON', rate: 60, years: 12,
+      email: 'charlotte.tutor@demo.skillsplore.local', name: 'Charlotte Nguyen', country: 'New Zealand', city: 'Wellington', mode: 'IN_PERSON', rate: 60, years: 12,
       headline: 'Piano & saxophone teacher, beginners to grade 8',
       experience: 'Professional performer and private teacher for over a decade, preparing students for ABRSM and Trinity exams.',
       style: 'Patient and encouraging, tailored to each student — from first notes to advanced repertoire.',
@@ -110,7 +110,7 @@ async function main() {
       quals: [{ title: 'Bachelor of Music (Performance)', institution: 'Victoria University of Wellington', year: 2011, withDoc: true, verified: true }],
     },
     {
-      email: 'ethan.tutor@demo.learnfolk.local', name: 'Ethan Brown', country: 'Australia', city: 'Sydney', mode: 'ONLINE', rate: 90, years: 6,
+      email: 'ethan.tutor@demo.skillsplore.local', name: 'Ethan Brown', country: 'Australia', city: 'Sydney', mode: 'ONLINE', rate: 90, years: 6,
       headline: 'Software engineer teaching programming & SolidWorks',
       experience: 'Full-stack developer and mechanical design hobbyist. I teach programming fundamentals and CAD for makers.',
       style: 'Project-based: we build something real while covering the fundamentals you need.',
@@ -119,7 +119,7 @@ async function main() {
       quals: [{ title: 'BSc Computer Science', institution: 'University of Sydney', year: 2018, withDoc: true }],
     },
     {
-      email: 'sophie.tutor@demo.learnfolk.local', name: 'Sophie Kaur', country: 'New Zealand', city: 'Christchurch', mode: 'BOTH', rate: 55, years: 5,
+      email: 'sophie.tutor@demo.skillsplore.local', name: 'Sophie Kaur', country: 'New Zealand', city: 'Christchurch', mode: 'BOTH', rate: 55, years: 5,
       headline: 'NCEA calculus & engineering maths specialist',
       experience: 'Secondary maths teacher supporting NCEA Level 1–3 and first-year engineering maths.',
       style: 'Structured around the NCEA standards with lots of exam technique.',
@@ -128,7 +128,7 @@ async function main() {
       quals: [{ title: 'BSc Mathematics, GradDip Teaching', institution: 'University of Canterbury', year: 2019, withDoc: true, verified: true }],
     },
     {
-      email: 'jack.tutor@demo.learnfolk.local', name: 'Jack Williams', country: 'Australia', city: 'Melbourne', mode: 'ONLINE', rate: 50, years: 4,
+      email: 'jack.tutor@demo.skillsplore.local', name: 'Jack Williams', country: 'Australia', city: 'Melbourne', mode: 'ONLINE', rate: 50, years: 4,
       headline: 'English tutor — essays, comprehension, exam prep',
       experience: 'English tutor for senior secondary and first-year university students.',
       style: 'We focus on clear structure and confident, well-evidenced writing.',
@@ -137,7 +137,7 @@ async function main() {
       quals: [{ title: 'BA English Literature', institution: 'University of Melbourne', year: 2020 }],
     },
     {
-      email: 'isabella.tutor@demo.learnfolk.local', name: 'Isabella Rossi', country: 'New Zealand', city: 'Hamilton', mode: 'BOTH', rate: 58, years: 9,
+      email: 'isabella.tutor@demo.skillsplore.local', name: 'Isabella Rossi', country: 'New Zealand', city: 'Hamilton', mode: 'BOTH', rate: 58, years: 9,
       headline: 'Russian & English language tutor',
       experience: 'Native Russian speaker and qualified language teacher.',
       style: 'Conversation-first with grammar woven in as you need it.',
@@ -146,7 +146,7 @@ async function main() {
       quals: [{ title: 'MA Applied Linguistics', institution: 'University of Waikato', year: 2015, withDoc: true }],
     },
     {
-      email: 'oliver.tutor@demo.learnfolk.local', name: 'Oliver Tran', country: 'Australia', city: 'Brisbane', mode: 'ONLINE', rate: 48, years: 7,
+      email: 'oliver.tutor@demo.skillsplore.local', name: 'Oliver Tran', country: 'Australia', city: 'Brisbane', mode: 'ONLINE', rate: 48, years: 7,
       headline: 'Vietnamese & English for all ages',
       experience: 'Bilingual tutor helping learners with practical, everyday language.',
       style: 'Relaxed, practical lessons built around real conversations.',
@@ -155,7 +155,7 @@ async function main() {
       quals: [{ title: 'Cert IV in TESOL', institution: 'TAFE Queensland', year: 2017 }],
     },
     {
-      email: 'amelia.tutor@demo.learnfolk.local', name: 'Amelia Clark', country: 'New Zealand', city: 'Dunedin', mode: 'IN_PERSON', rate: 62, years: 15,
+      email: 'amelia.tutor@demo.skillsplore.local', name: 'Amelia Clark', country: 'New Zealand', city: 'Dunedin', mode: 'IN_PERSON', rate: 62, years: 15,
       headline: 'Classical & contemporary piano teacher',
       experience: 'Fifteen years teaching piano to children and adults, all levels.',
       style: 'Warm and methodical; theory and playing together.',
@@ -164,7 +164,7 @@ async function main() {
       quals: [{ title: 'LTCL Piano Performance', institution: 'Trinity College London', year: 2009, withDoc: true, verified: true }],
     },
     {
-      email: 'lucas.tutor@demo.learnfolk.local', name: 'Lucas Smith', country: 'Australia', city: 'Perth', mode: 'ONLINE', rate: 80, years: 5,
+      email: 'lucas.tutor@demo.skillsplore.local', name: 'Lucas Smith', country: 'Australia', city: 'Perth', mode: 'ONLINE', rate: 80, years: 5,
       headline: 'Learn to code — Python, web, and more',
       experience: 'Software engineer who loves teaching absolute beginners to write their first programs.',
       style: 'Hands-on from lesson one; you write code, I coach.',
@@ -173,7 +173,7 @@ async function main() {
       quals: [{ title: 'BEng Software Engineering', institution: 'Curtin University', year: 2019 }],
     },
     {
-      email: 'grace.tutor@demo.learnfolk.local', name: 'Grace Lee', country: 'New Zealand', city: 'Auckland', mode: 'BOTH', rate: 82, years: 10,
+      email: 'grace.tutor@demo.skillsplore.local', name: 'Grace Lee', country: 'New Zealand', city: 'Auckland', mode: 'BOTH', rate: 82, years: 10,
       headline: 'Thermodynamics & SolidWorks for engineering students',
       experience: 'Mechanical engineer combining thermofluids theory with practical CAD skills.',
       style: 'I connect the theory to real design decisions and CAD workflows.',
@@ -194,7 +194,7 @@ async function main() {
       quals: [{ title: 'Certificate in Software Development', institution: 'Toi Ohomai', year: 2022, withDoc: true }],
     },
     {
-      email: 'zoe.pending@demo.learnfolk.local', name: 'Zoe Martin', country: 'Australia', city: 'Adelaide', mode: 'IN_PERSON', rate: 60, years: 6,
+      email: 'zoe.pending@demo.skillsplore.local', name: 'Zoe Martin', country: 'Australia', city: 'Adelaide', mode: 'IN_PERSON', rate: 60, years: 6,
       headline: 'Saxophone teacher (application under review)',
       experience: 'Gigging saxophonist offering lessons for beginners and improvers.',
       style: 'Play real music from day one.',

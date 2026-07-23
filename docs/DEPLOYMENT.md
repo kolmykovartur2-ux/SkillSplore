@@ -1,6 +1,6 @@
 # Deployment
 
-Learnfolk deploys as Docker containers to any privately controlled server. It needs only
+SkillSplore deploys as Docker containers to any privately controlled server. It needs only
 PostgreSQL, persistent file storage (or an S3-compatible bucket), generic SMTP and HTTPS.
 
 ## Hosted demonstration (password-protected)
@@ -37,7 +37,7 @@ The demo banner ("Demonstration environment — data may be reset.") is controll
 ### Reverse proxy example (Caddy)
 
 ```
-learnfolk.example.com {
+skillsplore.example.com {
     reverse_proxy app:4000
 }
 ```
@@ -45,7 +45,7 @@ learnfolk.example.com {
 ## Building the image
 
 ```bash
-docker build -t learnfolk:latest .
+docker build -t skillsplore:latest .
 ```
 
 The multi-stage `Dockerfile` builds the web client and the API, then ships a lean runtime in which
@@ -58,7 +58,7 @@ See [`DATA_EXPORT.md`](DATA_EXPORT.md). In Docker:
 ```bash
 # Database dump
 docker compose exec -T db pg_dump --format=custom --no-owner --no-privileges \
-  -U learnfolk learnfolk > backups/learnfolk-$(date +%F).dump
+  -U skillsplore skillsplore > backups/skillsplore-$(date +%F).dump
 
 # Object storage: back up the MinIO/volume data or your S3 bucket.
 ```

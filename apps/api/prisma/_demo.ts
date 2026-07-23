@@ -13,13 +13,13 @@ export const prisma = new PrismaClient();
 // Demo password is configurable but defaults to a clearly non-production value.
 // These credentials only ever exist in development/demo databases: the guard
 // below refuses to run any demo command when APP_ENV=production.
-export const DEMO_PASSWORD = process.env.DEMO_PASSWORD ?? 'learnfolk-demo';
+export const DEMO_PASSWORD = process.env.DEMO_PASSWORD ?? 'skillsplore-demo';
 
 export const DEMO_ACCOUNTS = {
-  admin: 'admin@demo.learnfolk.local',
-  student: 'student@demo.learnfolk.local',
-  tutor: 'tutor@demo.learnfolk.local',
-  pending_tutor: 'pending.tutor@demo.learnfolk.local',
+  admin: 'admin@demo.skillsplore.local',
+  student: 'student@demo.skillsplore.local',
+  tutor: 'tutor@demo.skillsplore.local',
+  pending_tutor: 'pending.tutor@demo.skillsplore.local',
 } as const;
 
 // Refuses to touch a production database. Also refuses to run silently against

@@ -14,7 +14,7 @@ if (-not $pgDump) { Write-Error "pg_dump not found. Install PostgreSQL client to
 
 New-Item -ItemType Directory -Force -Path $BackupDir | Out-Null
 $ts = Get-Date -Format "yyyyMMdd-HHmmss"
-$out = Join-Path $BackupDir "learnfolk-$ts.dump"
+$out = Join-Path $BackupDir "skillsplore-$ts.dump"
 
 Write-Output "Dumping database -> $out"
 & $pgDump --format=custom --no-owner --no-privileges $env:DATABASE_URL | Set-Content -Path $out -Encoding Byte

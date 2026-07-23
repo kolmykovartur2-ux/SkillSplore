@@ -4,7 +4,7 @@ _Last updated: 2026-07-23_
 
 ## Summary
 
-Learnfolk is a **working, end-to-end MVP**. All primary marketplace journeys operate against a real
+SkillSplore is a **working, end-to-end MVP**. All primary marketplace journeys operate against a real
 PostgreSQL database with real authentication and permissions. The same codebase runs the
 demonstration and would run production; the two differ only in configuration, seed data, external
 adapters and security settings.
@@ -27,7 +27,7 @@ adapters and security settings.
 ## Verified
 
 - `npm run typecheck` passes for API and web.
-- `npm test` (API) — 9 permission/behaviour tests pass against an isolated `learnfolk_test` DB.
+- `npm test` (API) — 9 permission/behaviour tests pass against an isolated `skillsplore_test` DB.
 - Demonstration data seeds cleanly; the app renders real data (home, search, tutor profiles,
   admin dashboard with accurate statistics) in the browser.
 - API smoke-tested end to end (health, config, registration, search, admin, auth/session).
@@ -50,6 +50,6 @@ These are deliberately **not** claimed as done. See `docs/SECURITY.md` for detai
 ## Environment notes for this checkout
 
 - Node 20+ (developed against Node 24), PostgreSQL 17.
-- Local `DATABASE_URL` expects a `learnfolk` role/database; tests use `learnfolk_test`.
+- Local `DATABASE_URL` expects a `skillsplore` role/database; tests use `skillsplore_test`.
 - Passwords are hashed with bcrypt (pure-JS, no native build toolchain required). Argon2 is a
   documented future hardening option.

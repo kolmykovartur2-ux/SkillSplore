@@ -1,8 +1,8 @@
 #!/usr/bin/env sh
-# Restores a Learnfolk database dump created by backup.sh into the database in
+# Restores a SkillSplore database dump created by backup.sh into the database in
 # DATABASE_URL. The target database must already exist.
 #
-#   DATABASE_URL=postgres://... ./scripts/restore.sh backups/learnfolk-YYYYMMDD-HHMMSS.dump
+#   DATABASE_URL=postgres://... ./scripts/restore.sh backups/skillsplore-YYYYMMDD-HHMMSS.dump
 set -eu
 
 : "${DATABASE_URL:?Set DATABASE_URL to the target database}"

@@ -4,7 +4,7 @@
  * Refuses in production only if RUN_IN_PRODUCTION is not explicitly set, since
  * exporting production data may be a legitimate ownership-transfer action.
  *
- *   npm run export         # writes exports/learnfolk-export-<timestamp>.json
+ *   npm run export         # writes exports/skillsplore-export-<timestamp>.json
  */
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -38,7 +38,7 @@ async function main() {
 
   const dir = path.resolve(process.cwd(), process.env.EXPORT_DIR ?? '../../exports');
   await fs.mkdir(dir, { recursive: true });
-  const file = path.join(dir, `learnfolk-export-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
+  const file = path.join(dir, `skillsplore-export-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
   await fs.writeFile(file, JSON.stringify(data, null, 2));
   const counts = Object.entries(data)
     .filter(([, v]) => Array.isArray(v))

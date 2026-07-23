@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# Backs up the Learnfolk PostgreSQL database (and local object storage, if any).
+# Backs up the SkillSplore PostgreSQL database (and local object storage, if any).
 # Uses only standard PostgreSQL tooling — portable to any host.
 #
 #   DATABASE_URL=postgres://... ./scripts/backup.sh
@@ -13,7 +13,7 @@ TS=$(date +%Y%m%d-%H%M%S)
 DIR="${BACKUP_DIR:-backups}"
 mkdir -p "$DIR"
 
-DB_OUT="$DIR/learnfolk-$TS.dump"
+DB_OUT="$DIR/skillsplore-$TS.dump"
 echo "Dumping database -> $DB_OUT"
 pg_dump --format=custom --no-owner --no-privileges "$DATABASE_URL" > "$DB_OUT"
 

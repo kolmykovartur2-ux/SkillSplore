@@ -1,6 +1,26 @@
 # Changelog
 
-All notable changes to Learnfolk are documented here.
+All notable changes to SkillSplore are documented here.
+
+## [Unreleased]
+
+### Changed
+- **Rebrand:** renamed the product from Learnfolk to SkillSplore across the codebase — npm package
+  names, UI copy, docs, email domains, demo account addresses, cookie name, project directory, and
+  local Postgres role/database. No architecture or data-model changes.
+- **Catalogue:** subject taxonomy expanded from 10 to 97 subjects across 12 categories
+  (`apps/api/prisma/taxonomy.data.ts`), each with an icon for browse tiles. Seed rebuilt to populate
+  it. See `docs/PRODUCT_COMPARISON.md` for the profi.ru structural comparison that motivated this.
+- **Design v2:** moved off a profi.ru-shaped composition (gradient panel + dominant search + category
+  grid) toward a restructured homepage — restrained hero with a subtle blurred-blob background,
+  numbered "how it works" section, a subject pill-cloud, and a real-review testimonial section — set
+  in Space Grotesk (display) + Inter (body) on a near-white ground with a single indigo/coral accent.
+- Added `GET /api/taxonomy/overview` (category/subject list with live approved-tutor counts) and
+  `GET /api/reviews/featured` (highest-rated genuine published reviews, for homepage social proof —
+  never fabricated).
+- Added Terms of Service and Privacy Policy pages (`/legal/terms`, `/legal/privacy`), linked from the
+  footer, with an explicit "payments arranged directly, SkillSplore takes no fee" clause and a
+  placeholder for professional legal review per the specification's production-preparation checklist.
 
 ## [0.1.0] — 2026-07-23
 

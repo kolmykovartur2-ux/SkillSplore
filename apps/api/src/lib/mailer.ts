@@ -37,5 +37,5 @@ export async function sendMail(mail: Mail): Promise<void> {
 }
 
 export function verificationEmail(name: string, link: string): Mail['text'] {
-  return `Hi ${name},\n\nConfirm your Learnfolk email address:\n${link}\n\nIf you did not create this account you can ignore this message.`;
+  return `Hi ${name},\n\nConfirm your SkillSplore email address:\n${link}\n\nIf you did not create this account you can ignore this message.`;
 }

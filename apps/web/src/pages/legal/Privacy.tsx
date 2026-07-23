@@ -5,7 +5,7 @@ export function Privacy() {
     <LegalLayout title="Privacy Policy" updated="23 July 2026">
       <h2>1. Who this applies to</h2>
       <p>
-        This policy explains how Learnfolk (“we”, “us”) collects, uses and protects personal
+        This policy explains how SkillSplore (“we”, “us”) collects, uses and protects personal
         information about students, tutors and visitors. It should be read together with our Terms
         of Service.
       </p>

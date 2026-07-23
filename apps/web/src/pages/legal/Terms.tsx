@@ -3,11 +3,11 @@ import { LegalLayout } from './LegalLayout.js';
 export function Terms() {
   return (
     <LegalLayout title="Terms of Service" updated="23 July 2026">
-      <h2>1. About Learnfolk</h2>
+      <h2>1. About SkillSplore</h2>
       <p>
-        Learnfolk (“the platform”, “we”, “us”) is an online marketplace that helps students find
-        independent tutors. Learnfolk provides the platform on which students and tutors connect,
-        communicate and arrange lessons. Learnfolk is not the employer of any tutor and is not a
+        SkillSplore (“the platform”, “we”, “us”) is an online marketplace that helps students find
+        independent tutors. SkillSplore provides the platform on which students and tutors connect,
+        communicate and arrange lessons. SkillSplore is not the employer of any tutor and is not a
         party to any agreement made between a student and a tutor.
       </p>
 
@@ -21,24 +21,24 @@ export function Terms() {
 
       <h2>3. Tutors</h2>
       <p>
-        Tutors are independent providers, not employees or agents of Learnfolk. Tutors are
+        Tutors are independent providers, not employees or agents of SkillSplore. Tutors are
         responsible for the accuracy of their profiles, the qualifications and experience they
         claim, the lawfulness of their services, and their own tax and regulatory obligations.
-        Tutor profiles are reviewed before they become public, but Learnfolk does not guarantee any
+        Tutor profiles are reviewed before they become public, but SkillSplore does not guarantee any
         tutor’s identity, qualifications, or the quality or outcome of any lesson.
       </p>
 
       <h2>4. Payments are arranged directly</h2>
       <p>
-        <strong>Learnfolk does not process payments and does not hold, transfer or protect any
+        <strong>SkillSplore does not process payments and does not hold, transfer or protect any
         money.</strong> All fees for lessons are agreed and paid directly between the student and
-        the tutor, outside the platform. Learnfolk does not provide any financial guarantee, escrow,
+        the tutor, outside the platform. SkillSplore does not provide any financial guarantee, escrow,
         refund, or buyer/seller protection. Any dispute about payment is solely between the student
         and the tutor.
       </p>
 
       <h2>5. Acceptable use</h2>
-      <p>You agree not to use Learnfolk to:</p>
+      <p>You agree not to use SkillSplore to:</p>
       <ul>
         <li>post false, misleading, unlawful, abusive, or infringing content;</li>
         <li>harass, threaten, discriminate against, or endanger any person;</li>
@@ -65,8 +65,8 @@ export function Terms() {
 
       <h2>8. Intellectual property</h2>
       <p>
-        The platform, its software and branding are owned by Learnfolk or its licensors. You retain
-        ownership of content you post but grant Learnfolk a licence to host and display it for the
+        The platform, its software and branding are owned by SkillSplore or its licensors. You retain
+        ownership of content you post but grant SkillSplore a licence to host and display it for the
         purpose of operating the service.
       </p>
 
@@ -79,7 +79,7 @@ export function Terms() {
 
       <h2>10. Disclaimers and liability</h2>
       <p>
-        The platform is provided “as is”. To the maximum extent permitted by law, Learnfolk excludes
+        The platform is provided “as is”. To the maximum extent permitted by law, SkillSplore excludes
         implied warranties and is not liable for the conduct of any user, the quality or outcome of
         any lesson, or any dealing arranged through the platform. Nothing in these terms limits
         rights that cannot be excluded under applicable consumer law.

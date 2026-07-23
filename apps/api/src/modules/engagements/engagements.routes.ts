@@ -46,8 +46,8 @@ function serialize(e: EngagementRow, viewerId: number) {
     hasReview: !!e.review,
     // Reviews may be written by the student for a completed engagement only.
     canReview: iAmStudent && e.status === 'COMPLETED' && !e.review,
-    // Payment is arranged directly between student and tutor, outside Learnfolk.
-    paymentNote: 'Payment is arranged directly between you and the tutor. Learnfolk does not process or protect payments.',
+    // Payment is arranged directly between student and tutor, outside SkillSplore.
+    paymentNote: 'Payment is arranged directly between you and the tutor. SkillSplore does not process or protect payments.',
   };
 }
 

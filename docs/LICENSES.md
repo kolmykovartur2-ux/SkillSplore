@@ -1,7 +1,7 @@
 # Dependency licences
 
 All runtime and build dependencies use permissive open-source licences (MIT, Apache-2.0,
-BSD-2-Clause, MIT-0). None impose copyleft obligations on Learnfolk's own source, so the platform can
+BSD-2-Clause, MIT-0). None impose copyleft obligations on SkillSplore's own source, so the platform can
 be continued, hosted privately, licensed or sold without licence conflicts. **Confirm this catalogue
 after any dependency change**, and take independent legal advice before a resale or relicensing.
 
