@@ -39,8 +39,6 @@ export function Home() {
   return (
     <div>
       <section className="hero">
-        <div className="blob blob-1" />
-        <div className="blob blob-2" />
         <div className="eyebrow">✦ {overview ? `${overview.totalApprovedTutors} approved tutors` : 'A better way to learn'}</div>
         <h1>Learn something new from a <span className="gradient-text">real</span> expert</h1>
         <p className="sub">
