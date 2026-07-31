@@ -110,6 +110,9 @@ model User {
   suspendedAt     DateTime?
   suspendedReason String?
   deletedAt       DateTime?
+  // Per-account brute-force lockout (separate from IP-based rate limiting).
+  failedLoginCount Int       @default(0)
+  lockedUntil      DateTime?
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
@@ -125,6 +128,8 @@ model User {
   reportsMade              Report[]
   blocksMade               Block[]                   @relation("Blocker")
   blocksReceived           Block[]                   @relation("Blocked")
+  subjectSuggestionsMade     SubjectSuggestion[]      @relation("SuggestionSubmitter")
+  subjectSuggestionsReviewed SubjectSuggestion[]      @relation("SuggestionReviewer")
 
   @@index([status])
 }
@@ -147,25 +152,69 @@ model EmailToken {
 // ---------------------------------------------------------------------------
 
 model Category {
-  id       Int       @id @default(autoincrement())
-  name     String    @unique
-  slug     String    @unique
-  icon     String?
-  subjects Subject[]
+  id             Int       @id @default(autoincrement())
+  name           String    @unique
+  // Lowercased, accent- and punctuation-stripped form of `name`, used to catch
+  // near-duplicates ("Music" vs "music" vs "Music ") at the database level.
+  normalizedName String    @unique
+  slug           String    @unique
+  icon           String?
+  subjects       Subject[]
+  suggestions    SubjectSuggestion[] @relation("SuggestedCategory")
 }
 
 model Subject {
-  id         Int      @id @default(autoincrement())
-  name       String   @unique
-  slug       String   @unique
-  categoryId Int?
-  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  id             Int      @id @default(autoincrement())
+  name           String   @unique
+  normalizedName String   @unique
+  slug           String   @unique
+  categoryId     Int?
+  category       Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   tutorSubjects TutorSubject[]
   requests      TutoringRequest[]
   engagements   Engagement[]
+  resolvedFromSuggestions SubjectSuggestion[] @relation("ResolvedSubject")
 
   @@index([categoryId])
+}
+
+enum SuggestionStatus {
+  PENDING
+  APPROVED
+  MERGED
+  REJECTED
+}
+
+// A student or tutor proposing a subject that isn't in the catalogue yet.
+// Never creates a Subject directly -- always goes through this review queue,
+// or auto-resolves instantly if it turns out to already exist (see
+// subjects.routes.ts), which is what actually keeps the catalogue from
+// fragmenting into near-duplicates.
+model SubjectSuggestion {
+  id                  Int      @id @default(autoincrement())
+  name                String
+  normalizedName      String
+  note                String?
+  suggestedCategoryId Int?
+  suggestedCategory   Category? @relation("SuggestedCategory", fields: [suggestedCategoryId], references: [id], onDelete: SetNull)
+  newCategoryName     String?
+
+  submittedById Int
+  submittedBy   User   @relation("SuggestionSubmitter", fields: [submittedById], references: [id], onDelete: Cascade)
+
+  status            SuggestionStatus @default(PENDING)
+  resolvedSubjectId Int?
+  resolvedSubject   Subject?         @relation("ResolvedSubject", fields: [resolvedSubjectId], references: [id], onDelete: SetNull)
+  reviewedById      Int?
+  reviewedBy        User?            @relation("SuggestionReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewNote        String?
+
+  createdAt  DateTime  @default(now())
+  resolvedAt DateTime?
+
+  @@index([status])
+  @@index([normalizedName])
 }
 
 model TeachingLevel {

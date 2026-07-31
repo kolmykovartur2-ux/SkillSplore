@@ -1,4 +1,14 @@
-# Dependency licences
+# Licensing
+
+## SkillSplore's own code
+
+This codebase is **proprietary — all rights reserved** (see [`LICENSE`](../LICENSE) at the repo root),
+not open source. `package.json` at the root and in each workspace declares `"license": "UNLICENSED"`,
+which also makes `npm publish` refuse to run by default. Keep the GitHub repository **private**; a
+license file only governs what people are permitted to do — it does nothing if the source is publicly
+readable in the first place. Update the copyright holder name in `LICENSE` before relying on it.
+
+## Third-party dependencies
 
 All runtime and build dependencies use permissive open-source licences (MIT, Apache-2.0,
 BSD-2-Clause, MIT-0). None impose copyleft obligations on SkillSplore's own source, so the platform can

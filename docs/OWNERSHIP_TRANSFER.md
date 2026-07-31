@@ -46,6 +46,28 @@ All third-party dependencies and their licences are catalogued in `docs/LICENSES
 catalogue after dependency changes (instructions in that file). Review it before any resale or
 relicensing.
 
+## Protecting the code and brand
+
+"Sovereign" (owning your infrastructure) and "un-copyable" (stopping others copying it) are different
+goals — the first is built into the architecture, the second is mostly process, not code, once someone
+has the source. What's actually in place, and what's still on you:
+
+- **Someone cloning the repo and launching a competitor.** The code carries a proprietary licence
+  (`LICENSE` at the repo root, `"license": "UNLICENSED"` in every `package.json`) — but a licence only
+  restricts what people are *permitted* to do, it enforces nothing by itself. **Keep the GitHub
+  repository private.** If it's ever public, anyone with the URL has already copied it regardless of
+  what the licence says.
+- **Someone scraping the live site's listings.** IP-based rate limiting (`apps/api/src/middleware/rateLimit.ts`)
+  and a Terms-of-Service clause prohibiting automated data extraction (`Terms.tsx`, section 5) are in
+  place. Neither stops a determined scraper — that needs a WAF/bot-management layer (e.g. Cloudflare in
+  front of the app) if it becomes a real problem, which isn't built here.
+- **Account/session hijacking.** Covered in `docs/SECURITY.md` — bcrypt, server-side sessions with
+  fixation-safe regeneration, per-IP and per-account rate limiting on login. MFA for admins remains
+  outstanding there.
+- **Someone using the SkillSplore name elsewhere.** Trademark registration is not a code concern and
+  isn't done here — search the trademark register in the jurisdiction(s) you operate in, and register
+  if the name matters to you, before it's in wide use.
+
 ## Key files to know
 
 | Area | Location |

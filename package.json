@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "SkillSplore — a sovereign, self-hostable tutoring marketplace (MVP).",
-  "license": "SEE docs/LICENSES.md",
+  "license": "UNLICENSED",
   "workspaces": [
     "apps/api",
     "apps/web"

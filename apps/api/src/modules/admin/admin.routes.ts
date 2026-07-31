@@ -4,11 +4,12 @@ import { asyncHandler } from '../../lib/asyncHandler.js';
 import { validate } from '../../lib/validate.js';
 import { requireRole } from '../../middleware/auth.js';
 import { prisma } from '../../lib/prisma.js';
-import { badRequest, notFound } from '../../lib/errors.js';
+import { badRequest, conflict, notFound } from '../../lib/errors.js';
 import { writeAudit } from '../../lib/audit.js';
 import { notify } from '../../lib/notify.js';
 import { sendMail } from '../../lib/mailer.js';
 import { money } from '../../lib/serializers.js';
+import { normalizeName } from '../../lib/normalize.js';
 import { hideContent, loadReportContext } from './admin.moderation.js';
 import { recomputeTutorRating } from '../reviews/reviews.service.js';
 import { fullProfileInclude } from '../tutors/tutors.service.js';
@@ -461,7 +462,10 @@ adminRouter.post(
   '/categories',
   validate({ body: z.object({ name: z.string().min(2).max(80) }) }),
   asyncHandler(async (req, res) => {
-    const category = await prisma.category.create({ data: { name: req.body.name, slug: slugify(req.body.name) } });
+    const normalizedName = normalizeName(req.body.name);
+    const existing = await prisma.category.findUnique({ where: { normalizedName } });
+    if (existing) throw conflict(`"${existing.name}" already exists as a category.`);
+    const category = await prisma.category.create({ data: { name: req.body.name, normalizedName, slug: slugify(req.body.name) } });
     res.status(201).json({ category });
   }),
 );
@@ -470,7 +474,12 @@ adminRouter.post(
   '/subjects',
   validate({ body: z.object({ name: z.string().min(2).max(80), categoryId: z.number().int().positive().nullable().optional() }) }),
   asyncHandler(async (req, res) => {
-    const subject = await prisma.subject.create({ data: { name: req.body.name, slug: slugify(req.body.name), categoryId: req.body.categoryId ?? null } });
+    const normalizedName = normalizeName(req.body.name);
+    const existing = await prisma.subject.findUnique({ where: { normalizedName } });
+    if (existing) throw conflict(`"${existing.name}" already exists as a subject.`);
+    const subject = await prisma.subject.create({
+      data: { name: req.body.name, normalizedName, slug: slugify(req.body.name), categoryId: req.body.categoryId ?? null },
+    });
     res.status(201).json({ subject });
   }),
 );
@@ -491,6 +500,105 @@ adminRouter.delete(
     const inUse = await prisma.tutorSubject.count({ where: { subjectId: id } });
     if (inUse > 0) throw badRequest('This subject is in use by tutors and cannot be deleted.');
     await prisma.subject.delete({ where: { id } });
+    res.json({ ok: true });
+  }),
+);
+
+// --- Subject suggestion review queue ----------------------------------------
+// User-submitted subjects never create a Subject row directly (see
+// modules/subjects/subjects.routes.ts) -- they land here for an admin to
+// either approve as new, merge into an existing subject, or reject.
+
+adminRouter.get(
+  '/subject-suggestions',
+  asyncHandler(async (req, res) => {
+    const status = typeof req.query.status === 'string' ? req.query.status : 'PENDING';
+    const suggestions = await prisma.subjectSuggestion.findMany({
+      where: status === 'ALL' ? {} : { status: status as never },
+      orderBy: { createdAt: 'asc' },
+      include: {
+        submittedBy: { select: { id: true, displayName: true, email: true } },
+        suggestedCategory: { select: { id: true, name: true } },
+        resolvedSubject: { select: { id: true, name: true } },
+        reviewedBy: { select: { id: true, displayName: true } },
+      },
+    });
+    res.json({ suggestions });
+  }),
+);
+
+async function resolveSuggestion(
+  id: number,
+  adminId: number,
+  update: { status: 'APPROVED' | 'MERGED' | 'REJECTED'; resolvedSubjectId?: number; reviewNote?: string },
+) {
+  const suggestion = await prisma.subjectSuggestion.findUnique({ where: { id } });
+  if (!suggestion) throw notFound('Suggestion not found.');
+  if (suggestion.status !== 'PENDING') throw badRequest('This suggestion has already been reviewed.');
+
+  await prisma.subjectSuggestion.update({
+    where: { id },
+    data: { ...update, reviewedById: adminId, resolvedAt: new Date() },
+  });
+
+  const messages: Record<string, string> = {
+    APPROVED: `Good news — the subject you suggested, "${suggestion.name}", has been added to SkillSplore.`,
+    MERGED: `The subject you suggested, "${suggestion.name}", already existed under a slightly different name. It's ready to use.`,
+    REJECTED: `The subject you suggested, "${suggestion.name}", wasn't added${update.reviewNote ? `: ${update.reviewNote}` : '.'}`,
+  };
+  await notify({
+    userId: suggestion.submittedById,
+    type: 'subject_suggestion',
+    title: 'Your subject suggestion was reviewed',
+    body: messages[update.status],
+    linkUrl: '/search',
+  });
+  await writeAudit({ actorId: adminId, action: `subject_suggestion.${update.status.toLowerCase()}`, entityType: 'SubjectSuggestion', entityId: id });
+}
+
+adminRouter.post(
+  '/subject-suggestions/:id/approve',
+  validate({ body: z.object({ categoryId: z.number().int().positive().nullable() }) }),
+  asyncHandler(async (req, res) => {
+    const id = Number(req.params.id);
+    const suggestion = await prisma.subjectSuggestion.findUnique({ where: { id } });
+    if (!suggestion) throw notFound('Suggestion not found.');
+    if (suggestion.status !== 'PENDING') throw badRequest('This suggestion has already been reviewed.');
+
+    const existingByName = await prisma.subject.findUnique({ where: { normalizedName: suggestion.normalizedName } });
+    if (existingByName) throw conflict(`"${existingByName.name}" already exists — merge this suggestion into it instead of approving.`);
+
+    const subject = await prisma.subject.create({
+      data: {
+        name: suggestion.name,
+        normalizedName: suggestion.normalizedName,
+        slug: slugify(suggestion.name),
+        categoryId: req.body.categoryId,
+      },
+    });
+    await resolveSuggestion(id, req.user!.id, { status: 'APPROVED', resolvedSubjectId: subject.id });
+    res.json({ subject });
+  }),
+);
+
+adminRouter.post(
+  '/subject-suggestions/:id/merge',
+  validate({ body: z.object({ subjectId: z.number().int().positive() }) }),
+  asyncHandler(async (req, res) => {
+    const id = Number(req.params.id);
+    const subject = await prisma.subject.findUnique({ where: { id: req.body.subjectId } });
+    if (!subject) throw notFound('Target subject not found.');
+    await resolveSuggestion(id, req.user!.id, { status: 'MERGED', resolvedSubjectId: subject.id });
+    res.json({ subject });
+  }),
+);
+
+adminRouter.post(
+  '/subject-suggestions/:id/reject',
+  validate({ body: z.object({ reviewNote: z.string().max(300).optional() }) }),
+  asyncHandler(async (req, res) => {
+    const id = Number(req.params.id);
+    await resolveSuggestion(id, req.user!.id, { status: 'REJECTED', reviewNote: req.body.reviewNote });
     res.json({ ok: true });
   }),
 );

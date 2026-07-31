@@ -30,6 +30,7 @@ import { AdminReports } from './pages/admin/AdminReports.js';
 import { ReportDetail } from './pages/admin/ReportDetail.js';
 import { AdminReviews } from './pages/admin/AdminReviews.js';
 import { AdminTaxonomy } from './pages/admin/AdminTaxonomy.js';
+import { AdminSubjectSuggestions } from './pages/admin/AdminSubjectSuggestions.js';
 import { AdminAudit } from './pages/admin/AdminAudit.js';
 import { Terms } from './pages/legal/Terms.js';
 import { Privacy } from './pages/legal/Privacy.js';
@@ -84,6 +85,7 @@ export function App() {
         <Route path="/admin/reports/:id" element={<RequireAuth role="ADMIN"><ReportDetail /></RequireAuth>} />
         <Route path="/admin/reviews" element={<RequireAuth role="ADMIN"><AdminReviews /></RequireAuth>} />
         <Route path="/admin/taxonomy" element={<RequireAuth role="ADMIN"><AdminTaxonomy /></RequireAuth>} />
+        <Route path="/admin/subject-suggestions" element={<RequireAuth role="ADMIN"><AdminSubjectSuggestions /></RequireAuth>} />
         <Route path="/admin/audit" element={<RequireAuth role="ADMIN"><AdminAudit /></RequireAuth>} />
 
         <Route path="*" element={<Navigate to="/" replace />} />

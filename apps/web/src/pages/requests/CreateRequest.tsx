@@ -4,6 +4,7 @@ import { api, ApiError } from '../../lib/api.js';
 import { useApi } from '../../lib/useApi.js';
 import { useToast } from '../../lib/toast.js';
 import { Alert, Button, Card, Field, Input, Select, Textarea } from '../../components/ui.js';
+import { SuggestSubjectModal } from '../../components/SuggestSubjectModal.js';
 
 interface Category { id: number; name: string; subjects: Array<{ id: number; name: string }> }
 interface Level { id: number; name: string }
@@ -11,11 +12,12 @@ interface Level { id: number; name: string }
 export function CreateRequest() {
   const navigate = useNavigate();
   const toast = useToast();
-  const { data: cats } = useApi<{ categories: Category[] }>('/taxonomy/categories');
+  const { data: cats, reload: reloadCats } = useApi<{ categories: Category[] }>('/taxonomy/categories');
   const { data: lvls } = useApi<{ levels: Level[] }>('/taxonomy/levels');
   const [form, setForm] = useState({ subjectId: '', levelId: '', title: '', description: '', deliveryMode: 'BOTH', country: '', city: '', budgetMin: '', budgetMax: '', timing: '' });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
 
   const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }));
 
@@ -60,7 +62,22 @@ export function CreateRequest() {
                 </optgroup>
               ))}
             </Select>
+            <button type="button" className="btn btn-ghost btn-sm" style={{ marginTop: 6, padding: '2px 0' }} onClick={() => setSuggesting(true)}>
+              Can't find your subject? Suggest one
+            </button>
           </Field>
+          {suggesting && (
+            <SuggestSubjectModal
+              initialName=""
+              categories={(cats?.categories ?? []).map((c) => ({ id: c.id, name: c.name }))}
+              onClose={() => setSuggesting(false)}
+              onResolved={(subject) => {
+                setSuggesting(false);
+                set({ subjectId: String(subject.id) });
+                reloadCats();
+              }}
+            />
+          )}
           <Field label="Level (optional)">
             <Select value={form.levelId} onChange={(e) => set({ levelId: e.target.value })}>
               <option value="">Any level</option>

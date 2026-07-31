@@ -19,7 +19,16 @@ production-certified.** Do not describe it as such until the outstanding reviews
 - **Upload validation:** MIME-type allow-lists and size limits for avatars and documents.
 - **Private documents:** qualification files are never publicly served; access requires the owning
   tutor or an administrator, and admin access is written to the audit log.
-- **Rate limiting** on the API, stricter on auth endpoints.
+- **Rate limiting** on the API, stricter on auth endpoints (per-IP). A separate **per-account lockout**
+  (`LOGIN_LOCKOUT_THRESHOLD`/`LOGIN_LOCKOUT_MINUTES`, default 8 attempts / 15 minutes) blocks a
+  distributed attack against one specific account from many IPs, which IP-based limiting alone
+  wouldn't catch. A locked account gets the exact same generic "incorrect email or password" response
+  as a wrong password — a distinguishable message would itself leak that the account exists. Password
+  reset (proving ownership via email) clears the lockout immediately rather than making the owner wait
+  it out.
+- **Catalogue growth is duplicate-safe:** user-submitted subjects go through normalized-name
+  uniqueness plus `pg_trgm` fuzzy matching before ever reaching an admin queue — see
+  `docs/FEATURES.md` → Subject catalogue growth.
 - **Audit logging:** an append-only trail records security- and moderation-sensitive actions.
 - **HTTP hardening** via Helmet (security headers); CORS restricted to the configured web origin.
 - **Environment validation:** production refuses to start with demo login enabled, a weak/default

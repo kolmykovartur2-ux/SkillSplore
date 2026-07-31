@@ -46,6 +46,12 @@ const schema = z.object({
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(15 * 60 * 1000),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(300),
   AUTH_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(20),
+
+  // Per-account brute-force lockout. Distinct from AUTH_RATE_LIMIT_MAX (which
+  // is per-IP): this catches a distributed attack against one specific
+  // account from many IPs, which IP-based rate limiting alone would miss.
+  LOGIN_LOCKOUT_THRESHOLD: z.coerce.number().int().positive().default(8),
+  LOGIN_LOCKOUT_MINUTES: z.coerce.number().int().positive().default(15),
 });
 
 const parsed = schema.safeParse(process.env);

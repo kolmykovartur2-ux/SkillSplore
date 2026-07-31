@@ -68,11 +68,30 @@ export async function verifyEmail(token: string): Promise<void> {
 
 export async function authenticate(email: string, password: string): Promise<User> {
   const user = await prisma.user.findUnique({ where: { email } });
-  // Uniform failure to avoid revealing which accounts exist.
+  // Uniform failure to avoid revealing which accounts exist -- this same
+  // response also covers an account that's temporarily locked out (below):
+  // a distinguishable "account locked" message would itself leak that the
+  // account exists, so it deliberately looks identical to a wrong password.
   const invalid = unauthorized('Incorrect email or password.');
   if (!user || user.deletedAt) throw invalid;
+
+  // Per-account lockout: reject without even checking the password while
+  // locked, and without extending the lock further on repeated attempts.
+  if (user.lockedUntil && user.lockedUntil > new Date()) throw invalid;
+
   const ok = await verifyPassword(password, user.passwordHash);
-  if (!ok) throw invalid;
+  if (!ok) {
+    const failedLoginCount = user.failedLoginCount + 1;
+    const lockedUntil =
+      failedLoginCount >= env.LOGIN_LOCKOUT_THRESHOLD ? new Date(Date.now() + env.LOGIN_LOCKOUT_MINUTES * 60 * 1000) : null;
+    await prisma.user.update({ where: { id: user.id }, data: { failedLoginCount, lockedUntil } });
+    throw invalid;
+  }
+
+  if (user.failedLoginCount > 0 || user.lockedUntil) {
+    await prisma.user.update({ where: { id: user.id }, data: { failedLoginCount: 0, lockedUntil: null } });
+  }
+
   if (user.status === 'SUSPENDED') {
     throw unauthorized('This account is suspended. Contact support.');
   }
@@ -107,7 +126,10 @@ export async function resetPassword(token: string, newPassword: string): Promise
   }
   const passwordHash = await hashPassword(newPassword);
   await prisma.$transaction([
-    prisma.user.update({ where: { id: record.userId }, data: { passwordHash } }),
+    // Proving ownership via emailed reset link is a stronger signal than a
+    // login attempt, so this also clears any brute-force lockout -- a
+    // locked-out user isn't stuck waiting out the timer if they can reset.
+    prisma.user.update({ where: { id: record.userId }, data: { passwordHash, failedLoginCount: 0, lockedUntil: null } }),
     prisma.emailToken.update({ where: { id: record.id }, data: { usedAt: new Date() } }),
     // Invalidate any other outstanding reset tokens for this user.
     prisma.emailToken.updateMany({

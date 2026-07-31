@@ -44,7 +44,16 @@ export function Terms() {
         <li>harass, threaten, discriminate against, or endanger any person;</li>
         <li>circumvent the platform’s safety, verification, or reporting features;</li>
         <li>collect other users’ personal data except as needed to arrange a lesson;</li>
-        <li>impersonate any person or misrepresent your affiliation.</li>
+        <li>impersonate any person or misrepresent your affiliation;</li>
+        <li>
+          scrape, crawl, harvest, or otherwise extract data from the platform by automated means, or
+          build or operate a derivative or competing directory or dataset from that data, without our
+          prior written permission;
+        </li>
+        <li>
+          reverse-engineer, copy, mirror, or attempt to gain unauthorised access to the platform's
+          software, infrastructure, or accounts.
+        </li>
       </ul>
 
       <h2>6. Messages, requests and reviews</h2>
@@ -65,9 +74,11 @@ export function Terms() {
 
       <h2>8. Intellectual property</h2>
       <p>
-        The platform, its software and branding are owned by SkillSplore or its licensors. You retain
-        ownership of content you post but grant SkillSplore a licence to host and display it for the
-        purpose of operating the service.
+        The platform, including its software, source code, database structure, compiled catalogue of
+        subjects and categories, design, and branding, is owned by SkillSplore or its licensors and is
+        protected by copyright and other intellectual property law. No licence to that software or
+        branding is granted by using the platform. You retain ownership of content you post but grant
+        SkillSplore a licence to host and display it for the purpose of operating the service.
       </p>
 
       <h2>9. Suspension and termination</h2>

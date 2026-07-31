@@ -5,6 +5,7 @@ import { useApi } from '../../lib/useApi.js';
 import { useToast } from '../../lib/toast.js';
 import type { Money } from '../../lib/types.js';
 import { Alert, Badge, Button, Card, Field, Input, Select, Spinner, StatusBadge, Textarea } from '../../components/ui.js';
+import { SuggestSubjectModal } from '../../components/SuggestSubjectModal.js';
 import { slotLabel } from '../../lib/format.js';
 
 interface OwnProfile {
@@ -136,14 +137,16 @@ function ProfileStep({ profile, onSaved }: { profile: OwnProfile; onSaved: () =>
 
 function SubjectsStep({ profile, onSaved }: { profile: OwnProfile; onSaved: () => void }) {
   const toast = useToast();
-  const { data: subs } = useApi<{ subjects: Subject[] }>('/taxonomy/subjects');
+  const { data: subs, reload: reloadSubjects } = useApi<{ subjects: Subject[] }>('/taxonomy/subjects');
   const { data: lvls } = useApi<{ levels: Level[] }>('/taxonomy/levels');
+  const { data: cats } = useApi<{ categories: Array<{ id: number; name: string }> }>('/taxonomy/categories');
   const [selected, setSelected] = useState<Record<number, string>>(
     Object.fromEntries(profile.subjects.map((s) => [s.subjectId, s.priceCents ? String(s.priceCents / 100) : ''])),
   );
   const [levelIds, setLevelIds] = useState<Set<number>>(new Set(profile.levels.map((l) => l.id)));
   const [busy, setBusy] = useState(false);
   const [filter, setFilter] = useState('');
+  const [suggesting, setSuggesting] = useState(false);
 
   const toggle = (id: number) => setSelected((s) => { const n = { ...s }; if (id in n) delete n[id]; else n[id] = ''; return n; });
   const toggleLevel = (id: number) => setLevelIds((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
@@ -186,8 +189,30 @@ function SubjectsStep({ profile, onSaved }: { profile: OwnProfile; onSaved: () =
             </div>
           </div>
         ))}
-        {visible.length === 0 && <p className="muted">No subjects match “{filter}”.</p>}
+        {visible.length === 0 && (
+          <p className="muted">
+            No subjects match “{filter}”.{' '}
+            {filter.trim().length >= 2 && (
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => setSuggesting(true)}>
+                Suggest “{filter.trim()}”
+              </button>
+            )}
+          </p>
+        )}
       </div>
+      {suggesting && (
+        <SuggestSubjectModal
+          initialName={filter.trim()}
+          categories={cats?.categories ?? []}
+          onClose={() => setSuggesting(false)}
+          onResolved={(subject) => {
+            setSuggesting(false);
+            setFilter('');
+            setSelected((s) => ({ ...s, [subject.id]: '' }));
+            reloadSubjects();
+          }}
+        />
+      )}
       <div className="divider" />
       <h3>Teaching levels</h3>
       <div className="row-wrap">

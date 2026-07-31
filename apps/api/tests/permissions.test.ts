@@ -119,6 +119,127 @@ describe('reviews require a completed engagement', () => {
   });
 });
 
+describe('subject suggestions never fragment the catalogue', () => {
+  it('requires authentication to suggest a subject', async () => {
+    const res = await anon().post('/api/subjects/suggest').send({ name: 'Beekeeping' });
+    expect(res.status).toBe(401);
+  });
+
+  it('resolves instantly to an existing subject instead of creating a duplicate', async () => {
+    await createSubject('Watercolour Painting');
+    const student = await createUser('dup-student@test.local');
+    const agent = await loginAs('dup-student@test.local');
+
+    // Same subject, different case/whitespace/punctuation -- must not create a new row.
+    const res = await agent.post('/api/subjects/suggest').send({ name: '  watercolour   painting!' });
+    expect(res.status).toBe(200);
+    expect(res.body.resolution).toBe('already_exists');
+    expect(res.body.subject.name).toBe('Watercolour Painting');
+
+    const count = await prisma.subject.count({ where: { normalizedName: 'watercolour painting' } });
+    expect(count).toBe(1);
+  });
+
+  it('queues a genuinely new suggestion instead of creating a Subject directly', async () => {
+    const student = await createUser('sugg-student@test.local');
+    const agent = await loginAs('sugg-student@test.local');
+    const res = await agent.post('/api/subjects/suggest').send({ name: 'Falconry' });
+    expect(res.status).toBe(201);
+    expect(res.body.resolution).toBe('queued');
+
+    const bySameNorm = await prisma.subject.findFirst({ where: { normalizedName: 'falconry' } });
+    expect(bySameNorm).toBeNull(); // no Subject row created yet
+    const pending = await prisma.subjectSuggestion.findFirst({ where: { normalizedName: 'falconry', status: 'PENDING' } });
+    expect(pending).not.toBeNull();
+  });
+
+  it('does not duplicate an already-pending suggestion', async () => {
+    const a = await createUser('sugg-a@test.local');
+    const b = await createUser('sugg-b@test.local');
+    const agentA = await loginAs('sugg-a@test.local');
+    const agentB = await loginAs('sugg-b@test.local');
+
+    await agentA.post('/api/subjects/suggest').send({ name: 'Falconry Advanced' });
+    const second = await agentB.post('/api/subjects/suggest').send({ name: 'falconry advanced' });
+    expect(second.body.resolution).toBe('already_suggested');
+
+    const count = await prisma.subjectSuggestion.count({ where: { normalizedName: 'falconry advanced' } });
+    expect(count).toBe(1);
+  });
+
+  it('forbids non-admins from the review queue and its actions', async () => {
+    const student = await createUser('sugg-nonadmin@test.local');
+    const agent = await loginAs('sugg-nonadmin@test.local');
+    const list = await agent.get('/api/admin/subject-suggestions');
+    expect(list.status).toBe(403);
+    const approve = await agent.post('/api/admin/subject-suggestions/1/approve').send({ categoryId: null });
+    expect(approve.status).toBe(403);
+  });
+
+  it('lets an admin approve a suggestion, creating exactly one Subject', async () => {
+    const submitter = await createUser('sugg-submitter@test.local');
+    const submitterAgent = await loginAs('sugg-submitter@test.local');
+    const created = await submitterAgent.post('/api/subjects/suggest').send({ name: 'Bonsai Cultivation' });
+    const suggestionId = created.body.suggestion.id;
+
+    await createUser('sugg-admin@test.local', ['STUDENT', 'ADMIN']);
+    const adminAgent = await loginAs('sugg-admin@test.local');
+    const approve = await adminAgent.post(`/api/admin/subject-suggestions/${suggestionId}/approve`).send({ categoryId: null });
+    expect(approve.status).toBe(200);
+
+    const subjects = await prisma.subject.findMany({ where: { normalizedName: 'bonsai cultivation' } });
+    expect(subjects).toHaveLength(1);
+
+    // Approving twice is refused, not double-applied.
+    const again = await adminAgent.post(`/api/admin/subject-suggestions/${suggestionId}/approve`).send({ categoryId: null });
+    expect(again.status).toBe(400);
+    const stillOne = await prisma.subject.count({ where: { normalizedName: 'bonsai cultivation' } });
+    expect(stillOne).toBe(1);
+  });
+});
+
+describe('per-account brute-force lockout', () => {
+  it('locks the account after repeated wrong passwords, and a correct password stays rejected until it clears', async () => {
+    await createUser('lockout-target@test.local');
+
+    // Default threshold is 8. Exhaust it with wrong passwords.
+    for (let i = 0; i < 8; i++) {
+      const res = await anon().post('/api/auth/login').send({ email: 'lockout-target@test.local', password: 'wrong-password' });
+      expect(res.status).toBe(401);
+    }
+
+    // Now even the correct password is rejected -- same generic message, so
+    // the response doesn't distinguish "locked" from "wrong password".
+    const correctButLocked = await anon().post('/api/auth/login').send({ email: 'lockout-target@test.local', password: 'password123' });
+    expect(correctButLocked.status).toBe(401);
+    expect(correctButLocked.body.error.message).toBe('Incorrect email or password.');
+
+    const user = await prisma.user.findUniqueOrThrow({ where: { email: 'lockout-target@test.local' } });
+    expect(user.lockedUntil).not.toBeNull();
+  });
+
+  it('a successful password reset clears the lockout immediately, without waiting out the timer', async () => {
+    const user = await createUser('lockout-reset@test.local');
+    await prisma.user.update({ where: { id: user.id }, data: { failedLoginCount: 8, lockedUntil: new Date(Date.now() + 60 * 60 * 1000) } });
+
+    const token = 'a'.repeat(32);
+    const { hashToken } = await import('../src/lib/tokens.js');
+    await prisma.emailToken.create({
+      data: { userId: user.id, type: 'RESET_PASSWORD', tokenHash: hashToken(token), expiresAt: new Date(Date.now() + 60 * 60 * 1000) },
+    });
+
+    const reset = await anon().post('/api/auth/reset-password').send({ token, password: 'brandNewPassword123' });
+    expect(reset.status).toBe(200);
+
+    const login = await anon().post('/api/auth/login').send({ email: 'lockout-reset@test.local', password: 'brandNewPassword123' });
+    expect(login.status).toBe(200);
+
+    const refreshed = await prisma.user.findUniqueOrThrow({ where: { id: user.id } });
+    expect(refreshed.lockedUntil).toBeNull();
+    expect(refreshed.failedLoginCount).toBe(0);
+  });
+});
+
 describe('private qualification documents', () => {
   it('denies access to a non-owner and allows the owning tutor', async () => {
     const tutorUser = await createUser('doc-tutor@test.local', ['STUDENT', 'TUTOR']);

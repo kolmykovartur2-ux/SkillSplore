@@ -7,6 +7,7 @@
  */
 import { prisma, guardDemoCommand, truncateAll, hash, DEMO_PASSWORD, DEMO_ACCOUNTS } from './_demo.js';
 import { TAXONOMY, TOTAL_SUBJECTS } from './taxonomy.data.js';
+import { normalizeName } from '../src/lib/normalize.js';
 import type { DeliveryMode } from '@prisma/client';
 
 const dollars = (n: number) => Math.round(n * 100);
@@ -21,11 +22,15 @@ async function main() {
   console.log(`Seeding taxonomy (${TAXONOMY.length} categories, ${TOTAL_SUBJECTS} subjects)...`);
   const subjects: Record<string, number> = {};
   for (const cat of TAXONOMY) {
-    const category = await prisma.category.create({ data: { name: cat.name, slug: slug(cat.name), icon: cat.icon } });
+    const category = await prisma.category.create({
+      data: { name: cat.name, normalizedName: normalizeName(cat.name), slug: slug(cat.name), icon: cat.icon },
+    });
     for (const subjectName of cat.subjects) {
       // Subject names are unique across the catalogue; skip accidental dupes.
       if (subjects[subjectName]) continue;
-      const s = await prisma.subject.create({ data: { name: subjectName, slug: slug(subjectName), categoryId: category.id } });
+      const s = await prisma.subject.create({
+        data: { name: subjectName, normalizedName: normalizeName(subjectName), slug: slug(subjectName), categoryId: category.id },
+      });
       subjects[subjectName] = s.id;
     }
   }

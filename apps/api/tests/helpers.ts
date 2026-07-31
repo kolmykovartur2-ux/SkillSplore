@@ -3,6 +3,7 @@ import type { Role } from '@prisma/client';
 import { createApp } from '../src/app.js';
 import { prisma } from '../src/lib/prisma.js';
 import { hashPassword } from '../src/lib/password.js';
+import { normalizeName } from '../src/lib/normalize.js';
 
 export const app = createApp();
 export { prisma };
@@ -28,6 +29,7 @@ export async function resetDb(): Promise<void> {
     prisma.notification.deleteMany(),
     prisma.auditLog.deleteMany(),
     prisma.adminNote.deleteMany(),
+    prisma.subjectSuggestion.deleteMany(),
     prisma.subject.deleteMany(),
     prisma.teachingLevel.deleteMany(),
     prisma.category.deleteMany(),
@@ -61,7 +63,7 @@ export function anon() {
 }
 
 export async function createSubject(name: string) {
-  return prisma.subject.create({ data: { name, slug: name.toLowerCase().replace(/\s+/g, '-') } });
+  return prisma.subject.create({ data: { name, normalizedName: normalizeName(name), slug: name.toLowerCase().replace(/\s+/g, '-') } });
 }
 
 export async function createTutorProfile(userId: number, opts: { status?: 'DRAFT' | 'PENDING' | 'APPROVED'; subjectId?: number } = {}) {

@@ -69,6 +69,16 @@ permissions. Nothing important is simulated in frontend state only.
 - [x] Categories, subjects, teaching levels management
 - [x] Qualification checks, account suspensions, audit log, platform statistics
 
+## Subject catalogue growth (user-submitted, duplicate-safe)
+- [x] Any student or tutor can suggest a subject that isn't in the catalogue from the tutor-onboarding
+      and request-creation subject pickers.
+- [x] A normalized-name uniqueness constraint (case/accent/punctuation-insensitive) means an exact
+      near-duplicate resolves instantly to the existing subject — no admin step, no new row.
+- [x] Fuzzy "did you mean" search (Postgres `pg_trgm`) surfaces close matches while typing, so most
+      near-duplicates are avoided before a suggestion is ever submitted.
+- [x] Genuinely new suggestions queue for admin review (`/admin/subject-suggestions`): approve as a
+      new subject, merge into an existing one, or reject with a note. The submitter is notified either way.
+
 ## Product quality
 - [x] Responsive mobile + desktop, consistent visual system
 - [x] Loading, empty and error states; form validation; success messages
