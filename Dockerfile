@@ -40,6 +40,11 @@ COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/apps/api/package.json ./apps/api/package.json
 COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY --from=build /app/apps/api/prisma ./apps/api/prisma
+# Prisma's own scripts (seed.ts, reset.ts, accounts.ts, export.ts) run
+# directly via tsx rather than the compiled dist/ output, and may import
+# shared helpers from src/lib -- so that source tree is needed at runtime
+# too, not just the compiled dist/ used by the actual server process.
+COPY --from=build /app/apps/api/src ./apps/api/src
 # Built static web client served by the API.
 COPY --from=build /app/apps/web/dist ./apps/web/dist
 
