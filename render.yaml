@@ -1,0 +1,62 @@
+# Render Blueprint — provisions the SkillSplore web service and its Postgres
+# database together. In the Render dashboard: New -> Blueprint -> point at
+# this repo. See docs/DEPLOYMENT.md for the full walkthrough.
+#
+# This is a demo-mode deployment (APP_ENV=demo): seeded fictional data,
+# demo login shortcuts enabled, safe to share publicly. For a real
+# production deployment, change APP_ENV to "production" and remove the
+# demo-only env vars below — see docs/DEPLOYMENT.md.
+
+databases:
+  - name: skillsplore-db
+    plan: free
+    databaseName: skillsplore
+    user: skillsplore
+
+services:
+  - type: web
+    name: skillsplore
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    preDeployCommand: npx prisma migrate deploy --schema apps/api/prisma/schema.prisma && npx tsx apps/api/prisma/seed.ts
+    envVars:
+      - key: APP_ENV
+        value: demo
+      - key: DATABASE_URL
+        fromDatabase:
+          name: skillsplore-db
+          property: connectionString
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: API_PORT
+        value: 4000
+      - key: WEB_ORIGIN
+        fromService:
+          type: web
+          name: skillsplore
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: skillsplore
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: FORCE_SECURE_COOKIES
+        value: 1
+      - key: STORAGE_DRIVER
+        value: local
+      - key: STORAGE_LOCAL_DIR
+        value: /app/storage-data
+      - key: SHOW_DEMO_BANNER
+        value: 1
+      - key: ENABLE_DEMO_LOGIN
+        value: 1
+      - key: MAIL_FROM
+        value: "SkillSplore <no-reply@skillsplore.local>"
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 900000
+      - key: RATE_LIMIT_MAX
+        value: 300
+      - key: AUTH_RATE_LIMIT_MAX
+        value: 20
