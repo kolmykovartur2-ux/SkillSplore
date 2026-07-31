@@ -6,6 +6,14 @@
 FROM node:20-bookworm-slim AS build
 WORKDIR /app
 
+# Installed here too (not just in the runtime stage below) so `prisma
+# generate` detects the real openssl version present -- without it, Prisma
+# guesses the wrong binaryTarget and the runtime stage can't find a matching
+# query engine. binaryTargets in schema.prisma pins this explicitly too, but
+# fixing the actual mismatch here is the real fix, not just a workaround.
+RUN apt-get update && apt-get install -y --no-install-recommends openssl \
+ && rm -rf /var/lib/apt/lists/*
+
 # Install workspace deps using lockfile for reproducible builds.
 COPY package.json package-lock.json* ./
 COPY apps/api/package.json apps/api/package.json

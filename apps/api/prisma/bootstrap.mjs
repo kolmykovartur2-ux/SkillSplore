@@ -7,7 +7,10 @@ import { spawnSync } from 'node:child_process';
 import { PrismaClient } from '@prisma/client';
 
 function run(cmd, args) {
-  const result = spawnSync(cmd, args, { stdio: 'inherit' });
+  // Only needed on Windows, where `npx` is a .cmd shim and can't be spawned
+  // directly -- Linux (where this actually runs in production) never hits
+  // this branch. Args here are always fixed constants, never external input.
+  const result = spawnSync(cmd, args, { stdio: 'inherit', shell: process.platform === 'win32' });
   if (result.status !== 0) {
     console.error(`[bootstrap] command failed: ${cmd} ${args.join(' ')}`);
     process.exit(result.status ?? 1);

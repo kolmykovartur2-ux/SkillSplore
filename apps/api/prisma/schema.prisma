@@ -2,7 +2,13 @@
 // Standard PostgreSQL. Portable, migratable, no proprietary provider features.
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // "native" covers local dev on whatever host runs `prisma generate`.
+  // debian-openssl-3.0.x is pinned explicitly for the Docker image
+  // (Debian bookworm) rather than relying on auto-detection, since the
+  // build stage generating the client doesn't have openssl installed
+  // and can misdetect the target the runtime stage actually needs.
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
