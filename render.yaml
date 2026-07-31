@@ -20,7 +20,9 @@ services:
     plan: free
     dockerfilePath: ./Dockerfile
     healthCheckPath: /api/health
-    preDeployCommand: npx prisma migrate deploy --schema apps/api/prisma/schema.prisma && npx tsx apps/api/prisma/seed.ts
+    # Free tier doesn't support preDeployCommand -- migrations and a
+    # first-boot-only demo seed run inside the container's own entrypoint
+    # instead (see apps/api/prisma/bootstrap.mjs / Dockerfile).
     envVars:
       - key: APP_ENV
         value: demo

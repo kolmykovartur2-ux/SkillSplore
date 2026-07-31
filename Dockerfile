@@ -36,4 +36,4 @@ COPY --from=build /app/apps/api/prisma ./apps/api/prisma
 COPY --from=build /app/apps/web/dist ./apps/web/dist
 
 EXPOSE 4000
-CMD ["node", "apps/api/dist/index.js"]
+CMD ["node", "apps/api/prisma/bootstrap.mjs"]
