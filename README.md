@@ -1,7 +1,11 @@
 # SkillSplore
 
-A sovereign, self-hostable tutoring marketplace connecting students with independent tutors
-(built for New Zealand and Australia in the demo, but not locked to any region).
+A sovereign, self-hostable **moderated learning noticeboard** that helps learners and people with
+useful knowledge or skills find each other — academic tutoring, music, art, languages, technology,
+business and practical skills alike (built for New Zealand and Australia in the demo, but not
+locked to any region or to tutoring). See [`docs/PRODUCT_POSITIONING.md`](docs/PRODUCT_POSITIONING.md)
+for the full positioning and [`docs/TERMINOLOGY.md`](docs/TERMINOLOGY.md) for which terms to use
+where.
 
 This repository is **one codebase** that runs in two modes — a demonstration mode with rich
 fictional data, and a production mode for real users — sharing the same schema, business logic,

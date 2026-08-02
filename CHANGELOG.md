@@ -4,6 +4,20 @@ All notable changes to SkillSplore are documented here.
 
 ## [Unreleased]
 
+### Changed (2026-08-03) — Repositioning: moderated learning noticeboard
+Repositioned public-facing copy from a tutoring-only "marketplace" to a "moderated learning
+noticeboard" spanning academic, creative and practical skills. Copy-only change — no routes,
+components, database models or API paths were renamed. See `docs/PRODUCT_POSITIONING.md` and
+`docs/TERMINOLOGY.md` for the reasoning and word choices.
+- Rebuilt the homepage: honest pre-launch hero copy, real database-driven category grid (added a
+  Cooking & Culinary Skills category), separate learner/provider "How it works" flows, no fabricated
+  stats or testimonials (the `/api/reviews/featured` homepage section below was removed).
+- Updated navigation and footer copy; added About and Safety pages; updated homepage title/meta.
+- Copy pass across search, request creation/response, tutor profile, dashboard and onboarding pages.
+- Centralized payment/pricing copy into `apps/web/src/lib/pricingCopy.ts`.
+- Light terminology pass on Terms of Service and Privacy Policy (still drafts pending legal review).
+- Added `docs/PRODUCT_POSITIONING.md`, `docs/TERMINOLOGY.md`, `docs/ROADMAP.md`.
+
 ### Changed
 - **Rebrand:** renamed the product from Learnfolk to SkillSplore across the codebase — npm package
   names, UI copy, docs, email domains, demo account addresses, cookie name, project directory, and

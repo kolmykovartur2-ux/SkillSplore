@@ -3,6 +3,10 @@
 Every item below is implemented against a real PostgreSQL database with real authentication and
 permissions. Nothing important is simulated in frontend state only.
 
+Role/model names below (Tutor, Student) reflect the underlying code and database, not public-facing
+copy — see [`PRODUCT_POSITIONING.md`](PRODUCT_POSITIONING.md) and [`TERMINOLOGY.md`](TERMINOLOGY.md)
+for the language actually shown to users.
+
 ## Authentication & accounts
 - [x] Register with email and password
 - [x] Email confirmation (token emailed via the email adapter; captured by Mailpit in dev)
