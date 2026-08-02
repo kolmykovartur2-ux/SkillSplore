@@ -4,7 +4,7 @@ import { api, ApiError } from '../lib/api.js';
 import { useApi } from '../lib/useApi.js';
 import { useAuth } from '../lib/auth.js';
 import { useToast } from '../lib/toast.js';
-import type { Money, PublicUser } from '../lib/types.js';
+import type { Money, PublicUser, Verification } from '../lib/types.js';
 import { Avatar, Badge, Button, Card, EmptyState, Field, Modal, Spinner, Stars, Textarea } from '../components/ui.js';
 import { deliveryLabel, money, slotLabel, dateStr } from '../lib/format.js';
 
@@ -18,6 +18,7 @@ interface Profile {
   levels: Array<{ id: number; name: string }>;
   availability: Array<{ dayOfWeek: number; startMinute: number; endMinute: number }>;
   qualifications: Array<{ id: number; title: string; institution: string | null; year: number | null; verified: boolean }>;
+  verifications: Verification[];
   trustIndicators: { verifiedQualifications: number; completedEngagements: number; reviewCount: number; memberSince: string };
   reviews: Review[];
   isSaved: boolean;
@@ -80,13 +81,21 @@ export function TutorProfile() {
             <div className="grow">
               <div className="row-wrap">
                 <h1 className="mt-0" style={{ marginBottom: 4 }}>{p.displayName}</h1>
-                {p.trustIndicators.verifiedQualifications > 0 && <Badge variant="accent">✓ Verified qualifications</Badge>}
               </div>
               <p className="muted" style={{ margin: 0 }}>{p.headline}</p>
               <div className="row-wrap" style={{ marginTop: 8 }}>
                 {p.ratingCount > 0 ? <Stars rating={p.averageRating} count={p.ratingCount} /> : <span className="muted">No reviews yet</span>}
                 <span className="muted">· {[p.city, p.country].filter(Boolean).join(', ')} · {deliveryLabel(p.deliveryMode)}</span>
               </div>
+              {p.verifications.length > 0 && (
+                <div className="row-wrap" style={{ marginTop: 10 }}>
+                  {p.verifications.map((v, i) => (
+                    <Badge key={i} variant="accent" title={`Checked ${dateStr(v.checkedAt)}${v.expiresAt ? ` · expires ${dateStr(v.expiresAt)}` : ''}`}>
+                      ✓ {v.label}
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div></Card>
@@ -120,7 +129,7 @@ export function TutorProfile() {
                 <li key={q.id} className="row-wrap">
                   <strong>{q.title}</strong>
                   <span className="muted">{[q.institution, q.year].filter(Boolean).join(', ')}</span>
-                  {q.verified && <Badge variant="success">Verified</Badge>}
+                  {q.verified && <Badge variant="success">Document checked</Badge>}
                 </li>
               ))}
             </ul>

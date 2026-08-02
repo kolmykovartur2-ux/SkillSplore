@@ -126,6 +126,7 @@ model User {
   requests                 TutoringRequest[]
   savedTutors              SavedTutor[]
   notifications            Notification[]
+  verificationsReviewed    Verification[]            @relation("VerificationReviewer")
   emailTokens              EmailToken[]
   messages                 Message[]
   conversationParticipants ConversationParticipant[]
@@ -269,6 +270,7 @@ model TutorProfile {
   levels         TeachingLevel[]    @relation("TutorLevels")
   availability   AvailabilitySlot[]
   qualifications Qualification[]
+  verifications  Verification[]
   reviews        Review[]
   responses      RequestResponse[]
   savedBy        SavedTutor[]
@@ -314,6 +316,33 @@ model Qualification {
   verifiedAt     DateTime?
   verifiedById   Int?
   createdAt      DateTime     @default(now())
+
+  @@index([tutorProfileId])
+}
+
+enum VerificationType {
+  IDENTITY_DOCUMENT
+  QUALIFICATION_DOCUMENT
+  EMAIL_CONFIRMED
+}
+
+// A specific, named check performed on a tutor -- never a generic "Verified"
+// badge. `label` is the exact public-facing wording (e.g. "Qualification
+// document checked"), shown with checkedAt and, where set, expiresAt. Public
+// serialization must only surface active records: not revoked, not expired.
+model Verification {
+  id             Int              @id @default(autoincrement())
+  tutorProfileId Int
+  tutorProfile   TutorProfile     @relation(fields: [tutorProfileId], references: [id], onDelete: Cascade)
+  type           VerificationType
+  label          String
+  evidenceRef    String?
+  reviewedById   Int
+  reviewedBy     User             @relation("VerificationReviewer", fields: [reviewedById], references: [id])
+  checkedAt      DateTime         @default(now())
+  expiresAt      DateTime?
+  revokedAt      DateTime?
+  revokedReason  String?
 
   @@index([tutorProfileId])
 }

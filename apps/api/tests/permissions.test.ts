@@ -240,6 +240,75 @@ describe('per-account brute-force lockout', () => {
   });
 });
 
+describe('verification records replace the generic "verified" boolean', () => {
+  it('forbids non-admins from adding or revoking verifications', async () => {
+    const tutorUser = await createUser('ver-nonadmin@test.local', ['STUDENT', 'TUTOR']);
+    const profile = await createTutorProfile(tutorUser.id, { status: 'APPROVED' });
+    await createUser('ver-nonadmin-caller@test.local');
+    const agent = await loginAs('ver-nonadmin-caller@test.local');
+
+    const add = await agent.post(`/api/admin/tutors/${profile.id}/verifications`).send({ type: 'IDENTITY_DOCUMENT' });
+    expect(add.status).toBe(403);
+  });
+
+  it('admin can add a named verification and it appears on the public profile with its exact label', async () => {
+    const tutorUser = await createUser('ver-tutor@test.local', ['STUDENT', 'TUTOR']);
+    const profile = await createTutorProfile(tutorUser.id, { status: 'APPROVED' });
+    await createUser('ver-admin@test.local', ['STUDENT', 'ADMIN']);
+    const adminAgent = await loginAs('ver-admin@test.local');
+
+    const add = await adminAgent
+      .post(`/api/admin/tutors/${profile.id}/verifications`)
+      .send({ type: 'IDENTITY_DOCUMENT', evidenceRef: 'Passport sighted' });
+    expect(add.status).toBe(201);
+    expect(add.body.verification.label).toBe('Identity checked');
+
+    const publicRes = await anon().get(`/api/tutors/${profile.id}`);
+    expect(publicRes.status).toBe(200);
+    expect(publicRes.body.profile.verifications).toEqual(
+      expect.arrayContaining([expect.objectContaining({ type: 'IDENTITY_DOCUMENT', label: 'Identity checked' })]),
+    );
+    // Never a generic claim -- the exact label is what's shown, not a bare "Verified".
+    expect(JSON.stringify(publicRes.body.profile.verifications)).not.toContain('"label":"Verified"');
+  });
+
+  it('a revoked verification stops appearing on the public profile', async () => {
+    const tutorUser = await createUser('ver-revoke-tutor@test.local', ['STUDENT', 'TUTOR']);
+    const profile = await createTutorProfile(tutorUser.id, { status: 'APPROVED' });
+    await createUser('ver-revoke-admin@test.local', ['STUDENT', 'ADMIN']);
+    const adminAgent = await loginAs('ver-revoke-admin@test.local');
+
+    const add = await adminAgent.post(`/api/admin/tutors/${profile.id}/verifications`).send({ type: 'EMAIL_CONFIRMED' });
+    const verificationId = add.body.verification.id;
+
+    const beforeRevoke = await anon().get(`/api/tutors/${profile.id}`);
+    expect(beforeRevoke.body.profile.verifications).toHaveLength(1);
+
+    const revoke = await adminAgent.post(`/api/admin/verifications/${verificationId}/revoke`).send({ reason: 'Email changed, no longer confirmed' });
+    expect(revoke.status).toBe(200);
+
+    const afterRevoke = await anon().get(`/api/tutors/${profile.id}`);
+    expect(afterRevoke.body.profile.verifications).toHaveLength(0);
+  });
+
+  it('verifying a qualification through the existing endpoint also creates a named verification record', async () => {
+    const tutorUser = await createUser('ver-qual-tutor@test.local', ['STUDENT', 'TUTOR']);
+    const profile = await createTutorProfile(tutorUser.id, { status: 'APPROVED' });
+    const qualification = await prisma.qualification.create({
+      data: { tutorProfileId: profile.id, title: 'BSc Mathematics' },
+    });
+    await createUser('ver-qual-admin@test.local', ['STUDENT', 'ADMIN']);
+    const adminAgent = await loginAs('ver-qual-admin@test.local');
+
+    const verify = await adminAgent.post(`/api/admin/qualifications/${qualification.id}/verify`);
+    expect(verify.status).toBe(200);
+
+    const record = await prisma.verification.findFirst({ where: { tutorProfileId: profile.id, type: 'QUALIFICATION_DOCUMENT' } });
+    expect(record).not.toBeNull();
+    expect(record?.label).toBe('Qualification document checked');
+  });
+});
+
 describe('private qualification documents', () => {
   it('denies access to a non-owner and allows the owning tutor', async () => {
     const tutorUser = await createUser('doc-tutor@test.local', ['STUDENT', 'TUTOR']);

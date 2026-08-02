@@ -46,6 +46,14 @@ export interface SearchResult {
   ratingCount: number;
   subjects: string[];
   verified: boolean;
+  verifications: Verification[];
+}
+
+export interface Verification {
+  type: 'IDENTITY_DOCUMENT' | 'QUALIFICATION_DOCUMENT' | 'EMAIL_CONFIRMED';
+  label: string;
+  checkedAt: string;
+  expiresAt: string | null;
 }
 
 export interface PageMeta { total: number; page: number; pageSize: number; totalPages: number; }

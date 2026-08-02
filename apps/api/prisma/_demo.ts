@@ -74,6 +74,7 @@ export async function truncateAll(): Promise<void> {
     prisma.block.deleteMany(),
     prisma.availabilitySlot.deleteMany(),
     prisma.qualification.deleteMany(),
+    prisma.verification.deleteMany(),
     prisma.tutorSubject.deleteMany(),
     prisma.tutorProfile.deleteMany(),
     prisma.emailToken.deleteMany(),

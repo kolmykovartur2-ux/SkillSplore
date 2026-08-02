@@ -36,8 +36,8 @@ export function Card({ children, className = '' }: { children: ReactNode; classN
   return <div className={`card ${className}`}>{children}</div>;
 }
 
-export function Badge({ children, variant = '' }: { children: ReactNode; variant?: '' | 'primary' | 'success' | 'warning' | 'danger' | 'accent' }) {
-  return <span className={`badge ${variant ? 'badge-' + variant : ''}`}>{children}</span>;
+export function Badge({ children, variant = '', title }: { children: ReactNode; variant?: '' | 'primary' | 'success' | 'warning' | 'danger' | 'accent'; title?: string }) {
+  return <span className={`badge ${variant ? 'badge-' + variant : ''}`} title={title}>{children}</span>;
 }
 
 export function Field({ label, error, hint, children }: { label?: string; error?: string; hint?: string; children: ReactNode }) {

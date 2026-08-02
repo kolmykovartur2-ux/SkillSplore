@@ -12,7 +12,11 @@ export function TutorCard({ t }: { t: SearchResult }) {
           <div className="grow">
             <div className="spread">
               <strong style={{ fontSize: '1.05rem' }}>{t.displayName}</strong>
-              {t.verified && <Badge variant="accent">✓ Verified</Badge>}
+              {t.verifications.length > 0 && (
+                <Badge variant="accent" title={t.verifications.map((v) => v.label).join(', ')}>
+                  ✓ {t.verifications[0]!.label}{t.verifications.length > 1 && ` +${t.verifications.length - 1}`}
+                </Badge>
+              )}
             </div>
             <div className="muted" style={{ fontSize: '0.88rem' }}>{t.headline}</div>
           </div>

@@ -5,14 +5,20 @@ import { useApi } from '../../lib/useApi.js';
 import { useToast } from '../../lib/toast.js';
 import type { Money } from '../../lib/types.js';
 import { AdminNav } from '../../components/AdminNav.js';
-import { Badge, Button, Card, Field, Spinner, StatusBadge, Textarea } from '../../components/ui.js';
+import { Badge, Button, Card, Field, Input, Select, Spinner, StatusBadge, Textarea } from '../../components/ui.js';
+import { dateStr } from '../../lib/format.js';
 
+interface AdminVerification {
+  id: number; type: string; label: string; evidenceRef: string | null;
+  checkedAt: string; expiresAt: string | null; revokedAt: string | null; revokedReason: string | null;
+}
 interface AdminTutor {
   id: number; status: string; headline: string | null; experience: string | null; teachingStyle: string | null; deliveryMode: string;
   country: string | null; city: string | null; hourlyRate: Money | null; changeRequestNote: string | null; submittedAt: string | null;
   user: { id: number; displayName: string; email: string };
   subjects: Array<{ name: string; price: Money | null }>; levels: string[];
   qualifications: Array<{ id: number; title: string; institution: string | null; year: number | null; hasDocument: boolean; documentUrl: string | null; verified: boolean }>;
+  verifications: AdminVerification[];
 }
 interface Note { id: number; body: string; createdAt: string }
 
@@ -25,6 +31,8 @@ export function ApplicationDetail() {
   const [note, setNote] = useState('');
   const [decisionNote, setDecisionNote] = useState('');
   const [busy, setBusy] = useState(false);
+  const [verType, setVerType] = useState('IDENTITY_DOCUMENT');
+  const [verEvidence, setVerEvidence] = useState('');
 
   if (loading) return <><AdminNav /><Spinner /></>;
   const t = data!.tutor;
@@ -43,6 +51,20 @@ export function ApplicationDetail() {
 
   const addNote = async () => {
     try { await api.post('/admin/notes', { entityType: 'TutorProfile', entityId: t.id, body: note }); setNote(''); reloadNotes(); toast('Note added'); }
+    catch (e) { toast(e instanceof ApiError ? e.message : 'Failed', 'error'); }
+  };
+
+  const addVerification = async () => {
+    try {
+      await api.post(`/admin/tutors/${t.id}/verifications`, { type: verType, evidenceRef: verEvidence || undefined });
+      setVerEvidence(''); reload(); toast('Verification recorded', 'success');
+    } catch (e) { toast(e instanceof ApiError ? e.message : 'Failed', 'error'); }
+  };
+
+  const revokeVerification = async (vid: number) => {
+    const reason = window.prompt('Reason for revoking this verification:');
+    if (!reason || reason.trim().length < 3) return;
+    try { await api.post(`/admin/verifications/${vid}/revoke`, { reason }); reload(); toast('Verification revoked', 'success'); }
     catch (e) { toast(e instanceof ApiError ? e.message : 'Failed', 'error'); }
   };
 
@@ -77,6 +99,40 @@ export function ApplicationDetail() {
               ))}
               {t.qualifications.length === 0 && <li className="muted">No qualifications submitted.</li>}
             </ul>
+          </div></Card>
+          <Card><div className="card-body">
+            <h3 className="mt-0">Verifications</h3>
+            <p className="muted" style={{ marginTop: 0 }}>
+              Every record is a specific, named check — never a generic "Verified" badge. Only
+              active (non-revoked, non-expired) records show on the public profile.
+            </p>
+            <ul className="list-reset stack-sm">
+              {t.verifications.map((v) => (
+                <li key={v.id} className="spread" style={{ opacity: v.revokedAt ? 0.55 : 1 }}>
+                  <span>
+                    <strong>{v.label}</strong>{' '}
+                    <span className="muted">
+                      · checked {dateStr(v.checkedAt)}
+                      {v.expiresAt && ` · expires ${dateStr(v.expiresAt)}`}
+                      {v.evidenceRef && ` · ${v.evidenceRef}`}
+                      {v.revokedAt && ` · revoked: ${v.revokedReason}`}
+                    </span>
+                  </span>
+                  {!v.revokedAt && <Button className="btn-sm" variant="danger" onClick={() => revokeVerification(v.id)}>Revoke</Button>}
+                </li>
+              ))}
+              {t.verifications.length === 0 && <li className="muted">No verifications recorded.</li>}
+            </ul>
+            <div className="divider" />
+            <div className="row-wrap">
+              <Select value={verType} onChange={(e) => setVerType(e.target.value)} style={{ width: 220 }}>
+                <option value="IDENTITY_DOCUMENT">Identity checked</option>
+                <option value="QUALIFICATION_DOCUMENT">Qualification document checked</option>
+                <option value="EMAIL_CONFIRMED">Email confirmed</option>
+              </Select>
+              <Input placeholder="Evidence note (optional)" value={verEvidence} onChange={(e) => setVerEvidence(e.target.value)} style={{ flex: 1, minWidth: 160 }} />
+              <Button onClick={addVerification}>Add verification</Button>
+            </div>
           </div></Card>
           <Card><div className="card-body">
             <h3 className="mt-0">Internal notes</h3>

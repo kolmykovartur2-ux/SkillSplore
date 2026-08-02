@@ -6,6 +6,7 @@ import { validate } from '../../lib/validate.js';
 import { prisma } from '../../lib/prisma.js';
 import { paginate, pageMeta } from '../../lib/pagination.js';
 import { money, publicUser } from '../../lib/serializers.js';
+import { activeVerifications } from '../../lib/verification.js';
 
 export const searchRouter = Router();
 
@@ -84,6 +85,7 @@ searchRouter.get(
           user: { select: { id: true, displayName: true, avatarKey: true } },
           subjects: { include: { subject: true } },
           qualifications: { select: { verifiedAt: true } },
+          verifications: true,
         },
       }),
     ]);
@@ -101,7 +103,10 @@ searchRouter.get(
       averageRating: p.averageRating,
       ratingCount: p.ratingCount,
       subjects: p.subjects.map((s) => s.subject.name),
+      // Kept for backward compatibility with anything still reading a plain
+      // boolean; `verifications` (named, specific checks) is the real signal.
       verified: p.qualifications.some((q) => q.verifiedAt),
+      verifications: activeVerifications(p.verifications),
     }));
 
     res.json({ results, meta: pageMeta(total, qp.page, qp.pageSize) });

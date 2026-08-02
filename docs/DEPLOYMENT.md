@@ -17,6 +17,27 @@ PostgreSQL, persistent file storage (or an S3-compatible bucket), generic SMTP a
 The demo banner ("Demonstration environment — data may be reset.") is controlled by
 `SHOW_DEMO_BANNER` and is forced off when `APP_ENV=production`.
 
+## Render (the current live deployment)
+
+The live demo deploys from `render.yaml` (New → Blueprint in the Render dashboard, pointed at this
+repo). It runs on Render's **free tier**, which has two real limitations worth knowing about before
+treating it as more than a demo:
+
+- **Uploads are not persistent.** `STORAGE_DRIVER=local` writes avatars and qualification documents
+  to the container's own filesystem, and Render's free tier does not persist that across a redeploy
+  or restart — uploaded files will be lost. Fixing this needs an account-owner decision, not a code
+  change:
+  - **Upgrade to a paid plan and attach a disk** — uncomment the `disk:` block in `render.yaml`,
+    pointed at `/app/storage-data` (matching `STORAGE_LOCAL_DIR`).
+  - **Or switch to S3-compatible storage** — the code already supports this
+    (`apps/api/src/lib/storage.ts`, `STORAGE_DRIVER=s3`). Sign up with any S3-compatible provider
+    (Cloudflare R2, Backblaze B2, AWS S3, etc.), then set `STORAGE_DRIVER=s3`, `S3_ENDPOINT`,
+    `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` as environment variables in the Render dashboard
+    (as secrets, not committed to `render.yaml`).
+- **The free Postgres database expires after 30 days** unless upgraded to a paid plan.
+
+Both are fine for a demo people click around for a few minutes; neither is fine for real user data.
+
 ## Production
 
 1. `APP_ENV=production`. The app will refuse to start if demo login is enabled, the session secret

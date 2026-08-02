@@ -2,6 +2,7 @@ import { Prisma, type Role } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 import { badRequest } from '../../lib/errors.js';
 import { money, publicUser } from '../../lib/serializers.js';
+import { activeVerifications } from '../../lib/verification.js';
 
 // Ensures the user has a tutor profile to work on and holds the TUTOR role.
 export async function getOrCreateProfile(userId: number) {
@@ -24,6 +25,7 @@ export const fullProfileInclude = {
   levels: { orderBy: { sortOrder: 'asc' } },
   availability: { orderBy: [{ dayOfWeek: 'asc' }, { startMinute: 'asc' }] },
   qualifications: { orderBy: { createdAt: 'asc' } },
+  verifications: { orderBy: { checkedAt: 'desc' } },
 } satisfies Prisma.TutorProfileInclude;
 
 type FullProfile = Prisma.TutorProfileGetPayload<{ include: typeof fullProfileInclude }>;
@@ -74,6 +76,7 @@ export function serializeOwnProfile(p: FullProfile) {
       documentUrl: q.documentKey ? `/api/files/qualification/${q.id}` : null,
       verified: !!q.verifiedAt,
     })),
+    verifications: activeVerifications(p.verifications),
   };
 }
 
@@ -131,6 +134,11 @@ export async function serializePublicProfile(p: FullProfile) {
       year: q.year,
       verified: !!q.verifiedAt,
     })),
+    // Named, specific checks -- e.g. "Qualification document checked" with a
+    // date -- never a generic "Verified" claim. This is the actual trust
+    // signal shown on the profile; verifiedQualifications below is a count
+    // kept for backward compatibility.
+    verifications: activeVerifications(p.verifications),
     trustIndicators: {
       verifiedQualifications,
       completedEngagements,

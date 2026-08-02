@@ -68,6 +68,10 @@ permissions. Nothing important is simulated in frontend state only.
 - [x] Users, tutor applications, approved tutors, requests, reviews, reports
 - [x] Categories, subjects, teaching levels management
 - [x] Qualification checks, account suspensions, audit log, platform statistics
+- [x] Verification records: named, specific checks ("Identity checked", "Qualification document
+      checked", "Email confirmed") with reviewer, date and optional expiry — never a generic
+      "Verified" badge. Admin can add a check with no dedicated evidence flow yet (e.g. identity)
+      and revoke with a reason; only active (non-revoked, non-expired) records show publicly.
 
 ## Subject catalogue growth (user-submitted, duplicate-safe)
 - [x] Any student or tutor can suggest a subject that isn't in the catalogue from the tutor-onboarding

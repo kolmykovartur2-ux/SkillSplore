@@ -8,6 +8,7 @@
 import { prisma, guardDemoCommand, truncateAll, hash, DEMO_PASSWORD, DEMO_ACCOUNTS } from './_demo.js';
 import { TAXONOMY, TOTAL_SUBJECTS } from './taxonomy.data.js';
 import { normalizeName } from '../src/lib/normalize.js';
+import { DEFAULT_VERIFICATION_LABELS } from '../src/lib/verification.js';
 import type { DeliveryMode } from '@prisma/client';
 
 const dollars = (n: number) => Math.round(n * 100);
@@ -269,6 +270,19 @@ async function main() {
           verifiedById: q.verified ? admin.id : null,
         },
       });
+      // Mirrors what the admin qualification-verify endpoint does -- the
+      // public badge comes from Verification, not the boolean above.
+      if (q.verified) {
+        await prisma.verification.create({
+          data: {
+            tutorProfileId: profile.id,
+            type: 'QUALIFICATION_DOCUMENT',
+            label: DEFAULT_VERIFICATION_LABELS.QUALIFICATION_DOCUMENT,
+            evidenceRef: q.title,
+            reviewedById: admin.id,
+          },
+        });
+      }
     }
     return { user, profile };
   }

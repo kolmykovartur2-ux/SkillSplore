@@ -10,6 +10,7 @@ import { notify } from '../../lib/notify.js';
 import { sendMail } from '../../lib/mailer.js';
 import { money } from '../../lib/serializers.js';
 import { normalizeName } from '../../lib/normalize.js';
+import { DEFAULT_VERIFICATION_LABELS } from '../../lib/verification.js';
 import { hideContent, loadReportContext } from './admin.moderation.js';
 import { recomputeTutorRating } from '../reviews/reviews.service.js';
 import { fullProfileInclude } from '../tutors/tutors.service.js';
@@ -174,6 +175,16 @@ adminRouter.get(
           documentUrl: q.documentKey ? `/api/files/qualification/${q.id}` : null,
           verified: !!q.verifiedAt,
         })),
+        verifications: p.verifications.map((v) => ({
+          id: v.id,
+          type: v.type,
+          label: v.label,
+          evidenceRef: v.evidenceRef,
+          checkedAt: v.checkedAt,
+          expiresAt: v.expiresAt,
+          revokedAt: v.revokedAt,
+          revokedReason: v.revokedReason,
+        })),
       },
     });
   }),
@@ -268,8 +279,70 @@ adminRouter.post(
   '/qualifications/:id/verify',
   asyncHandler(async (req, res) => {
     const id = Number(req.params.id);
+    const qualification = await prisma.qualification.findUnique({ where: { id } });
+    if (!qualification) throw notFound('Qualification not found.');
     await prisma.qualification.update({ where: { id }, data: { verifiedAt: new Date(), verifiedById: req.user!.id } });
+    // The public badge comes from Verification, not the boolean above --
+    // this is what actually makes "Qualification document checked" appear
+    // on the tutor's profile with a real reviewer and date attached.
+    await prisma.verification.create({
+      data: {
+        tutorProfileId: qualification.tutorProfileId,
+        type: 'QUALIFICATION_DOCUMENT',
+        label: DEFAULT_VERIFICATION_LABELS.QUALIFICATION_DOCUMENT,
+        evidenceRef: qualification.title,
+        reviewedById: req.user!.id,
+      },
+    });
     await writeAudit({ actorId: req.user!.id, action: 'qualification.verified', entityType: 'Qualification', entityId: id });
+    res.json({ ok: true });
+  }),
+);
+
+// --- Verification records ---------------------------------------------------
+// Manual add covers checks with no dedicated evidence-upload flow yet (e.g.
+// identity), and re-recording email confirmation for tutors who verified
+// before this system existed.
+
+adminRouter.post(
+  '/tutors/:profileId/verifications',
+  validate({
+    body: z.object({
+      type: z.enum(['IDENTITY_DOCUMENT', 'QUALIFICATION_DOCUMENT', 'EMAIL_CONFIRMED']),
+      label: z.string().min(3).max(120).optional(),
+      evidenceRef: z.string().max(300).optional(),
+      expiresAt: z.string().datetime().optional(),
+    }),
+  }),
+  asyncHandler(async (req, res) => {
+    const tutorProfileId = Number(req.params.profileId);
+    const profile = await prisma.tutorProfile.findUnique({ where: { id: tutorProfileId } });
+    if (!profile) throw notFound('Tutor profile not found.');
+    const verification = await prisma.verification.create({
+      data: {
+        tutorProfileId,
+        type: req.body.type,
+        label: req.body.label || DEFAULT_VERIFICATION_LABELS[req.body.type as keyof typeof DEFAULT_VERIFICATION_LABELS],
+        evidenceRef: req.body.evidenceRef,
+        expiresAt: req.body.expiresAt ? new Date(req.body.expiresAt) : null,
+        reviewedById: req.user!.id,
+      },
+    });
+    await writeAudit({ actorId: req.user!.id, action: 'verification.added', entityType: 'TutorProfile', entityId: tutorProfileId, metadata: { type: req.body.type } });
+    res.status(201).json({ verification });
+  }),
+);
+
+adminRouter.post(
+  '/verifications/:id/revoke',
+  validate({ body: z.object({ reason: z.string().min(3).max(300) }) }),
+  asyncHandler(async (req, res) => {
+    const id = Number(req.params.id);
+    const existing = await prisma.verification.findUnique({ where: { id } });
+    if (!existing) throw notFound('Verification not found.');
+    if (existing.revokedAt) throw badRequest('This verification is already revoked.');
+    await prisma.verification.update({ where: { id }, data: { revokedAt: new Date(), revokedReason: req.body.reason } });
+    await writeAudit({ actorId: req.user!.id, action: 'verification.revoked', entityType: 'Verification', entityId: id, metadata: { reason: req.body.reason } });
     res.json({ ok: true });
   }),
 );
