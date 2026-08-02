@@ -6,23 +6,23 @@ export function Privacy() {
       <h2>1. Who this applies to</h2>
       <p>
         This policy explains how SkillSplore (“we”, “us”) collects, uses and protects personal
-        information about students, tutors and visitors. It should be read together with our Terms
-        of Service.
+        information about learners, providers and visitors. It should be read together with our
+        Terms of Service.
       </p>
 
       <h2>2. Information we collect</h2>
       <ul>
         <li><strong>Account data:</strong> name, email address, password (stored only as a hash), and role.</li>
-        <li><strong>Profile data:</strong> for tutors — biography, subjects, rates, availability, location, and uploaded qualification documents.</li>
-        <li><strong>Activity data:</strong> tutoring requests, responses, messages, engagements, reviews and reports you create.</li>
+        <li><strong>Profile data:</strong> for providers — biography, subjects or skills, rates, availability, location, and uploaded qualification documents.</li>
+        <li><strong>Activity data:</strong> learning requests, responses, messages, engagements, reviews and reports you create.</li>
         <li><strong>Technical data:</strong> session information and basic logs needed to operate and secure the service.</li>
       </ul>
-      <p>We do not collect payment card details, because payments are arranged directly between students and tutors, off the platform.</p>
+      <p>We do not collect payment card details, because payments are arranged directly between learners and providers, off the platform.</p>
 
       <h2>3. How we use it</h2>
       <ul>
-        <li>to operate the marketplace — create profiles, run search, deliver messages and notifications;</li>
-        <li>to review and verify tutor applications and qualifications;</li>
+        <li>to operate the platform — create profiles, run search, deliver messages and notifications;</li>
+        <li>to review and verify provider applications and qualifications;</li>
         <li>to keep the platform safe — moderation, handling reports, and preventing abuse;</li>
         <li>to communicate service and account information to you;</li>
         <li>to meet legal obligations.</li>
@@ -30,11 +30,11 @@ export function Privacy() {
 
       <h2>4. What is visible to others</h2>
       <p>
-        Approved tutor profiles (name, headline, subjects, rates, reviews and trust indicators) are
-        publicly visible. Uploaded qualification documents are private and are accessible only to
-        you and to administrators for verification. Messages are visible only to the participants in
-        a conversation and, where necessary, to moderators investigating a report. Your email address
-        and password are never shown to other users.
+        Approved provider profiles (name, headline, subjects or skills, rates, reviews and trust
+        indicators) are publicly visible. Uploaded qualification documents are private and are
+        accessible only to you and to administrators for verification. Messages are visible only to
+        the participants in a conversation and, where necessary, to moderators investigating a
+        report. Your email address and password are never shown to other users.
       </p>
 
       <h2>5. Sharing</h2>

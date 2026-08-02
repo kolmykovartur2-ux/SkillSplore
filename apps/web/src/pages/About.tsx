@@ -1,3 +1,5 @@
+import { PAYMENT_DISCLAIMER } from '../lib/pricingCopy.js';
+
 export function About() {
   return (
     <div className="container-narrow" style={{ margin: '0 auto' }}>
@@ -22,9 +24,9 @@ export function About() {
           </p>
           <h2>What SkillSplore isn&rsquo;t</h2>
           <p>
-            SkillSplore doesn&rsquo;t process lesson payments, employ anyone listed on the platform, or
-            guarantee that a match will occur. Learners and providers arrange the details of any learning
-            directly between themselves.
+            {PAYMENT_DISCLAIMER} It doesn&rsquo;t employ anyone listed on the platform, or guarantee that
+            a match will occur. Learners and providers arrange the details of any learning directly
+            between themselves.
           </p>
           <h2>Where we are</h2>
           <p>

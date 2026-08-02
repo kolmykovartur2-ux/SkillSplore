@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useApi } from '../lib/useApi.js';
+import { PAYMENT_DISCLAIMER } from '../lib/pricingCopy.js';
 
 interface OverviewSubject { id: number; name: string; slug: string; tutorCount: number }
 interface OverviewCategory { id: number; name: string; icon: string | null; subjectCount: number; tutorCount: number; subjects: OverviewSubject[] }
@@ -10,7 +11,7 @@ const LEARNER_STEPS = [
   { title: 'Search or post what you want to learn', body: 'Browse people directly, or describe what you need and let suitable people respond.' },
   { title: 'Compare people, rates and availability', body: 'Look at experience, location, format and price side by side — nothing is ranked by price alone.' },
   { title: 'Message someone who appears suitable', body: 'Ask questions, discuss availability, and see if it feels like a good fit before committing to anything.' },
-  { title: 'Arrange the details directly', body: 'Confirm timing, format and payment between yourselves. SkillSplore doesn’t process lesson payments.' },
+  { title: 'Arrange the details directly', body: `Confirm timing, format and payment between yourselves. ${PAYMENT_DISCLAIMER}` },
 ];
 
 const PROVIDER_STEPS = [

@@ -7,6 +7,7 @@ import { useToast } from '../lib/toast.js';
 import type { Money, PublicUser, Verification } from '../lib/types.js';
 import { Avatar, Badge, Button, Card, EmptyState, Field, Modal, Spinner, Stars, Textarea } from '../components/ui.js';
 import { deliveryLabel, money, slotLabel, dateStr } from '../lib/format.js';
+import { PAYMENT_DISCLAIMER } from '../lib/pricingCopy.js';
 
 interface Review { id: number; rating: number; title: string | null; body: string; createdAt: string; student: PublicUser; tutorResponse: string | null; tutorRespondedAt: string | null; categoryRatings: Record<string, number> | null }
 interface Profile {
@@ -161,7 +162,7 @@ export function TutorProfile() {
           </div>
           <Button variant="primary" className="btn-block" onClick={() => (user ? setContactOpen(true) : requireLogin())}>Contact</Button>
           <Button className="btn-block" onClick={toggleSave}>{p.isSaved ? '★ Saved' : '☆ Save profile'}</Button>
-          <div className="alert alert-info" style={{ fontSize: '0.8rem', margin: 0 }}>Learning is arranged and paid directly between you and this person. SkillSplore does not process payments.</div>
+          <div className="alert alert-info" style={{ fontSize: '0.8rem', margin: 0 }}>Learning is arranged and paid directly between you and this person. {PAYMENT_DISCLAIMER}</div>
         </div></Card>
 
         <Card><div className="card-body">

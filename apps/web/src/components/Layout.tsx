@@ -3,6 +3,7 @@ import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth.js';
 import { api } from '../lib/api.js';
 import { Avatar } from './ui.js';
+import { ARRANGEMENT_DISCLAIMER } from '../lib/pricingCopy.js';
 
 function useBadgeCounts(loggedIn: boolean) {
   const [messages, setMessages] = useState(0);
@@ -97,8 +98,7 @@ export function Layout({ children }: { children: ReactNode }) {
               <span className="brand" style={{ fontSize: '1.05rem' }}><span className="dot" /> SkillSplore</span>
               <p className="muted" style={{ fontSize: '0.85rem', margin: '8px 0 0', maxWidth: 360 }}>
                 A moderated noticeboard that helps learners and people with useful knowledge or skills
-                find each other. Learning is arranged and paid directly between both parties — SkillSplore
-                does not process payments.
+                find each other. {ARRANGEMENT_DISCLAIMER}
               </p>
             </div>
             <nav className="footer-links">
