@@ -91,8 +91,17 @@ a { color: var(--primary); }
 .logo-demo { display: flex; align-items: center; justify-content: center; height: 150px; }
 .logo-demo.on-cream { background: var(--bg); border-radius: var(--radius); }
 .logo-demo.on-ink { background: var(--ink); border-radius: var(--radius); }
-.mark-lg { width: 72px; height: 72px; border-radius: 24px; background: var(--gradient-rainbow); }
-.mark-solid { width: 72px; height: 72px; border-radius: 24px; background: var(--primary); }
+
+/* Standalone icon: two circles meeting, inside the existing squircle
+   container. Proportions match icon-standalone.svg exactly (scaled from
+   the 512px source at 0.1875x). */
+.icon-standalone { position: relative; width: 96px; height: 96px; border-radius: 32px; background: var(--gradient-rainbow); flex-shrink: 0; }
+.icon-standalone.solid { background: var(--primary); }
+.icon-standalone.reversed { background: var(--ink); }
+.icon-standalone .c1, .icon-standalone .c2 { position: absolute; top: 50%; width: 48px; height: 48px; border-radius: 50%; background: #faf9f6; transform: translateY(-50%); }
+.icon-standalone .c1 { left: 13px; }
+.icon-standalone .c2 { left: 35px; }
+.icon-row { display: flex; align-items: center; justify-content: center; gap: 28px; }
 .lockup-sm { display: flex; align-items: center; gap: 14px; }
 .lockup-sm .mark { width: 44px; height: 44px; border-radius: 15px; background: var(--gradient-rainbow); flex-shrink: 0; }
 .lockup-sm .word { font-size: 1.85rem; font-weight: 700; letter-spacing: -0.03em; }
@@ -187,9 +196,9 @@ a { color: var(--primary); }
 
   <div class="section">
     <div class="section-head">
-      <span class="kicker">Logo</span>
-      <h2>The mark and the lockup</h2>
-      <p>The mark is a rounded square carrying the one gradient in the whole system. The wordmark is set in Instrument Sans Bold, never a second display face.</p>
+      <span class="kicker">Wordmark</span>
+      <h2>For inline use, next to the name</h2>
+      <p>A flat gradient square, sized to sit quietly beside the wordmark â€” nav bars, email signatures, anywhere the name "SkillSplore" is already doing the talking.</p>
     </div>
     <div class="logo-grid">
       <div class="swatch-card">
@@ -200,18 +209,37 @@ a { color: var(--primary); }
         <div class="logo-demo on-ink"><div class="lockup-sm on-ink"><div class="mark"></div><div class="word">SkillSplore</div></div></div>
         <p class="caption">On ink â€” for dark backgrounds only</p>
       </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <span class="kicker">Standalone icon</span>
+      <h2>Two circles meeting</h2>
+      <p>For anywhere the mark has to carry the brand alone, with no wordmark alongside it â€” app icons, social avatars, a browser favicon. The flat wordmark square above doesn't hold up on its own at that job, so this is a separate, more deliberate mark: two circles overlapping, standing in for a student's request meeting a tutor's proposal â€” the actual mechanic of the product, not a generic education symbol.</p>
+    </div>
+    <div class="logo-grid">
       <div class="swatch-card">
-        <div class="logo-demo on-cream"><div class="mark-lg"></div></div>
-        <p class="caption">Mark alone â€” app icons, avatars, favicons</p>
+        <div class="logo-demo on-cream"><div class="icon-standalone"><div class="c1"></div><div class="c2"></div></div></div>
+        <p class="caption">Primary â€” gradient</p>
       </div>
       <div class="swatch-card">
-        <div class="logo-demo on-cream"><div class="mark-solid"></div></div>
-        <p class="caption">Single-colour fallback â€” print, embroidery, tiny sizes where the gradient can't reproduce</p>
+        <div class="logo-demo on-cream"><div class="icon-standalone solid"><div class="c1"></div><div class="c2"></div></div></div>
+        <p class="caption">Single-colour fallback â€” print, embroidery, tiny sizes</p>
+      </div>
+      <div class="swatch-card" style="grid-column: 1 / -1;">
+        <div class="logo-demo on-ink"><div class="icon-row">
+          <div class="icon-standalone reversed"><div class="c1"></div><div class="c2"></div></div>
+          <div class="icon-standalone" style="width:48px;height:48px;border-radius:16px;"><div class="c1" style="width:24px;height:24px;left:6px;"></div><div class="c2" style="width:24px;height:24px;left:18px;"></div></div>
+          <div class="icon-standalone" style="width:24px;height:24px;border-radius:8px;"><div class="c1" style="width:12px;height:12px;left:3px;"></div><div class="c2" style="width:12px;height:12px;left:9px;"></div></div>
+        </div></div>
+        <p class="caption">Reversed for dark grounds, shown here at 96px / 48px / 24px â€” the overlap still reads clearly down to favicon size</p>
       </div>
     </div>
     <ul class="rule-list">
-      <li class="yes"><span class="mark-icon">âœ“</span><span>Keep the mark's corner radius at one-third of its edge length â€” it's a rounded square, not a circle or a sharp square.</span></li>
-      <li class="yes"><span class="mark-icon">âœ“</span><span>Give the mark clearspace equal to its own width on every side before any other element.</span></li>
+      <li class="yes"><span class="mark-icon">âœ“</span><span>Keep the two circles at equal size, overlapping by about half their diameter â€” enough to read as one shape meeting another, not two separate dots.</span></li>
+      <li class="yes"><span class="mark-icon">âœ“</span><span>Give the icon clearspace equal to its own width on every side before any other element.</span></li>
+      <li class="no"><span class="mark-icon">âœ•</span><span>Don't pull the circles apart, resize them differently, or add a third circle.</span></li>
       <li class="no"><span class="mark-icon">âœ•</span><span>Don't recolour, rotate, or apply the gradient at any angle other than the horizontal left-to-right original.</span></li>
       <li class="no"><span class="mark-icon">âœ•</span><span>Don't use the gradient anywhere else in a layout â€” not as a background, a button, or a text treatment on more than one word.</span></li>
     </ul>
@@ -319,9 +347,12 @@ a { color: var(--primary); }
       <h2>What's in this package</h2>
     </div>
     <ul class="file-list">
-      <li><code>logo-mark.svg</code><span class="file-desc">Gradient mark, scalable vector</span></li>
-      <li><code>logo-mark-solid.svg</code><span class="file-desc">Single-colour fallback</span></li>
+      <li><code>logo-mark.svg</code><span class="file-desc">Flat gradient square â€” inline, next to the wordmark</span></li>
+      <li><code>logo-mark-solid.svg</code><span class="file-desc">Single-colour version of the same</span></li>
       <li><code>logo-lockup.svg</code><span class="file-desc">Mark + wordmark (needs Instrument Sans installed to render as text)</span></li>
+      <li><code>icon-standalone.svg</code><span class="file-desc">Two-circle icon, gradient â€” app icons, avatars, favicons</span></li>
+      <li><code>icon-standalone-solid.svg</code><span class="file-desc">Single-colour fallback of the icon</span></li>
+      <li><code>icon-standalone-reversed.svg</code><span class="file-desc">Icon for dark grounds</span></li>
       <li><code>tokens.json</code><span class="file-desc">Every hex value, machine-readable</span></li>
     </ul>
   </div>
