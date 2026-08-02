@@ -1,35 +1,39 @@
-import { useMemo, useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useApi } from '../lib/useApi.js';
-import type { SearchResult } from '../lib/types.js';
-import { TutorCard } from '../components/TutorCard.js';
-import { Spinner } from '../components/ui.js';
 
 interface OverviewSubject { id: number; name: string; slug: string; tutorCount: number }
 interface OverviewCategory { id: number; name: string; icon: string | null; subjectCount: number; tutorCount: number; subjects: OverviewSubject[] }
 interface Overview { categories: OverviewCategory[]; totalSubjects: number; totalApprovedTutors: number }
-interface FeaturedReview { id: number; rating: number; body: string; student: string; tutor: string; tutorProfileId: number; subject: string | null }
 
-const STEPS: Array<{ title: string; body: string }> = [
-  { title: 'Describe what you need', body: 'Post a request in a couple of minutes — subject, level, and how you like to learn.' },
-  { title: 'Tutors send proposals', body: 'Approved tutors reply with a tailored introduction and their own rate — you never see it forced on you.' },
-  { title: 'Compare and choose', body: 'Weigh profiles, reviews and price side by side, then message and arrange lessons directly.' },
+const LEARNER_STEPS = [
+  { title: 'Search or post what you want to learn', body: 'Browse people directly, or describe what you need and let suitable people respond.' },
+  { title: 'Compare people, rates and availability', body: 'Look at experience, location, format and price side by side — nothing is ranked by price alone.' },
+  { title: 'Message someone who appears suitable', body: 'Ask questions, discuss availability, and see if it feels like a good fit before committing to anything.' },
+  { title: 'Arrange the details directly', body: 'Confirm timing, format and payment between yourselves. SkillSplore doesn’t process lesson payments.' },
+];
+
+const PROVIDER_STEPS = [
+  { title: 'Create a profile', body: 'Introduce yourself and what you can teach — academic, creative or practical.' },
+  { title: 'List subjects or skills you can teach', body: 'Be specific — the more useful your listing, the easier you are to find.' },
+  { title: 'Set your own rates and availability', body: 'You decide what you charge and when you’re free. Nothing is set for you.' },
+  { title: 'Respond to suitable requests', body: 'See what learners are asking for and reply to the ones that fit.' },
+  { title: 'Communicate directly with learners', body: 'Message, discuss the details, and arrange things between yourselves.' },
+];
+
+const BENEFITS = [
+  'Search directly, or post a request and let people come to you',
+  'Academic, creative and practical skills — not just school subjects',
+  'Online or in-person learning',
+  'Compare profiles and rates before you decide',
+  'Message people directly, no middleman',
+  'Moderated profiles and requests, with reporting built in',
 ];
 
 export function Home() {
   const navigate = useNavigate();
   const [q, setQ] = useState('');
   const { data: overview } = useApi<Overview>('/taxonomy/overview');
-  const { data: top, loading: loadingTop } = useApi<{ results: SearchResult[] }>('/search?sort=rating&pageSize=6');
-  const { data: featured } = useApi<{ reviews: FeaturedReview[] }>('/reviews/featured');
-
-  const popularSubjects = useMemo(() => {
-    if (!overview) return [];
-    return overview.categories
-      .flatMap((c) => c.subjects)
-      .sort((a, b) => b.tutorCount - a.tutorCount)
-      .slice(0, 16);
-  }, [overview]);
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -39,108 +43,121 @@ export function Home() {
   return (
     <div>
       <section className="hero">
-        <div className="eyebrow">✦ {overview ? `${overview.totalApprovedTutors} approved tutors` : 'A better way to learn'}</div>
-        <h1>Learn something new from a <span className="gradient-text">real</span> expert</h1>
+        <div className="eyebrow">Launching soon in New Zealand and Australia</div>
+        <h1>Post what you want to learn. Find the <span className="gradient-text">right</span> person.</h1>
         <p className="sub">
-          SkillSplore matches students with verified independent tutors across {overview ? `${overview.totalSubjects}+ subjects` : 'academics, music, languages and tech'}.
-          Post once, compare real proposals, and choose who you learn from.
+          Search by subject or skill, compare profiles, or post a request and hear from people who can help.
+          Learn online or in person.
         </p>
         <div className="cta-row">
-          <Link className="btn btn-primary btn-lg" to="/requests/new">Post a request — it’s free</Link>
-          <Link className="btn btn-outline btn-lg" to="/search">Browse tutors</Link>
+          <Link className="btn btn-primary btn-lg" to="/requests/new">Post what you want to learn</Link>
+          <Link className="btn btn-outline btn-lg" to="/search">Browse people and skills</Link>
         </div>
         <form className="searchbar" onSubmit={submit}>
-          <input placeholder="Search “piano”, “calculus”, “Python”…" value={q} onChange={(e) => setQ(e.target.value)} />
+          <input placeholder="Try &ldquo;calculus&rdquo;, &ldquo;saxophone&rdquo;, &ldquo;painting&rdquo; or &ldquo;Python&rdquo;" value={q} onChange={(e) => setQ(e.target.value)} />
           <button className="btn btn-gradient" type="submit">Search</button>
         </form>
-        {overview && (
-          <div className="stat-strip">
-            <div className="stat"><span className="num">{overview.totalApprovedTutors}</span><span className="label">Verified tutors</span></div>
-            <div className="stat"><span className="num">{overview.totalSubjects}+</span><span className="label">Subjects</span></div>
-            <div className="stat"><span className="num">2</span><span className="label">Countries</span></div>
-            <div className="stat"><span className="num">0%</span><span className="label">Platform fees</span></div>
-          </div>
-        )}
       </section>
 
       <section className="section">
         <div className="section-title" style={{ display: 'block', textAlign: 'center' }}>
-          <span className="kicker">How it works</span>
-          <h2 className="mt-0">Three steps to your first lesson</h2>
+          <span className="kicker">Two ways to use SkillSplore</span>
+          <h2 className="mt-0">Search directly, or let people come to you</h2>
         </div>
-        <div className="steps-row">
-          {STEPS.map((s, i) => (
-            <div className="step-card" key={s.title}>
-              <div className="step-num">{String(i + 1).padStart(2, '0')}</div>
-              <h3>{s.title}</h3>
-              <p>{s.body}</p>
-            </div>
-          ))}
+        <div className="grid grid-2">
+          <div className="card"><div className="card-body">
+            <h3 className="mt-0">Search directly</h3>
+            <p className="muted">Browse people by subject, skill, location, lesson format and rate.</p>
+            <Link className="btn btn-outline" to="/search">Browse people</Link>
+          </div></div>
+          <div className="card"><div className="card-body">
+            <h3 className="mt-0">Post a request</h3>
+            <p className="muted">Describe what you want to learn and let suitable people respond.</p>
+            <Link className="btn btn-gradient" to="/requests/new">Post a request</Link>
+          </div></div>
         </div>
       </section>
 
       <section className="section-tight">
-        <div className="section-title">
-          <div><span className="kicker">Popular</span><h2 className="mt-0">Subjects students are searching</h2></div>
-          <Link to="/search">All subjects →</Link>
+        <div className="section-title" style={{ display: 'block', textAlign: 'center' }}>
+          <span className="kicker">What could you learn?</span>
+          <h2 className="mt-0">Academic subjects, creative skills, and everything between</h2>
         </div>
-        <div className="pill-cloud">
-          {popularSubjects.map((s) => (
-            <Link key={s.id} to={`/search?subjectId=${s.id}`} className="subject-pill">
-              {s.name} {s.tutorCount > 0 && <span className="pill-count">· {s.tutorCount}</span>}
+        <div className="cat-grid">
+          {overview?.categories.map((c) => (
+            <Link key={c.id} to={`/search?categoryId=${c.id}`} className="cat-tile">
+              <div className="cat-head">
+                {c.icon && <span className="cat-icon">{c.icon}</span>}
+                <h3>{c.name}</h3>
+              </div>
+              <div className="cat-links">
+                {c.subjects.slice(0, 5).map((s) => <span key={s.id} className="muted" style={{ fontSize: '0.9rem' }}>{s.name}</span>)}
+              </div>
             </Link>
           ))}
         </div>
       </section>
 
-      <section className="section">
-        <div className="section-title">
-          <div><span className="kicker">Top rated</span><h2 className="mt-0">Tutors students love</h2></div>
-          <Link to="/search">Browse all →</Link>
+      <section className="section" id="how-it-works">
+        <div className="section-title" style={{ display: 'block', textAlign: 'center' }}>
+          <span className="kicker">How it works</span>
+          <h2 className="mt-0">For learners and people who teach</h2>
         </div>
-        {loadingTop ? <Spinner /> : (
-          <div className="grid grid-cards">
-            {top?.results.map((t) => <TutorCard key={t.id} t={t} />)}
+        <div className="grid grid-2" style={{ alignItems: 'start' }}>
+          <div>
+            <h3 style={{ marginBottom: 14 }}>For learners</h3>
+            <div className="stack">
+              {LEARNER_STEPS.map((s, i) => (
+                <div key={s.title} className="step-card">
+                  <div className="step-num">{String(i + 1).padStart(2, '0')}</div>
+                  <h4 style={{ marginBottom: 4 }}>{s.title}</h4>
+                  <p className="muted" style={{ margin: 0, fontSize: '0.92rem' }}>{s.body}</p>
+                </div>
+              ))}
+            </div>
           </div>
-        )}
+          <div>
+            <h3 style={{ marginBottom: 14 }}>For people who teach</h3>
+            <div className="stack">
+              {PROVIDER_STEPS.map((s, i) => (
+                <div key={s.title} className="step-card">
+                  <div className="step-num">{String(i + 1).padStart(2, '0')}</div>
+                  <h4 style={{ marginBottom: 4 }}>{s.title}</h4>
+                  <p className="muted" style={{ margin: 0, fontSize: '0.92rem' }}>{s.body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </section>
 
-      {featured && featured.reviews.length > 0 && (
-        <section className="section-tight">
-          <div className="section-title" style={{ display: 'block', textAlign: 'center' }}>
-            <span className="kicker">Real reviews</span>
-            <h2 className="mt-0">What students say</h2>
-          </div>
-          <div className="grid grid-cards">
-            {featured.reviews.slice(0, 3).map((r) => (
-              <div className="testimonial-card" key={r.id}>
-                <span className="quote-mark">“</span>
-                <p>{r.body}</p>
-                <div className="who">
-                  <div>
-                    <div className="who-name">{r.student}</div>
-                    <div className="who-sub">on {r.tutor}{r.subject ? ` · ${r.subject}` : ''}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      <section className="section-tight">
+        <div className="section-title" style={{ display: 'block', textAlign: 'center' }}>
+          <span className="kicker">Why use SkillSplore</span>
+          <h2 className="mt-0">Built around finding the right person</h2>
+        </div>
+        <div className="grid grid-cards">
+          {BENEFITS.map((b) => (
+            <div key={b} className="card"><div className="card-body">
+              <p style={{ margin: 0 }}>{b}</p>
+            </div></div>
+          ))}
+        </div>
+      </section>
 
       <section className="section">
-        <div className="grid grid-2">
-          <div className="card"><div className="card-body">
-            <h3>For students</h3>
-            <p className="muted">Search verified tutors, message them directly, or post a request and let tutors come to you. Arrange lessons and pay the tutor directly — no platform fees, ever.</p>
-            <Link className="btn btn-gradient" to="/requests/new">Post a request</Link>
-          </div></div>
-          <div className="card"><div className="card-body">
-            <h3>For tutors</h3>
-            <p className="muted">Create a profile, get approved, appear in search, and respond to student requests. You set your own rates and keep 100% of what you earn.</p>
-            <Link className="btn btn-outline" to="/tutor/onboarding">Become a tutor</Link>
-          </div></div>
-        </div>
+        <div className="card" style={{ textAlign: 'center', padding: '8px' }}><div className="card-body">
+          <span className="kicker">Early launch</span>
+          <h2 style={{ maxWidth: 560, margin: '0 auto 12px' }}>Join the early community</h2>
+          <p className="muted" style={{ maxWidth: 560, margin: '0 auto 24px' }}>
+            SkillSplore is preparing for launch. We&rsquo;re looking for early learners and people with
+            useful skills to help us test and improve the platform.
+          </p>
+          <div className="cta-row" style={{ marginBottom: 0 }}>
+            <Link className="btn btn-primary btn-lg" to="/register">Join as a learner</Link>
+            <Link className="btn btn-outline btn-lg" to="/tutor/onboarding">Create a teaching profile</Link>
+          </div>
+        </div></div>
       </section>
     </div>
   );

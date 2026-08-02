@@ -34,6 +34,8 @@ import { AdminSubjectSuggestions } from './pages/admin/AdminSubjectSuggestions.j
 import { AdminAudit } from './pages/admin/AdminAudit.js';
 import { Terms } from './pages/legal/Terms.js';
 import { Privacy } from './pages/legal/Privacy.js';
+import { About } from './pages/About.js';
+import { Safety } from './pages/Safety.js';
 
 function RequireAuth({ children, role }: { children: ReactNode; role?: 'TUTOR' | 'ADMIN' }) {
   const { user, loading, hasRole } = useAuth();
@@ -62,6 +64,8 @@ export function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/safety" element={<Safety />} />
 
         <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
         <Route path="/account" element={<RequireAuth><Account /></RequireAuth>} />

@@ -47,10 +47,12 @@ export function Layout({ children }: { children: ReactNode }) {
         <div className="container nav-inner">
           <Link to="/" className="brand"><span className="dot" /> SkillSplore</Link>
           <nav className="nav-links">
-            <NavLink to="/search" className="nav-link">Find tutors</NavLink>
+            <NavLink to="/search" className="nav-link">Browse skills</NavLink>
+            <NavLink to="/requests/new" className="nav-link">Post a request</NavLink>
+            <Link to="/#how-it-works" className="nav-link">How it works</Link>
             {user && <NavLink to="/dashboard" className="nav-link">Dashboard</NavLink>}
-            {user && <NavLink to="/requests" className="nav-link">Requests</NavLink>}
-            {isTutor && <NavLink to="/tutor/feed" className="nav-link">Request feed</NavLink>}
+            {user && <NavLink to="/requests" className="nav-link">My requests</NavLink>}
+            {isTutor && <NavLink to="/tutor/feed" className="nav-link">Matching requests</NavLink>}
             {user && (
               <NavLink to="/messages" className="nav-link">
                 Messages{messages > 0 && <span className="nav-badge">{messages}</span>}
@@ -75,7 +77,7 @@ export function Layout({ children }: { children: ReactNode }) {
                       <div style={{ padding: '4px 8px' }}><strong>{user.displayName}</strong><br /><small>{user.email}</small></div>
                       <div className="divider" style={{ margin: '8px 0' }} />
                       <Link className="nav-link" style={{ display: 'block' }} to="/account">Account</Link>
-                      <Link className="nav-link" style={{ display: 'block' }} to="/tutor/onboarding">Tutor profile</Link>
+                      <Link className="nav-link" style={{ display: 'block' }} to="/tutor/onboarding">Teaching profile</Link>
                       <button className="nav-link" style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }} onClick={doLogout}>Log out</button>
                     </div>
                   </div>
@@ -94,15 +96,20 @@ export function Layout({ children }: { children: ReactNode }) {
             <div>
               <span className="brand" style={{ fontSize: '1.05rem' }}><span className="dot" /> SkillSplore</span>
               <p className="muted" style={{ fontSize: '0.85rem', margin: '8px 0 0', maxWidth: 360 }}>
-                A marketplace connecting students with independent tutors. Lessons are arranged and paid
-                directly between students and tutors — SkillSplore does not process payments.
+                A moderated noticeboard that helps learners and people with useful knowledge or skills
+                find each other. Learning is arranged and paid directly between both parties — SkillSplore
+                does not process payments.
               </p>
             </div>
             <nav className="footer-links">
-              <Link to="/search">Find tutors</Link>
-              <Link to="/tutor/onboarding">Become a tutor</Link>
-              <Link to="/terms">Terms of Service</Link>
-              <Link to="/privacy">Privacy Policy</Link>
+              <Link to="/about">About</Link>
+              <Link to="/#how-it-works">How it works</Link>
+              <Link to="/search">Browse skills</Link>
+              <Link to="/requests/new">Post a request</Link>
+              <Link to="/tutor/onboarding">Teach on SkillSplore</Link>
+              <Link to="/safety">Safety</Link>
+              <Link to="/terms">Terms</Link>
+              <Link to="/privacy">Privacy</Link>
             </nav>
           </div>
           <div className="footer-bottom muted">© {new Date().getFullYear()} SkillSplore</div>
