@@ -182,6 +182,18 @@ export const TAXONOMY: CategoryDef[] = [
       'Running & athletics',
     ],
   },
+  {
+    name: 'Cooking & Culinary Skills',
+    icon: '🍳',
+    subjects: [
+      'Cooking fundamentals',
+      'Baking',
+      'Cake decorating',
+      'Meal prep',
+      'Vegan & vegetarian cooking',
+      'International cuisine',
+    ],
+  },
 ];
 
 // Convenience: total number of subjects in the catalogue.
