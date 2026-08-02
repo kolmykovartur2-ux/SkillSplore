@@ -32,7 +32,7 @@ export function Register() {
       <Card>
         <div className="card-body">
           <h1>Create your account</h1>
-          <p className="muted">One account lets you learn as a student and, if you like, teach as a tutor.</p>
+          <p className="muted">One account lets you learn from others and, if you like, teach what you know.</p>
           {error && <Alert type="error">{error}</Alert>}
           <form onSubmit={submit}>
             <Field label="Full name">

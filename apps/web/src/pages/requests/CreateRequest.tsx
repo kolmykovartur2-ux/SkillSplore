@@ -49,13 +49,13 @@ export function CreateRequest() {
 
   return (
     <div className="container-narrow" style={{ margin: '0 auto' }}>
-      <h1>Post a tutoring request</h1>
+      <h1>Post what you want to learn</h1>
       <Card><div className="card-body">
         {error && <Alert type="error">{error}</Alert>}
         <form onSubmit={onSubmit}>
-          <Field label="Subject">
+          <Field label="Subject or skill">
             <Select value={form.subjectId} onChange={(e) => set({ subjectId: e.target.value })} required>
-              <option value="">Choose a subject…</option>
+              <option value="">Choose a subject or skill…</option>
               {cats?.categories.map((c) => (
                 <optgroup key={c.id} label={c.name}>
                   {c.subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -84,7 +84,7 @@ export function CreateRequest() {
               {lvls?.levels.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
             </Select>
           </Field>
-          <Field label="Title"><Input value={form.title} onChange={(e) => set({ title: e.target.value })} required minLength={4} placeholder="e.g. Help with NCEA Level 3 calculus" /></Field>
+          <Field label="Title"><Input value={form.title} onChange={(e) => set({ title: e.target.value })} required minLength={4} placeholder="e.g. Help with NCEA Level 3 calculus, or beginner saxophone lessons" /></Field>
           <Field label="What help do you need?"><Textarea value={form.description} onChange={(e) => set({ description: e.target.value })} required minLength={10} /></Field>
           <Field label="Format">
             <Select value={form.deliveryMode} onChange={(e) => set({ deliveryMode: e.target.value })}>

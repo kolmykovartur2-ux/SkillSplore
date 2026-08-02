@@ -37,7 +37,7 @@ export function TutorProfile() {
   const [busy, setBusy] = useState(false);
 
   if (loading) return <Spinner />;
-  if (error || !data) return <EmptyState emoji="🚫" title="Tutor not found">This profile may not be public.</EmptyState>;
+  if (error || !data) return <EmptyState emoji="🚫" title="Profile not found">This profile may not be public.</EmptyState>;
   const p = data.profile;
 
   const requireLogin = () => { navigate('/login', { state: { from: `/tutors/${id}` } }); };
@@ -159,9 +159,9 @@ export function TutorProfile() {
             <div style={{ fontSize: '1.8rem', fontWeight: 800 }}>{money(p.hourlyRate)}<span className="muted" style={{ fontSize: '1rem', fontWeight: 400 }}>/hr</span></div>
             <span className="muted" style={{ fontSize: '0.82rem' }}>from</span>
           </div>
-          <Button variant="primary" className="btn-block" onClick={() => (user ? setContactOpen(true) : requireLogin())}>Contact tutor</Button>
-          <Button className="btn-block" onClick={toggleSave}>{p.isSaved ? '★ Saved' : '☆ Save tutor'}</Button>
-          <div className="alert alert-info" style={{ fontSize: '0.8rem', margin: 0 }}>Lessons are arranged and paid directly between you and the tutor. SkillSplore does not process payments.</div>
+          <Button variant="primary" className="btn-block" onClick={() => (user ? setContactOpen(true) : requireLogin())}>Contact</Button>
+          <Button className="btn-block" onClick={toggleSave}>{p.isSaved ? '★ Saved' : '☆ Save profile'}</Button>
+          <div className="alert alert-info" style={{ fontSize: '0.8rem', margin: 0 }}>Learning is arranged and paid directly between you and this person. SkillSplore does not process payments.</div>
         </div></Card>
 
         <Card><div className="card-body">

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useApi } from '../lib/useApi.js';
 import type { PageMeta, SearchResult } from '../lib/types.js';
+import { Link } from 'react-router-dom';
 import { TutorCard } from '../components/TutorCard.js';
 import { EmptyState, Field, Input, Select, Spinner, Button } from '../components/ui.js';
 
@@ -108,7 +109,7 @@ export function Search() {
 
       <div>
         <div className="section-title">
-          <h2 className="mt-0">{data ? `${data.meta.total} tutor${data.meta.total === 1 ? '' : 's'}` : 'Tutors'}{activeCategory ? ` in ${activeCategory.name}` : ''}</h2>
+          <h2 className="mt-0">{data ? `${data.meta.total} ${data.meta.total === 1 ? 'person' : 'people'}` : 'People'}{activeCategory ? ` in ${activeCategory.name}` : ''}</h2>
           <Select value={filters.sort} onChange={(e) => set({ sort: e.target.value })} style={{ width: 'auto' }}>
             <option value="relevance">Most relevant</option>
             <option value="rating">Highest rated</option>
@@ -119,7 +120,10 @@ export function Search() {
         </div>
 
         {loading ? <Spinner /> : !data || data.results.length === 0 ? (
-          <EmptyState emoji="🔍" title="No tutors match those filters">Try widening your search or clearing filters.</EmptyState>
+          <EmptyState emoji="🔍" title="Couldn't find the right person?">
+            Try widening your search or clearing filters, or{' '}
+            <Link to="/requests/new">post what you want to learn</Link> and let people respond.
+          </EmptyState>
         ) : (
           <>
             <div className="grid grid-cards">{data.results.map((t) => <TutorCard key={t.id} t={t} />)}</div>

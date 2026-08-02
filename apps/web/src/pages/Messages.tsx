@@ -22,7 +22,7 @@ export function Messages() {
       <div className={id ? 'conv-list-hide-mobile' : ''}>
         <h2 className="mt-0">Messages</h2>
         {loading ? <Spinner /> : (listData?.conversations.length ?? 0) === 0 ? (
-          <EmptyState emoji="💬" title="No conversations yet">Message a tutor from their profile to get started.</EmptyState>
+          <EmptyState emoji="💬" title="No conversations yet">Message someone from their profile to get started.</EmptyState>
         ) : (
           <div className="stack-sm">
             {listData!.conversations.map((c) => (

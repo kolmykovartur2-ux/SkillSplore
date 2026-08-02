@@ -23,7 +23,7 @@ export function MyRequests() {
     <div className="stack">
       <div className="section-title"><h1 className="mt-0">My requests</h1><Link className="btn btn-primary" to="/requests/new">Post a request</Link></div>
       {requests.length === 0 ? (
-        <EmptyState emoji="📝" title="No requests yet">Post a request and let tutors come to you.</EmptyState>
+        <EmptyState emoji="📝" title="No requests yet">Post a request and let suitable people come to you.</EmptyState>
       ) : (
         <div className="stack-sm">
           {requests.map((r) => (

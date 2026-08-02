@@ -58,8 +58,8 @@ function OwnerView({ responses, onChanged }: { responses: OwnerResp[]; currency:
   return (
     <div>
       <h2>Responses ({responses.length})</h2>
-      <p className="muted">Compare the tutor and their proposal — the cheapest option isn’t always the best fit.</p>
-      {responses.length === 0 ? <EmptyState emoji="⌛" title="No responses yet">Approved tutors will see your request in their feed.</EmptyState> : (
+      <p className="muted">Compare the person and their proposal — the cheapest option isn’t always the best fit.</p>
+      {responses.length === 0 ? <EmptyState emoji="⌛" title="No responses yet">Suitable people will see this request and can respond.</EmptyState> : (
         <div className="stack-sm">
           {responses.map((resp) => (
             <Card key={resp.id}><div className="card-body">
@@ -125,18 +125,18 @@ function TutorView({ requestId, myResponse, responseCount, onChanged }: { reques
 
   return (
     <Card><div className="card-body">
-      <div className="spread"><h2 className="mt-0">Your response</h2><span className="muted">{responseCount} tutor(s) have responded</span></div>
+      <div className="spread"><h2 className="mt-0">Your response</h2><span className="muted">{responseCount} {responseCount === 1 ? 'person has' : 'people have'} responded</span></div>
       {myResponse && <p><StatusBadge status={myResponse.status} /></p>}
       {locked ? (
         <p className="muted">This response is {myResponse!.status.toLowerCase()} and can no longer be edited.</p>
       ) : (
         <>
-          <Field label="Your introduction"><Textarea value={intro} onChange={(e) => setIntro(e.target.value)} placeholder="Explain how you can help, tailored to this student…" /></Field>
+          <Field label="Your introduction"><Textarea value={intro} onChange={(e) => setIntro(e.target.value)} placeholder="Explain how you can help, tailored to this learner…" /></Field>
           <div className="grid grid-2">
             <Field label="Your proposed rate / hr"><Input type="number" min={0} value={rate} onChange={(e) => setRate(e.target.value)} /></Field>
             <Field label="Availability (optional)"><Input value={avail} onChange={(e) => setAvail(e.target.value)} /></Field>
           </div>
-          <p className="hint">You can’t see other tutors’ proposed rates.</p>
+          <p className="hint">You can’t see other people’s proposed rates.</p>
           <div className="row">
             <Button variant="primary" loading={busy} disabled={intro.trim().length < 10} onClick={submit}>{myResponse ? 'Update response' : 'Submit response'}</Button>
             {myResponse && myResponse.status === 'PENDING' && <Button onClick={withdraw}>Withdraw</Button>}

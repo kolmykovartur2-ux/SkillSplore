@@ -29,8 +29,8 @@ export function Engagements() {
   return (
     <div className="stack">
       <h1>Engagements</h1>
-      <p className="muted">Record and track lessons you’ve arranged. Payment is handled directly between student and tutor.</p>
-      {list.length === 0 ? <EmptyState emoji="🤝" title="No engagements yet">Arrange one from a conversation once you’ve agreed on lessons.</EmptyState> : (
+      <p className="muted">Record and track learning you’ve arranged. Payment is handled directly between both people.</p>
+      {list.length === 0 ? <EmptyState emoji="🤝" title="No engagements yet">Arrange one from a conversation once you’ve agreed to learn together.</EmptyState> : (
         <div className="grid grid-cards">
           {list.map((e) => (
             <Card key={e.id}><div className="card-body stack-sm">

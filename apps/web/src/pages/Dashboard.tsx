@@ -24,16 +24,16 @@ export function Dashboard() {
 
       <div className="grid grid-cards">
         <Card><div className="card-body">
-          <h3 className="mt-0">Tutoring</h3>
+          <h3 className="mt-0">Teaching</h3>
           {loading ? <Spinner /> : profile ? (
             <>
-              <p className="muted">Your tutor profile is <StatusBadge status={profile.status} />.</p>
-              <Link className="btn btn-primary btn-sm" to="/tutor/onboarding">Manage tutor profile</Link>
+              <p className="muted">Your teaching profile is <StatusBadge status={profile.status} />.</p>
+              <Link className="btn btn-primary btn-sm" to="/tutor/onboarding">Manage teaching profile</Link>
             </>
           ) : (
             <>
               <p className="muted">Share your skills and earn by teaching.</p>
-              <Link className="btn btn-primary btn-sm" to="/tutor/onboarding">Become a tutor</Link>
+              <Link className="btn btn-primary btn-sm" to="/tutor/onboarding">Create a teaching profile</Link>
             </>
           )}
         </div></Card>
@@ -46,9 +46,9 @@ export function Dashboard() {
         </div></Card>
 
         <Card><div className="card-body">
-          <h3 className="mt-0">Saved tutors</h3>
+          <h3 className="mt-0">Saved profiles</h3>
           <p className="muted">{saved ? `${saved.tutors.length} saved` : '—'}</p>
-          <Link className="btn btn-sm" to="/search">Find tutors</Link>
+          <Link className="btn btn-sm" to="/search">Browse skills</Link>
         </div></Card>
 
         <Card><div className="card-body">
@@ -59,14 +59,14 @@ export function Dashboard() {
 
         <Card><div className="card-body">
           <h3 className="mt-0">Messages</h3>
-          <p className="muted">Chat with tutors and students.</p>
+          <p className="muted">Chat with people you're learning from or teaching.</p>
           <Link className="btn btn-sm" to="/messages">Open messages</Link>
         </div></Card>
 
         {hasRole('TUTOR') && (
           <Card><div className="card-body">
-            <h3 className="mt-0">Request feed</h3>
-            <p className="muted">Find students looking for your subjects.</p>
+            <h3 className="mt-0">Matching requests</h3>
+            <p className="muted">Find learners looking for your subjects or skills.</p>
             <Link className="btn btn-sm" to="/tutor/feed">Browse requests</Link>
           </div></Card>
         )}

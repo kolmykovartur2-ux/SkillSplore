@@ -30,7 +30,7 @@ export function Onboarding() {
 
   const startProfile = async () => {
     setBusy(true);
-    try { await api.post('/tutors/apply'); toast('Tutor profile started', 'success'); reload(); }
+    try { await api.post('/tutors/apply'); toast('Teaching profile started', 'success'); reload(); }
     catch (e) { toast(e instanceof ApiError ? e.message : 'Failed', 'error'); }
     finally { setBusy(false); }
   };
@@ -42,9 +42,9 @@ export function Onboarding() {
     return (
       <div className="container-narrow" style={{ margin: '0 auto' }}>
         <Card><div className="card-body center">
-          <h1>Become a tutor</h1>
-          <p className="muted">Create your tutor profile, get approved by our team, and start appearing in search and request feeds. You set your own rates.</p>
-          <Button variant="primary" loading={busy} onClick={startProfile}>Start my tutor profile</Button>
+          <h1>Create a teaching profile</h1>
+          <p className="muted">Introduce what you can teach, get approved by our team, and start appearing in search and matching requests. You set your own rates.</p>
+          <Button variant="primary" loading={busy} onClick={startProfile}>Start my teaching profile</Button>
         </div></Card>
       </div>
     );
@@ -52,7 +52,7 @@ export function Onboarding() {
 
   return (
     <div className="stack">
-      <div className="spread"><h1 className="mt-0">Tutor profile</h1><StatusBadge status={profile.status} /></div>
+      <div className="spread"><h1 className="mt-0">Teaching profile</h1><StatusBadge status={profile.status} /></div>
       {profile.status === 'CHANGES_REQUESTED' && profile.changeRequestNote && (
         <Alert type="info"><strong>Changes requested:</strong> {profile.changeRequestNote}</Alert>
       )}
@@ -106,7 +106,7 @@ function ProfileStep({ profile, onSaved }: { profile: OwnProfile; onSaved: () =>
 
   return (
     <Card><div className="card-body">
-      <Field label="Headline"><Input value={f.headline} onChange={(e) => set({ headline: e.target.value })} placeholder="e.g. Experienced maths & physics tutor" /></Field>
+      <Field label="Headline"><Input value={f.headline} onChange={(e) => set({ headline: e.target.value })} placeholder="e.g. Experienced maths & physics tutor, or jazz guitar teacher" /></Field>
       <Field label="Experience"><Textarea value={f.experience} onChange={(e) => set({ experience: e.target.value })} /></Field>
       <Field label="Teaching style"><Textarea value={f.teachingStyle} onChange={(e) => set({ teachingStyle: e.target.value })} /></Field>
       <div className="grid grid-2">

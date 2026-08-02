@@ -22,12 +22,12 @@ export function RequestFeed() {
 
   const { data, loading, error } = useApi<{ results: FeedItem[]; meta: PageMeta }>(path);
 
-  if (error) return <EmptyState emoji="🔒" title="Approved tutors only">Your tutor profile must be approved to see the request feed.</EmptyState>;
+  if (error) return <EmptyState emoji="🔒" title="Approved profiles only">Your teaching profile must be approved to see matching requests.</EmptyState>;
 
   return (
     <div className="stack">
-      <h1>Student request feed</h1>
-      <p className="muted">Open requests that match your subjects. You can submit one tailored response per request.</p>
+      <h1>Matching requests</h1>
+      <p className="muted">Open requests that match your subjects or skills. You can submit one tailored response per request.</p>
       <div className="row-wrap">
         <Select value={filters.subjectId} onChange={(e) => setFilters({ ...filters, subjectId: e.target.value, page: 1 })} style={{ width: 'auto' }}>
           <option value="">My subjects</option>
