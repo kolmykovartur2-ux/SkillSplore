@@ -1,0 +1,17 @@
+<svg width="620" height="120" viewBox="0 0 620 120" xmlns="http://www.w3.org/2000/svg">
+  <title>SkillSplore</title>
+  <!-- Requires Instrument Sans (free, Google Fonts) available wherever this
+       is rendered. If the font isn't installed, the wordmark will silently
+       fall back to a system sans — check before using in a design tool. -->
+  <defs>
+    <linearGradient id="skillsplore-rainbow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#82bcff" />
+      <stop offset="25%" stop-color="#2483ff" />
+      <stop offset="50%" stop-color="#ff66f4" />
+      <stop offset="75%" stop-color="#ff3029" />
+      <stop offset="100%" stop-color="#fe7b02" />
+    </linearGradient>
+  </defs>
+  <rect x="0" y="18" width="84" height="84" rx="28" ry="28" fill="url(#skillsplore-rainbow)" />
+  <text x="112" y="60" dominant-baseline="central" font-family="Instrument Sans, sans-serif" font-weight="700" font-size="72" letter-spacing="-1.5" fill="#141412">SkillSplore</text>
+</svg>

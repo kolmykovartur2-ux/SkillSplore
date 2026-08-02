@@ -1,0 +1,13 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <title>SkillSplore mark</title>
+  <defs>
+    <linearGradient id="skillsplore-rainbow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#82bcff" />
+      <stop offset="25%" stop-color="#2483ff" />
+      <stop offset="50%" stop-color="#ff66f4" />
+      <stop offset="75%" stop-color="#ff3029" />
+      <stop offset="100%" stop-color="#fe7b02" />
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="512" height="512" rx="171" ry="171" fill="url(#skillsplore-rainbow)" />
+</svg>

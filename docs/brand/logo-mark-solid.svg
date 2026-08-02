@@ -1,0 +1,6 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <title>SkillSplore mark (single colour)</title>
+  <!-- Use where the gradient can't reproduce reliably: single-colour print,
+       embroidery, stamps, tiny favicons, watermarks. -->
+  <rect x="0" y="0" width="512" height="512" rx="171" ry="171" fill="#3654e0" />
+</svg>
