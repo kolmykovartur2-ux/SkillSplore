@@ -19,7 +19,7 @@ export function About() {
           <p>
             SkillSplore provides the structure: profiles, search, requests, messaging, reviews,
             moderation and platform rules. It covers academic subjects as much as it covers music, art,
-            languages, technology, business and practical skills — not every person who teaches on
+            languages, technology, business and practical skills. Not every person who teaches on
             SkillSplore is formally a &ldquo;tutor&rdquo;, and the platform is built with that in mind.
           </p>
           <h2>What SkillSplore isn&rsquo;t</h2>

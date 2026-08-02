@@ -58,7 +58,7 @@ function OwnerView({ responses, onChanged }: { responses: OwnerResp[]; currency:
   return (
     <div>
       <h2>Responses ({responses.length})</h2>
-      <p className="muted">Compare the person and their proposal — the cheapest option isn’t always the best fit.</p>
+      <p className="muted">Compare the person and their proposal. The cheapest option isn’t always the best fit.</p>
       {responses.length === 0 ? <EmptyState emoji="⌛" title="No responses yet">Suitable people will see this request and can respond.</EmptyState> : (
         <div className="stack-sm">
           {responses.map((resp) => (

@@ -15,14 +15,14 @@ export function Safety() {
             <li>SkillSplore may review and remove content that breaks platform rules.</li>
             <li>You can block another user to stop them contacting you.</li>
             <li>Reviews are moderated and only follow a real completed arrangement.</li>
-            <li>Verification labels on a profile state exactly what was checked and by whom — never a
+            <li>Verification labels on a profile state exactly what was checked and by whom, never a
               generic &ldquo;verified&rdquo; badge with no explanation.</li>
             <li>Accounts that break community rules can be suspended.</li>
           </ul>
           <h2>What we don&rsquo;t do</h2>
           <p>
             SkillSplore doesn&rsquo;t supervise lessons, process payments, or guarantee the outcome of
-            any arrangement. We don&rsquo;t vet every provider&rsquo;s ability to teach — where a profile
+            any arrangement. We don&rsquo;t vet every provider&rsquo;s ability to teach; where a profile
             shows a check, it shows exactly what was checked. Only share information you are comfortable
             providing, and use your own judgement before meeting anyone or sending payment.
           </p>

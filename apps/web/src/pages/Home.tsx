@@ -9,14 +9,14 @@ interface Overview { categories: OverviewCategory[]; totalSubjects: number; tota
 
 const LEARNER_STEPS = [
   { title: 'Search or post what you want to learn', body: 'Browse people directly, or describe what you need and let suitable people respond.' },
-  { title: 'Compare people, rates and availability', body: 'Look at experience, location, format and price side by side — nothing is ranked by price alone.' },
+  { title: 'Compare people, rates and availability', body: 'Look at experience, location, format and price side by side. Nothing is ranked by price alone.' },
   { title: 'Message someone who appears suitable', body: 'Ask questions, discuss availability, and see if it feels like a good fit before committing to anything.' },
   { title: 'Arrange the details directly', body: `Confirm timing, format and payment between yourselves. ${PAYMENT_DISCLAIMER}` },
 ];
 
 const PROVIDER_STEPS = [
-  { title: 'Create a profile', body: 'Introduce yourself and what you can teach — academic, creative or practical.' },
-  { title: 'List subjects or skills you can teach', body: 'Be specific — the more useful your listing, the easier you are to find.' },
+  { title: 'Create a profile', body: 'Introduce yourself and what you can teach, whether academic, creative or practical.' },
+  { title: 'List subjects or skills you can teach', body: 'Be specific. The more useful your listing, the easier you are to find.' },
   { title: 'Set your own rates and availability', body: 'You decide what you charge and when you’re free. Nothing is set for you.' },
   { title: 'Respond to suitable requests', body: 'See what learners are asking for and reply to the ones that fit.' },
   { title: 'Communicate directly with learners', body: 'Message, discuss the details, and arrange things between yourselves.' },
@@ -24,7 +24,7 @@ const PROVIDER_STEPS = [
 
 const BENEFITS = [
   'Search directly, or post a request and let people come to you',
-  'Academic, creative and practical skills — not just school subjects',
+  'Academic, creative and practical skills, not just school subjects',
   'Online or in-person learning',
   'Compare profiles and rates before you decide',
   'Message people directly, no middleman',
