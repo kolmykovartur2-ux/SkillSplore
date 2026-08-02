@@ -67,9 +67,18 @@ export function createApp() {
 
   app.use('/api', apiLimiter, apiRouter);
 
+  const here = path.dirname(fileURLToPath(import.meta.url));
+
+  // Public brand/marketing reference kit (logo, colours, type) -- deliberately
+  // scoped to only docs/brand, not the rest of docs/, which has internal
+  // security and deployment notes that shouldn't be served publicly.
+  const brandDocs = path.resolve(here, '../../../docs/brand');
+  if (fs.existsSync(brandDocs)) {
+    app.use('/brand', express.static(brandDocs, { index: 'style-guide.html' }));
+  }
+
   // Serve the built SPA when present (production/demo image). In development the
   // Vite dev server serves the client instead.
-  const here = path.dirname(fileURLToPath(import.meta.url));
   const webDist = path.resolve(here, '../../web/dist');
   if (fs.existsSync(webDist)) {
     app.use(express.static(webDist));

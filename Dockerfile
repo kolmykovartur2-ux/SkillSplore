@@ -47,6 +47,9 @@ COPY --from=build /app/apps/api/prisma ./apps/api/prisma
 COPY --from=build /app/apps/api/src ./apps/api/src
 # Built static web client served by the API.
 COPY --from=build /app/apps/web/dist ./apps/web/dist
+# Public brand/marketing kit served at /brand -- scoped to this one
+# subfolder only, not the rest of docs/ (security/deployment notes).
+COPY --from=build /app/docs/brand ./docs/brand
 
 EXPOSE 4000
 CMD ["node", "apps/api/prisma/bootstrap.mjs"]
