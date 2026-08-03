@@ -151,6 +151,10 @@ small { color: var(--muted); }
 .nav-link:hover { background: var(--surface-2); color: var(--text); }
 .nav-link.active { color: var(--primary-dark); background: var(--primary-soft); }
 .nav-badge { background: var(--danger); color: #fff; border-radius: var(--radius-pill); font-size: 0.68rem; padding: 1px 6px; margin-left: 5px; font-weight: 700; }
+.nav-account { display: flex; align-items: center; gap: 4px; }
+/* Shown only once the nav collapses; see the 860px block below. */
+.nav-toggle { display: none; align-items: center; margin-left: auto; background: none; border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 7px 12px; font-size: 1.05rem; line-height: 1; cursor: pointer; color: var(--text); }
+.nav-toggle:hover { background: var(--surface-2); }
 
 /* --- Demo banner --- */
 .demo-banner { background: var(--ink); color: #d4d3ce; text-align: center; font-weight: 500; font-size: 0.82rem; padding: 7px 12px; }
@@ -281,4 +285,24 @@ small { color: var(--muted); }
   .profile-layout aside { position: static !important; }
   .messages-layout .conv-list-hide-mobile { display: none; }
   .conv-back-mobile { display: inline-flex; }
+
+  /* Collapse the primary navigation behind a toggle. Account actions stay in
+     the bar, so signing in or up never hides behind a menu. */
+  .nav-toggle { display: inline-flex; }
+  .nav-account { margin-left: 8px; }
+  .nav-links {
+    display: none;
+    order: 3;
+    width: 100%;
+    margin-left: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    padding: 8px 0 12px;
+    border-top: 1px solid var(--border);
+  }
+  .nav-links.open { display: flex; }
+  /* Comfortable tap targets, rather than the compact desktop padding. */
+  .nav-links .nav-link { padding: 11px 12px; font-size: 0.95rem; }
+  .nav-inner { flex-wrap: wrap; }
 }

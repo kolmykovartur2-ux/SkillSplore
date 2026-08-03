@@ -32,9 +32,11 @@ export function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { messages, alerts } = useBadgeCounts(!!user);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
 
   const isTutor = hasRole('TUTOR');
   const isAdmin = hasRole('ADMIN');
+  const totalBadges = messages + alerts;
 
   const doLogout = async () => {
     await logout();
@@ -47,7 +49,25 @@ export function Layout({ children }: { children: ReactNode }) {
       <header className="nav">
         <div className="container nav-inner">
           <Link to="/" className="brand"><span className="dot" /> SkillSplore</Link>
-          <nav className="nav-links">
+
+          {/* Collapses the navigation on narrow screens. A signed-in tutor or
+              admin has nine links here, which previously just wrapped into a
+              cluttered multi-line bar on a phone. */}
+          <button
+            type="button"
+            className="nav-toggle"
+            aria-expanded={navOpen}
+            aria-controls="primary-navigation"
+            aria-label={navOpen ? 'Close menu' : 'Open menu'}
+            onClick={() => setNavOpen((o) => !o)}
+          >
+            <span aria-hidden="true">{navOpen ? '✕' : '☰'}</span>
+            {/* Unread counts are hidden while collapsed, so surface that
+                something is waiting without spelling it out on the button. */}
+            {!navOpen && totalBadges > 0 && <span className="nav-badge">{totalBadges}</span>}
+          </button>
+
+          <nav id="primary-navigation" className={`nav-links${navOpen ? ' open' : ''}`} onClick={() => setNavOpen(false)}>
             <NavLink to="/search" className="nav-link">Browse skills</NavLink>
             <NavLink to="/requests/new" className="nav-link">Post a request</NavLink>
             <Link to="/#how-it-works" className="nav-link">How it works</Link>
@@ -65,11 +85,22 @@ export function Layout({ children }: { children: ReactNode }) {
               </NavLink>
             )}
             {isAdmin && <NavLink to="/admin" className="nav-link">Admin</NavLink>}
+          </nav>
+
+          {/* Outside the collapsible panel: signing in and signing up should
+              never be the thing hidden behind a menu. */}
+          <div className="nav-account">
             {!user && <NavLink to="/login" className="nav-link">Log in</NavLink>}
             {!user && <Link to="/register" className="btn btn-primary btn-sm">Sign up</Link>}
             {user && (
               <div style={{ position: 'relative' }}>
-                <button className="btn btn-ghost btn-sm" onClick={() => setMenuOpen((o) => !o)} style={{ padding: 4 }}>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  aria-expanded={menuOpen}
+                  aria-label="Account menu"
+                  onClick={() => setMenuOpen((o) => !o)}
+                  style={{ padding: 4 }}
+                >
                   <Avatar name={user.displayName} url={user.avatarUrl} size={32} />
                 </button>
                 {menuOpen && (
@@ -79,8 +110,6 @@ export function Layout({ children }: { children: ReactNode }) {
                       <div className="divider" style={{ margin: '8px 0' }} />
                       <Link className="nav-link" style={{ display: 'block' }} to="/account">Account</Link>
                       <Link className="nav-link" style={{ display: 'block' }} to="/tutor/onboarding">Teaching profile</Link>
-                      {/* In the menu rather than the main nav, which already
-                          wraps awkwardly on narrow screens. */}
                       {isTutor && <Link className="nav-link" style={{ display: 'block' }} to="/tutor/responses">My responses</Link>}
                       <button className="nav-link" style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }} onClick={doLogout}>Log out</button>
                     </div>
@@ -88,7 +117,7 @@ export function Layout({ children }: { children: ReactNode }) {
                 )}
               </div>
             )}
-          </nav>
+          </div>
         </div>
       </header>
       <main className="page">
