@@ -33,18 +33,17 @@
 #      and LINKEDIN_REDIRECT_URI (= your Render URL + /api/linkedin/oauth/callback
 #      — e.g. https://skillsplore-marketing.onrender.com/api/linkedin/oauth/callback),
 #      then change LINKEDIN_PUBLISHING_ENABLED to "true" and MOCK_LINKEDIN_API
-#      to "false", and change APP_ENV to "production" on both services below.
+#      to "false", and change APP_ENV to "production" on the service below.
 #      Saving triggers a redeploy.
 #   6. Register that exact same redirect URL in the LinkedIn Developer
 #      Portal's Auth tab before trying to connect (LinkedIn rejects a
 #      mismatch — see docs/marketing-agent/LINKEDIN_TROUBLESHOOTING.md).
 
-# Shared between the web service and the worker, so both processes agree on
-# the database, and — critically — so they encrypt/decrypt LinkedIn tokens
-# with the *same* TOKEN_ENCRYPTION_KEY. Defining these per-service instead
-# (e.g. two separate `generateValue: true` entries) would silently give each
-# process a different random key, and the worker would fail to decrypt
-# tokens the web process had encrypted.
+# A named group rather than inline envVars so a future worker service (see
+# note below) can share the exact same DATABASE_URL and TOKEN_ENCRYPTION_KEY
+# — critical for the worker to be able to decrypt LinkedIn tokens the web
+# process encrypted. Two separate `generateValue: true` entries would
+# silently give each process a different random key.
 envVarGroups:
   - name: skillsplore-marketing-shared
     envVars:
@@ -131,17 +130,10 @@ services:
       - key: AUTH_RATE_LIMIT_MAX
         value: 20
 
-  # Scheduler worker -- same image, different process. Only matters once
-  # AUTO_PUBLISH_APPROVED_POSTS=true; "Publish now" in the dashboard works
-  # without it.
-  - type: worker
-    name: skillsplore-marketing-worker
-    runtime: docker
-    plan: free
-    rootDir: apps/marketing-agent
-    dockerfilePath: ./Dockerfile
-    dockerCommand: node dist/worker.js
-    envVars:
-      - fromGroup: skillsplore-marketing-shared
-      - key: APP_ENV
-        value: demo
+# No background-worker service here: Render's free plan doesn't support the
+# "worker" service type at all ("service type not available for this plan").
+# This only disables fully automatic scheduled publishing
+# (AUTO_PUBLISH_APPROVED_POSTS) -- "Publish now" in the dashboard still works
+# without it. To add automatic scheduling later, upgrade this Render account
+# to a paid plan and add a worker service here (rootDir: apps/marketing-agent,
+# dockerCommand: node dist/worker.js, envVars: [{fromGroup: skillsplore-marketing-shared}]).
