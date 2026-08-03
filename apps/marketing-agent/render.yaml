@@ -49,6 +49,12 @@ envVarGroups:
     envVars:
       - key: DATABASE_URL
         sync: false
+      # Render's managed Postgres requires TLS; Prisma negotiates it
+      # automatically but the raw pg.Pool behind the session store does not
+      # (src/app.ts) and needs this explicitly, or every session write fails
+      # with "SSL/TLS required" and (unhandled) crashes the process.
+      - key: DATABASE_SSL
+        value: true
       - key: SESSION_SECRET
         generateValue: true
       - key: TOKEN_ENCRYPTION_KEY

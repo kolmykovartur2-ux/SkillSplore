@@ -23,6 +23,11 @@ const schema = z.object({
   DASHBOARD_ORIGIN: z.string().default('http://localhost:5183'),
 
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
+  // Prisma negotiates TLS on its own; the raw pg.Pool used for the session
+  // store (src/app.ts) does not, so managed hosts that require TLS (e.g.
+  // Render) need this explicitly. Off by default for plain self-hosted
+  // Postgres (docker-compose.yml has none configured).
+  DATABASE_SSL: bool(false),
 
   SESSION_SECRET: z.string().min(1, 'SESSION_SECRET is required'),
   // Reversible AES-256-GCM key for LinkedIn OAuth tokens (see lib/crypto.ts).

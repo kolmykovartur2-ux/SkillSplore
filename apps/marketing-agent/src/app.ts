@@ -43,7 +43,10 @@ export function createApp() {
   // Sessions persist in this service's own PostgreSQL database — a distinct
   // table in a distinct database from the marketplace's own sessions.
   const PgStore = connectPgSimple(session);
-  const sessionPool = new Pool({ connectionString: env.DATABASE_URL });
+  const sessionPool = new Pool({
+    connectionString: env.DATABASE_URL,
+    ssl: env.DATABASE_SSL ? { rejectUnauthorized: false } : undefined,
+  });
   // pg.Pool is an EventEmitter — without this listener, an async error on an
   // idle client (a normal occurrence: network blip, server-side idle reap)
   // throws unhandled and crashes the whole process.
