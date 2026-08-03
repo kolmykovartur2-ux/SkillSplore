@@ -141,4 +141,51 @@ describe('messaging: conversation membership and blocking', () => {
     const res = await aAgent.post(`/api/conversations/${conversation.id}/messages`).send({ body: 'Hello?' });
     expect(res.status).toBe(403);
   });
+
+  it('lists only the blocks you created, never blocks other people made', async () => {
+    const a = await createUser('a@test.local');
+    const b = await createUser('b@test.local');
+    const c = await createUser('c@test.local');
+    await prisma.block.create({ data: { blockerId: a.id, blockedId: b.id } });
+    await prisma.block.create({ data: { blockerId: c.id, blockedId: a.id } });
+
+    const aAgent = await loginAs('a@test.local');
+    const res = await aAgent.get('/api/conversations/blocks');
+
+    expect(res.status).toBe(200);
+    expect(res.body.blocks).toHaveLength(1);
+    expect(res.body.blocks[0].id).toBe(b.id);
+  });
+
+  it('unblocking restores messaging in both directions', async () => {
+    const a = await createUser('a@test.local');
+    const b = await createUser('b@test.local');
+    const conversation = await prisma.conversation.create({
+      data: { context: 'DIRECT_ENQUIRY', participants: { create: [{ userId: a.id }, { userId: b.id }] } },
+    });
+    await prisma.user.update({ where: { id: a.id }, data: { emailVerifiedAt: new Date() } });
+    await prisma.user.update({ where: { id: b.id }, data: { emailVerifiedAt: new Date() } });
+
+    const aAgent = await loginAs('a@test.local');
+    await aAgent.post('/api/conversations/block').send({ userId: b.id });
+    expect((await aAgent.post(`/api/conversations/${conversation.id}/messages`).send({ body: 'blocked' })).status).toBe(403);
+
+    const unblock = await aAgent.delete(`/api/conversations/block/${b.id}`);
+    expect(unblock.status).toBe(200);
+
+    // Both directions work again, not just the blocker's.
+    expect((await aAgent.post(`/api/conversations/${conversation.id}/messages`).send({ body: 'hello again' })).status).toBe(201);
+    const bAgent = await loginAs('b@test.local');
+    expect((await bAgent.post(`/api/conversations/${conversation.id}/messages`).send({ body: 'hi back' })).status).toBe(201);
+  });
+
+  it('refuses to let someone block themselves', async () => {
+    const a = await createUser('a@test.local');
+    const aAgent = await loginAs('a@test.local');
+
+    const res = await aAgent.post('/api/conversations/block').send({ userId: a.id });
+
+    expect(res.status).toBe(400);
+    expect(await prisma.block.count()).toBe(0);
+  });
 });

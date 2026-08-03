@@ -56,6 +56,7 @@ function Thread({ conversationId, onChanged, onBack }: { conversationId: number;
   const [busy, setBusy] = useState(false);
   const [arrangeOpen, setArrangeOpen] = useState(false);
   const [arrangeTitle, setArrangeTitle] = useState('');
+  const [confirmBlock, setConfirmBlock] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const load = async () => {
@@ -97,8 +98,14 @@ function Thread({ conversationId, onChanged, onBack }: { conversationId: number;
 
   const block = async () => {
     if (!conv?.otherParticipant) return;
-    try { await api.post('/conversations/block', { userId: conv.otherParticipant.id }); toast('User blocked'); }
+    setBusy(true);
+    try {
+      await api.post('/conversations/block', { userId: conv.otherParticipant.id });
+      toast(`${conv.otherParticipant.displayName} blocked. You can undo this in Account settings.`, 'success');
+      setConfirmBlock(false);
+    }
     catch (err) { toast(err instanceof ApiError ? err.message : 'Failed', 'error'); }
+    finally { setBusy(false); }
   };
 
   const archive = async () => {
@@ -125,7 +132,7 @@ function Thread({ conversationId, onChanged, onBack }: { conversationId: number;
           <div className="row">
             <Button className="btn-sm" onClick={() => setArrangeOpen(true)}>Record arrangement</Button>
             <Button className="btn-sm" onClick={archive}>Archive</Button>
-            <Button className="btn-sm" onClick={block}>Block</Button>
+            <Button className="btn-sm" onClick={() => setConfirmBlock(true)}>Block</Button>
           </div>
         </div>
 
@@ -158,6 +165,17 @@ function Thread({ conversationId, onChanged, onBack }: { conversationId: number;
           <Button type="submit" variant="primary" loading={busy} disabled={!text.trim()}>Send</Button>
         </form>
       </div>
+
+      {confirmBlock && (
+        <Modal title={`Block ${conv.otherParticipant?.displayName ?? 'this person'}?`} onClose={() => setConfirmBlock(false)}>
+          <p>Blocking works both ways. Neither of you will be able to message the other while the block is in place.</p>
+          <p className="muted">You can undo this at any time from Account settings.</p>
+          <div className="row">
+            <Button variant="danger" loading={busy} onClick={block}>Block</Button>
+            <Button onClick={() => setConfirmBlock(false)}>Cancel</Button>
+          </div>
+        </Modal>
+      )}
 
       {arrangeOpen && (
         <Modal title="Record an arrangement" onClose={() => setArrangeOpen(false)}>

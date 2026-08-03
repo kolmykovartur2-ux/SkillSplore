@@ -104,6 +104,25 @@ conversationsRouter.get(
   }),
 );
 
+// Blocking is symmetric in effect (see areBlocked), so someone who blocks a
+// person also stops being able to reach them. Without a way to see and undo
+// that, a mis-tap is permanent -- hence this listing. Must stay above "/:id",
+// which would otherwise match "blocks" and parse it as NaN.
+conversationsRouter.get(
+  '/blocks',
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const blocks = await prisma.block.findMany({
+      where: { blockerId: req.user!.id },
+      orderBy: { createdAt: 'desc' },
+      include: { blocked: { select: { id: true, displayName: true, avatarKey: true } } },
+    });
+    res.json({
+      blocks: blocks.map((b) => ({ ...publicUser(b.blocked), blockedAt: b.createdAt })),
+    });
+  }),
+);
+
 // --- Single conversation ---------------------------------------------------
 
 conversationsRouter.get(
