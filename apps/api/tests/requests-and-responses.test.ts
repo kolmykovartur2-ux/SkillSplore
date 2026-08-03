@@ -238,6 +238,63 @@ describe('response submission and duplicate prevention', () => {
   });
 });
 
+describe('a provider\'s own response history', () => {
+  it('keeps showing a response after the learner closes the request', async () => {
+    const student = await createUser('student@test.local');
+    const tutorUser = await createUser('tutor@test.local', ['TUTOR']);
+    const subject = await createSubject('Algebra');
+    const profile = await createTutorProfile(tutorUser.id, { status: 'APPROVED', subjectId: subject.id });
+    const request = await prisma.tutoringRequest.create({
+      data: { studentId: student.id, subjectId: subject.id, title: 'Algebra help', description: 'Need help with algebra basics.', status: 'OPEN', publishedAt: new Date() },
+    });
+    await prisma.requestResponse.create({
+      data: { requestId: request.id, tutorProfileId: profile.id, introduction: 'I can help with this.' },
+    });
+
+    const agent = await loginAs('tutor@test.local');
+    // The feed is OPEN-only, which is exactly why the response used to vanish.
+    expect((await agent.get('/api/requests/feed')).body.results).toHaveLength(1);
+
+    await prisma.tutoringRequest.update({ where: { id: request.id }, data: { status: 'CLOSED', closedAt: new Date() } });
+
+    expect((await agent.get('/api/requests/feed')).body.results).toHaveLength(0);
+    const mine = await agent.get('/api/responses/mine');
+    expect(mine.status).toBe(200);
+    expect(mine.body.responses).toHaveLength(1);
+    expect(mine.body.responses[0].request.status).toBe('CLOSED');
+  });
+
+  it('shows only your own responses, never another provider\'s', async () => {
+    const student = await createUser('student@test.local');
+    const mineUser = await createUser('mine@test.local', ['TUTOR']);
+    const otherUser = await createUser('other@test.local', ['TUTOR']);
+    const subject = await createSubject('Algebra');
+    const myProfile = await createTutorProfile(mineUser.id, { status: 'APPROVED', subjectId: subject.id });
+    const otherProfile = await createTutorProfile(otherUser.id, { status: 'APPROVED', subjectId: subject.id });
+    const request = await prisma.tutoringRequest.create({
+      data: { studentId: student.id, subjectId: subject.id, title: 'Algebra help', description: 'Need help with algebra basics.', status: 'OPEN', publishedAt: new Date() },
+    });
+    await prisma.requestResponse.create({ data: { requestId: request.id, tutorProfileId: myProfile.id, introduction: 'Mine, written by me.' } });
+    await prisma.requestResponse.create({ data: { requestId: request.id, tutorProfileId: otherProfile.id, introduction: 'Theirs, must stay hidden.' } });
+
+    const agent = await loginAs('mine@test.local');
+    const res = await agent.get('/api/responses/mine');
+
+    expect(res.body.responses).toHaveLength(1);
+    expect(res.body.responses[0].introduction).toBe('Mine, written by me.');
+  });
+
+  it('returns an empty list for someone with no teaching profile', async () => {
+    await createUser('learner@test.local');
+    const agent = await loginAs('learner@test.local');
+
+    const res = await agent.get('/api/responses/mine');
+
+    expect(res.status).toBe(200);
+    expect(res.body.responses).toEqual([]);
+  });
+});
+
 describe('unauthenticated access', () => {
   it('requires auth to post a request', async () => {
     const res = await anon().post('/api/requests').send({ title: 'x' });

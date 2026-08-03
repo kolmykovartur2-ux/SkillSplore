@@ -16,6 +16,7 @@ import { Dashboard } from './pages/Dashboard.js';
 import { Account } from './pages/Account.js';
 import { Onboarding } from './pages/tutor/Onboarding.js';
 import { RequestFeed } from './pages/tutor/RequestFeed.js';
+import { MyResponses } from './pages/tutor/MyResponses.js';
 import { MyRequests } from './pages/requests/MyRequests.js';
 import { CreateRequest } from './pages/requests/CreateRequest.js';
 import { RequestDetail } from './pages/requests/RequestDetail.js';
@@ -72,6 +73,7 @@ export function App() {
         <Route path="/account" element={<RequireAuth><Account /></RequireAuth>} />
         <Route path="/tutor/onboarding" element={<RequireAuth><Onboarding /></RequireAuth>} />
         <Route path="/tutor/feed" element={<RequireAuth role="TUTOR"><RequestFeed /></RequireAuth>} />
+        <Route path="/tutor/responses" element={<RequireAuth role="TUTOR"><MyResponses /></RequireAuth>} />
 
         <Route path="/requests" element={<RequireAuth><MyRequests /></RequireAuth>} />
         <Route path="/requests/new" element={<RequireAuth><CreateRequest /></RequireAuth>} />

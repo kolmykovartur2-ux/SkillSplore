@@ -67,7 +67,10 @@ export function Dashboard() {
           <Card><div className="card-body">
             <h3 className="mt-0">Matching requests</h3>
             <p className="muted">Find learners looking for your subjects or skills.</p>
-            <Link className="btn btn-sm" to="/tutor/feed">Browse requests</Link>
+            <div className="row-wrap">
+              <Link className="btn btn-sm" to="/tutor/feed">Browse requests</Link>
+              <Link className="btn btn-sm" to="/tutor/responses">My responses</Link>
+            </div>
           </div></Card>
         )}
 

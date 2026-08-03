@@ -79,6 +79,9 @@ export function Layout({ children }: { children: ReactNode }) {
                       <div className="divider" style={{ margin: '8px 0' }} />
                       <Link className="nav-link" style={{ display: 'block' }} to="/account">Account</Link>
                       <Link className="nav-link" style={{ display: 'block' }} to="/tutor/onboarding">Teaching profile</Link>
+                      {/* In the menu rather than the main nav, which already
+                          wraps awkwardly on narrow screens. */}
+                      {isTutor && <Link className="nav-link" style={{ display: 'block' }} to="/tutor/responses">My responses</Link>}
                       <button className="nav-link" style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }} onClick={doLogout}>Log out</button>
                     </div>
                   </div>

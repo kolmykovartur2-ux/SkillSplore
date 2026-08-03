@@ -8,6 +8,7 @@ import { badRequest, forbidden, notFound } from '../../lib/errors.js';
 import { notify } from '../../lib/notify.js';
 import { writeAudit } from '../../lib/audit.js';
 import { getOrCreateConversation, postMessage } from '../conversations/conversations.service.js';
+import { money, publicUser } from '../../lib/serializers.js';
 
 export const responsesRouter = Router();
 
@@ -82,6 +83,57 @@ async function ownResponse(userId: number, id: number) {
   if (r.tutorProfile.userId !== userId) throw forbidden();
   return r;
 }
+
+// A response only ever appeared inside the request feed, which is filtered to
+// OPEN requests. The moment the learner paused or closed their request, the
+// provider's own reply became unreachable -- including accepted ones. Must stay
+// above "/:id", which would otherwise match "mine" and parse it as NaN.
+responsesRouter.get(
+  '/mine',
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const profile = await prisma.tutorProfile.findFirst({ where: { userId: req.user!.id } });
+    if (!profile) {
+      res.json({ responses: [] });
+      return;
+    }
+
+    const rows = await prisma.requestResponse.findMany({
+      where: { tutorProfileId: profile.id },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        request: {
+          include: {
+            subject: { select: { id: true, name: true } },
+            student: { select: { id: true, displayName: true, avatarKey: true } },
+          },
+        },
+      },
+    });
+
+    res.json({
+      responses: rows.map((r) => ({
+        id: r.id,
+        status: r.status,
+        introduction: r.introduction,
+        proposedRate: money(r.proposedRateCents, r.request.currency),
+        availabilityNote: r.availabilityNote,
+        createdAt: r.createdAt,
+        request: {
+          id: r.request.id,
+          kind: r.request.kind,
+          title: r.request.title,
+          status: r.request.status,
+          subject: r.request.subject,
+          // A hidden request is one moderation removed; say so rather than
+          // showing its content back to the provider as if nothing happened.
+          hidden: !!r.request.hiddenAt,
+        },
+        learner: publicUser(r.request.student),
+      })),
+    });
+  }),
+);
 
 responsesRouter.patch(
   '/:id',
