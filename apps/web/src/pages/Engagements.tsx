@@ -10,7 +10,7 @@ import { dateStr } from '../lib/format.js';
 interface Engagement {
   id: number; title: string; status: string; createdAt: string; completedAt: string | null; conversationId: number | null;
   subject: { id: number; name: string } | null; tutor: { profileId: number } & PublicUser; student: PublicUser;
-  role: 'student' | 'tutor' | 'observer'; hasReview: boolean; canReview: boolean; paymentNote: string;
+  role: 'student' | 'tutor' | 'observer'; hasReview: boolean; canReview: boolean; paymentNote: string; requestKind?: string;
 }
 
 export function Engagements() {
@@ -29,8 +29,8 @@ export function Engagements() {
   return (
     <div className="stack">
       <h1>Engagements</h1>
-      <p className="muted">Record and track learning you’ve arranged. Payment is handled directly between both people.</p>
-      {list.length === 0 ? <EmptyState emoji="🤝" title="No engagements yet">Arrange one from a conversation once you’ve agreed to learn together.</EmptyState> : (
+      <p className="muted">Record and track learning and service arrangements you’ve made. Payment is handled directly between both people.</p>
+      {list.length === 0 ? <EmptyState emoji="🤝" title="No engagements yet">Arrange one from a conversation once you’ve agreed to work together.</EmptyState> : (
         <div className="grid grid-cards">
           {list.map((e) => (
             <Card key={e.id}><div className="card-body stack-sm">
@@ -75,14 +75,25 @@ function ReviewModal({ engagement, onClose, onDone }: { engagement: Engagement; 
   return (
     <Modal title={`Review ${engagement.tutor.displayName}`} onClose={onClose}>
       <Field label="Rating">
-        <div className="stars" style={{ fontSize: '1.6rem', cursor: 'pointer' }}>
+        <div className="stars" role="radiogroup" aria-label="Rating out of 5 stars" style={{ fontSize: '1.6rem' }}>
           {[1, 2, 3, 4, 5].map((n) => (
-            <span key={n} className={n <= rating ? '' : 'empty'} onClick={() => setRating(n)}>★</span>
+            <button
+              key={n}
+              type="button"
+              role="radio"
+              aria-checked={n === rating}
+              aria-label={`${n} star${n === 1 ? '' : 's'}`}
+              className={n <= rating ? '' : 'empty'}
+              style={{ background: 'none', border: 'none', padding: 2, cursor: 'pointer', font: 'inherit', color: 'inherit' }}
+              onClick={() => setRating(n)}
+            >
+              ★
+            </button>
           ))}
         </div>
       </Field>
       <Field label="Title (optional)"><Input value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
-      <Field label="Your review"><Textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="How were the lessons?" /></Field>
+      <Field label="Your review"><Textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="Share your experience and feedback." /></Field>
       <Button variant="primary" className="btn-block" loading={busy} disabled={body.trim().length < 4} onClick={submit}>Publish review</Button>
     </Modal>
   );

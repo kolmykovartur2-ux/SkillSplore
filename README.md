@@ -107,3 +107,19 @@ See [`docs/FEATURES.md`](docs/FEATURES.md) for the full feature list,
 [`docs/PRODUCT_COMPARISON.md`](docs/PRODUCT_COMPARISON.md) for how the product and design compare
 to the profi.ru reference, and [`docs/OWNERSHIP_TRANSFER.md`](docs/OWNERSHIP_TRANSFER.md) for taking
 ownership.
+
+## Optional: LinkedIn marketing agent
+
+[`apps/marketing-agent/`](apps/marketing-agent/README.md) is a separate, optional service for
+planning, generating, reviewing, approving, scheduling and publishing SkillSplore's LinkedIn
+company-page content. It has its own database, its own login, its own Docker image, and its own
+`npm install` — this marketplace never imports from it, calls it, or depends on it in any way.
+Stopping it, leaving it unconfigured, or deleting the directory entirely has no effect here.
+
+```bash
+npm run dev:marketing          # apps/marketing-agent's own dev server
+npm run typecheck:marketing
+npm run test:marketing
+```
+
+See [`apps/marketing-agent/README.md`](apps/marketing-agent/README.md) to run it.

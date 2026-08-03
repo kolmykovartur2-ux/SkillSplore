@@ -2,6 +2,15 @@
 
 _Last updated: 2026-08-03_
 
+> This file summarizes state. `docs/ARCHITECTURE.md` describes structure in depth,
+> `docs/TECHNICAL_DEBT.md` and `docs/KNOWN_LIMITATIONS.md` list what's weak or missing,
+> `docs/SECURITY_REVIEW.md` / `docs/THREAT_MODEL.md` / `docs/INCIDENT_RESPONSE.md` cover security,
+> `docs/DATA_MODEL.md` / `docs/DATA_RETENTION.md` cover the database, and
+> `docs/USER_JOURNEY_AUDIT.md` (Phase 2, in progress) will track every user-facing flow
+> individually. All were written from direct inspection of this checkout, not from the original
+> design intent. This is a **launch-readiness sprint in progress** — see `CHANGELOG.md` for
+> per-phase status.
+
 ## Summary
 
 SkillSplore is a **working, end-to-end MVP** and is **pre-launch**. All primary journeys operate
@@ -29,7 +38,16 @@ copy-only repositioning, not a schema or route rename.
 - Demonstration seed / reset / accounts commands (guarded against production).
 - Docker Compose stack: app + PostgreSQL + MinIO + Mailpit.
 - Portable backup / restore / JSON export.
-- Automated tests covering critical permission rules (all passing).
+- Automated tests: **55 tests across 4 files** (`permissions.test.ts` 21,
+  `requests-and-responses.test.ts` 15, `search-and-auth.test.ts` 10,
+  `envProductionGuard.test.ts` 9) — up from 1 file/21 tests as of the start of the 2026-08-03
+  launch-readiness sprint. Covers permissions, request/response lifecycle + duplicate prevention,
+  search filtering, registration/login/logout/suspension, messaging membership/blocking, and the
+  production-vs-demo boot guards. Still zero frontend tests and zero E2E tests — see
+  `docs/TECHNICAL_DEBT.md`.
+- An optional, fully separate LinkedIn marketing agent (`apps/marketing-agent/`) — own database,
+  own auth, own Docker stack. The marketplace does not depend on it; see
+  `apps/marketing-agent/README.md`.
 
 ## Verified
 

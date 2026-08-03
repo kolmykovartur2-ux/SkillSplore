@@ -1,4 +1,5 @@
-import type { ButtonHTMLAttributes, ReactNode, SelectHTMLAttributes, InputHTMLAttributes, TextareaHTMLAttributes } from 'react';
+import type { ButtonHTMLAttributes, ReactElement, ReactNode, SelectHTMLAttributes, InputHTMLAttributes, TextareaHTMLAttributes } from 'react';
+import { cloneElement, isValidElement, useEffect, useId, useRef } from 'react';
 import { initials } from '../lib/format.js';
 
 export function Spinner() {
@@ -40,13 +41,27 @@ export function Badge({ children, variant = '', title }: { children: ReactNode; 
   return <span className={`badge ${variant ? 'badge-' + variant : ''}`} title={title}>{children}</span>;
 }
 
+// Wires the label to its control (htmlFor/id) and the control to its hint/
+// error text (aria-describedby) automatically, so every call site gets a
+// correctly-associated form field for free instead of relying on each of the
+// ~40 usages across the app to wire it up by hand.
 export function Field({ label, error, hint, children }: { label?: string; error?: string; hint?: string; children: ReactNode }) {
+  const id = useId();
+  const hintId = `${id}-hint`;
+  const errorId = `${id}-error`;
+  const child = isValidElement(children)
+    ? cloneElement(children as ReactElement<Record<string, unknown>>, {
+        id,
+        'aria-describedby': error ? errorId : hint ? hintId : undefined,
+        'aria-invalid': error ? true : undefined,
+      })
+    : children;
   return (
     <div className="field">
-      {label && <label>{label}</label>}
-      {children}
-      {hint && <div className="hint">{hint}</div>}
-      {error && <div className="field-error">{error}</div>}
+      {label && <label htmlFor={id}>{label}</label>}
+      {child}
+      {hint && <div id={hintId} className="hint">{hint}</div>}
+      {error && <div id={errorId} className="field-error" role="alert">{error}</div>}
     </div>
   );
 }
@@ -90,15 +105,38 @@ export function StatusBadge({ status }: { status: string }) {
 }
 
 export function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+  const titleId = useRef(`modal-title-${Math.random().toString(36).slice(2)}`).current;
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    // Move focus into the dialog so keyboard/screen-reader users land inside
+    // it rather than staying on whatever triggered it behind the overlay.
+    cardRef.current?.focus();
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
+
   return (
     <div
       style={{ position: 'fixed', inset: 0, background: 'rgba(20,24,40,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 90, padding: 16 }}
       onClick={onClose}
     >
-      <div className="card" style={{ maxWidth: 520, width: '100%' }} onClick={(e) => e.stopPropagation()}>
+      <div
+        ref={cardRef}
+        className="card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        style={{ maxWidth: 520, width: '100%' }}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="card-body">
           <div className="spread" style={{ marginBottom: 12 }}>
-            <h3 className="mt-0">{title}</h3>
+            <h3 id={titleId} className="mt-0">{title}</h3>
             <button className="btn btn-ghost btn-sm" onClick={onClose} aria-label="Close">✕</button>
           </div>
           {children}

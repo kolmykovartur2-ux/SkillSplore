@@ -14,7 +14,7 @@ export function Search() {
   const [filters, setFilters] = useState({
     q: urlParams.get('q') ?? '',
     subjectId: urlParams.get('subjectId') ?? '',
-    categoryId: urlParams.get('category') ?? '',
+    categoryId: urlParams.get('categoryId') ?? '',
     levelId: '',
     country: '',
     city: '',
@@ -110,7 +110,7 @@ export function Search() {
       <div>
         <div className="section-title">
           <h2 className="mt-0">{data ? `${data.meta.total} ${data.meta.total === 1 ? 'person' : 'people'}` : 'People'}{activeCategory ? ` in ${activeCategory.name}` : ''}</h2>
-          <Select value={filters.sort} onChange={(e) => set({ sort: e.target.value })} style={{ width: 'auto' }}>
+          <Select aria-label="Sort results by" value={filters.sort} onChange={(e) => set({ sort: e.target.value })} style={{ width: 'auto' }}>
             <option value="relevance">Most relevant</option>
             <option value="rating">Highest rated</option>
             <option value="price_asc">Price: low to high</option>

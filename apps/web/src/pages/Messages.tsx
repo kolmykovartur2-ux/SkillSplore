@@ -133,7 +133,21 @@ function Thread({ conversationId, onChanged, onBack }: { conversationId: number;
           {conv.messages.map((m) => (
             <div key={m.id} className={`bubble ${m.mine ? 'mine' : ''}`} title={dateTime(m.createdAt)}>
               {m.body}
-              <span className="time">{timeAgo(m.createdAt)}{!m.mine && !m.hidden && <> · <a style={{ color: 'inherit', textDecoration: 'underline' }} onClick={() => reportMessage(m.id)}>report</a></>}</span>
+              <span className="time">
+                {timeAgo(m.createdAt)}
+                {!m.mine && !m.hidden && (
+                  <>
+                    {' · '}
+                    <button
+                      type="button"
+                      style={{ color: 'inherit', textDecoration: 'underline', background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer' }}
+                      onClick={() => reportMessage(m.id)}
+                    >
+                      report
+                    </button>
+                  </>
+                )}
+              </span>
             </div>
           ))}
           <div ref={bottomRef} />

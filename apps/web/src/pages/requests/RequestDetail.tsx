@@ -7,7 +7,7 @@ import type { Money, PublicUser } from '../../lib/types.js';
 import { Avatar, Badge, Button, Card, EmptyState, Field, Input, Spinner, StatusBadge, Stars, Textarea } from '../../components/ui.js';
 import { dateStr, deliveryLabel, money } from '../../lib/format.js';
 
-interface ReqCore { id: number; title: string; description: string; deliveryMode: string; country: string | null; city: string | null; budgetMin: Money | null; budgetMax: Money | null; timing: string | null; status: string; subject: { name: string }; level: { name: string } | null; createdAt: string }
+interface ReqCore { id: number; kind: string; title: string; description: string; deliveryMode: string; country: string | null; city: string | null; budgetMin: Money | null; budgetMax: Money | null; timing: string | null; status: string; subject: { name: string }; level: { name: string } | null; createdAt: string }
 interface OwnerResp { id: number; status: string; introduction: string; proposedRate: Money | null; availabilityNote: string | null; createdAt: string; tutor: { profileId: number; averageRating: number; ratingCount: number; headline: string | null } & PublicUser }
 interface MyResp { id: number; status: string; introduction: string; proposedRate: Money | null; availabilityNote: string | null }
 interface DetailData { request: ReqCore; student: PublicUser; isOwner: boolean; responses?: OwnerResp[]; responseCount?: number; myResponse?: MyResp | null }
@@ -20,33 +20,35 @@ export function RequestDetail() {
   if (error || !data) return <EmptyState emoji="🚫" title="Request unavailable">You may not have access to this request.</EmptyState>;
 
   const r = data.request;
+  const isLearning = r.kind === 'LEARNING';
   return (
     <div className="stack">
       <Card><div className="card-body">
         <div className="spread"><h1 className="mt-0">{r.title}</h1><StatusBadge status={r.status} /></div>
-        <div className="row-wrap"><Badge>{r.subject.name}</Badge>{r.level && <Badge>{r.level.name}</Badge>}<span className="muted">{deliveryLabel(r.deliveryMode)}{r.city ? ` · ${r.city}, ${r.country}` : ''}</span></div>
+        <div className="row-wrap"><Badge>{isLearning ? 'Learning' : 'Service'}</Badge><Badge>{r.subject.name}</Badge>{r.level && <Badge>{r.level.name}</Badge>}<span className="muted">{deliveryLabel(r.deliveryMode)}{r.city ? ` . ${r.city}, ${r.country}` : ''}</span></div>
         <p style={{ whiteSpace: 'pre-wrap', marginTop: 12 }}>{r.description}</p>
         <div className="row-wrap muted" style={{ fontSize: '0.88rem' }}>
-          {(r.budgetMin || r.budgetMax) && <span>Budget: {money(r.budgetMin)}{r.budgetMax ? `–${money(r.budgetMax)}` : '+'} /hr</span>}
-          {r.timing && <span>· Timing: {r.timing}</span>}
-          <span>· Posted {dateStr(r.createdAt)} by {data.student.displayName}</span>
+          {(r.budgetMin || r.budgetMax) && <span>Budget: {money(r.budgetMin)}{r.budgetMax ? `${money(r.budgetMax)}` : '+'} /hr</span>}
+          {r.timing && <span>. Timing: {r.timing}</span>}
+          <span>. Posted {dateStr(r.createdAt)} by {data.student.displayName}</span>
         </div>
       </div></Card>
 
-      {data.isOwner ? <OwnerView responses={data.responses ?? []} currency={r.budgetMin?.currency ?? 'NZD'} onChanged={reload} />
-        : <TutorView requestId={r.id} myResponse={data.myResponse ?? null} responseCount={data.responseCount ?? 0} onChanged={reload} />}
+      {data.isOwner ? <OwnerView kind={r.kind} responses={data.responses ?? []} currency={r.budgetMin?.currency ?? 'NZD'} onChanged={reload} />
+        : <TutorView kind={r.kind} requestId={r.id} myResponse={data.myResponse ?? null} responseCount={data.responseCount ?? 0} onChanged={reload} />}
     </div>
   );
 }
 
-function OwnerView({ responses, onChanged }: { responses: OwnerResp[]; currency: string; onChanged: () => void }) {
+function OwnerView({ kind, responses, onChanged }: { kind: string; responses: OwnerResp[]; currency: string; onChanged: () => void }) {
   const navigate = useNavigate();
   const toast = useToast();
+  const isLearning = kind === 'LEARNING';
 
   const accept = async (respId: number) => {
     try {
       const { conversationId } = await api.post<{ conversationId: number }>(`/responses/${respId}/accept`);
-      toast('Response accepted — conversation opened', 'success');
+      toast('Response accepted - conversation opened', 'success');
       navigate(`/messages/${conversationId}`);
     } catch (e) { toast(e instanceof ApiError ? e.message : 'Failed', 'error'); }
   };
@@ -58,7 +60,7 @@ function OwnerView({ responses, onChanged }: { responses: OwnerResp[]; currency:
   return (
     <div>
       <h2>Responses ({responses.length})</h2>
-      <p className="muted">Compare the person and their proposal. The cheapest option isn’t always the best fit.</p>
+      <p className="muted">{isLearning ? "Compare the person and their proposal. The cheapest option isn't always the best fit." : "Review who wants to help and their proposal. Check their profile and chat to confirm they're a good fit."}</p>
       {responses.length === 0 ? <EmptyState emoji="⌛" title="No responses yet">Suitable people will see this request and can respond.</EmptyState> : (
         <div className="stack-sm">
           {responses.map((resp) => (
@@ -93,8 +95,9 @@ function OwnerView({ responses, onChanged }: { responses: OwnerResp[]; currency:
   );
 }
 
-function TutorView({ requestId, myResponse, responseCount, onChanged }: { requestId: number; myResponse: MyResp | null; responseCount: number; onChanged: () => void }) {
+function TutorView({ kind, requestId, myResponse, responseCount, onChanged }: { kind: string; requestId: number; myResponse: MyResp | null; responseCount: number; onChanged: () => void }) {
   const toast = useToast();
+  const isLearning = kind === 'LEARNING';
   const [intro, setIntro] = useState(myResponse?.introduction ?? '');
   const [rate, setRate] = useState(myResponse?.proposedRate ? String(myResponse.proposedRate.cents / 100) : '');
   const [avail, setAvail] = useState(myResponse?.availabilityNote ?? '');
@@ -131,12 +134,12 @@ function TutorView({ requestId, myResponse, responseCount, onChanged }: { reques
         <p className="muted">This response is {myResponse!.status.toLowerCase()} and can no longer be edited.</p>
       ) : (
         <>
-          <Field label="Your introduction"><Textarea value={intro} onChange={(e) => setIntro(e.target.value)} placeholder="Explain how you can help, tailored to this learner…" /></Field>
+          <Field label="Your introduction"><Textarea value={intro} onChange={(e) => setIntro(e.target.value)} placeholder={isLearning ? "Explain how you can help teach this person..." : "Explain how you can help with this project..."} /></Field>
           <div className="grid grid-2">
             <Field label="Your proposed rate / hr"><Input type="number" min={0} value={rate} onChange={(e) => setRate(e.target.value)} /></Field>
             <Field label="Availability (optional)"><Input value={avail} onChange={(e) => setAvail(e.target.value)} /></Field>
           </div>
-          <p className="hint">You can’t see other people’s proposed rates.</p>
+          <p className="hint">You can't see other people's proposed rates.</p>
           <div className="row">
             <Button variant="primary" loading={busy} disabled={intro.trim().length < 10} onClick={submit}>{myResponse ? 'Update response' : 'Submit response'}</Button>
             {myResponse && myResponse.status === 'PENDING' && <Button onClick={withdraw}>Withdraw</Button>}

@@ -24,7 +24,13 @@
     "demo:seed": "npm run demo:seed -w @skillsplore/api",
     "demo:reset": "npm run demo:reset -w @skillsplore/api",
     "demo:accounts": "npm run demo:accounts -w @skillsplore/api",
-    "export": "npm run export -w @skillsplore/api"
+    "export": "npm run export -w @skillsplore/api",
+    "dev:marketing": "npm --prefix apps/marketing-agent run dev",
+    "dev:marketing:worker": "npm --prefix apps/marketing-agent run dev:worker",
+    "build:marketing": "npm --prefix apps/marketing-agent run build:web && npm --prefix apps/marketing-agent run build",
+    "typecheck:marketing": "npm --prefix apps/marketing-agent run typecheck && npm --prefix apps/marketing-agent run typecheck:web",
+    "test:marketing": "npm --prefix apps/marketing-agent run test",
+    "migrate:marketing": "npm --prefix apps/marketing-agent run migrate"
   },
   "devDependencies": {
     "@eslint/js": "^9.14.0",

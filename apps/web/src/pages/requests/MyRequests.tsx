@@ -5,7 +5,7 @@ import { useToast } from '../../lib/toast.js';
 import { Badge, Button, Card, EmptyState, Spinner, StatusBadge } from '../../components/ui.js';
 import { dateStr, deliveryLabel } from '../../lib/format.js';
 
-interface Req { id: number; title: string; status: string; subject: { name: string }; level: { name: string } | null; deliveryMode: string; responseCount: number; createdAt: string }
+interface Req { id: number; kind: string; title: string; status: string; subject: { name: string }; level: { name: string } | null; deliveryMode: string; responseCount: number; createdAt: string }
 
 export function MyRequests() {
   const { data, loading, reload } = useApi<{ requests: Req[] }>('/requests/mine');
@@ -32,7 +32,7 @@ export function MyRequests() {
                 <div>
                   <Link to={`/requests/${r.id}`}><strong>{r.title}</strong></Link>
                   <div className="row-wrap" style={{ marginTop: 6 }}>
-                    <Badge>{r.subject.name}</Badge>{r.level && <Badge>{r.level.name}</Badge>}
+                    <Badge>{r.kind === 'LEARNING' ? 'Learning' : 'Service'}</Badge><Badge>{r.subject.name}</Badge>{r.level && <Badge>{r.level.name}</Badge>}
                     <span className="muted" style={{ fontSize: '0.82rem' }}>{deliveryLabel(r.deliveryMode)} · {dateStr(r.createdAt)}</span>
                   </div>
                 </div>

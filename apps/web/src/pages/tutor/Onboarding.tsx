@@ -58,8 +58,19 @@ export function Onboarding() {
       )}
       {profile.status === 'APPROVED' && <Alert type="success">Your profile is live and searchable. <Link to={`/tutors/${profile.id}`}>View public profile</Link></Alert>}
 
-      <div className="stepper">
-        {STEPS.map((s, i) => <div key={s} className={`step ${i === step ? 'active' : ''}`} onClick={() => setStep(i)}>{i + 1}. {s}</div>)}
+      <div className="stepper" role="tablist" aria-label="Onboarding steps">
+        {STEPS.map((s, i) => (
+          <button
+            key={s}
+            type="button"
+            role="tab"
+            aria-selected={i === step}
+            className={`step ${i === step ? 'active' : ''}`}
+            onClick={() => setStep(i)}
+          >
+            {i + 1}. {s}
+          </button>
+        ))}
       </div>
 
       {step === 0 && <ProfileStep profile={profile} onSaved={reload} />}
@@ -262,7 +273,17 @@ function AvailabilityStep({ profile, onSaved }: { profile: OwnProfile; onSaved: 
       </div>
       <div className="row-wrap">
         {slots.length === 0 ? <span className="muted">No slots yet.</span> : slots.map((s, i) => (
-          <Badge key={i}>{slotLabel(s.dayOfWeek, s.startMinute, s.endMinute)} <span onClick={() => remove(i)} style={{ cursor: 'pointer', marginLeft: 4 }}>✕</span></Badge>
+          <Badge key={i}>
+            {slotLabel(s.dayOfWeek, s.startMinute, s.endMinute)}{' '}
+            <button
+              type="button"
+              aria-label={`Remove ${slotLabel(s.dayOfWeek, s.startMinute, s.endMinute)}`}
+              onClick={() => remove(i)}
+              style={{ cursor: 'pointer', marginLeft: 4, background: 'none', border: 'none', padding: 0, font: 'inherit', color: 'inherit' }}
+            >
+              ✕
+            </button>
+          </Badge>
         ))}
       </div>
       <div style={{ marginTop: 16 }}><Button variant="primary" loading={busy} onClick={save}>Save progress</Button></div>

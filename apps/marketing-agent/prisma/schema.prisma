@@ -1,0 +1,452 @@
+// ---------------------------------------------------------------------------
+// SkillSplore LinkedIn Content Agent — own database, own schema.
+// Deliberately separate from apps/api/prisma/schema.prisma: this service can
+// be stopped, wiped or removed without touching a single marketplace table.
+// Conventions copied from apps/api for consistency: Int autoincrement ids,
+// camelCase fields, PascalCase models, nullable DateTime? lifecycle columns
+// instead of a generic soft-delete flag, SCREAMING_SNAKE enum values.
+// ---------------------------------------------------------------------------
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Full lifecycle from spec §7. Only "approved" content may be scheduled; only
+// "scheduled" content whose time has arrived may be published.
+enum ContentStatus {
+  IDEA
+  RESEARCHING
+  DRAFT
+  AWAITING_REVIEW
+  CHANGES_REQUESTED
+  APPROVED
+  SCHEDULED
+  PUBLISHING
+  PUBLISHED
+  FAILED
+  CANCELLED
+  ARCHIVED
+}
+
+enum EditorType {
+  AI
+  HUMAN
+}
+
+enum ApprovalAction {
+  APPROVED
+  CHANGES_REQUESTED
+  REAPPROVAL_REQUIRED
+}
+
+enum ConnectionStatus {
+  NOT_CONNECTED
+  CONNECTED
+  EXPIRED
+  REVOKED
+  ERROR
+}
+
+enum AttemptStatus {
+  PENDING
+  SUCCESS
+  FAILED_TRANSIENT
+  FAILED_PERMANENT
+}
+
+enum MediaKind {
+  LOGO
+  SCREENSHOT
+  PHOTO
+  DIAGRAM
+  POST_IMAGE
+  OTHER
+}
+
+enum ContentFormat {
+  TEXT_ONLY
+  SINGLE_IMAGE
+  MULTI_IMAGE
+  LINK_POST
+  NATIVE_VIDEO_BRIEF
+  DOCUMENT_POST_BRIEF
+  POLL_BRIEF
+}
+
+enum GenerationProviderType {
+  ANTHROPIC
+  OPENAI_COMPATIBLE
+  OLLAMA
+  TEMPLATE
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+// Single founder/administrator account model. Deliberately not the
+// marketplace's User/Role system — this service has its own, much smaller,
+// auth surface so it never depends on apps/api being reachable.
+model AdminUser {
+  id               Int       @id @default(autoincrement())
+  email            String    @unique
+  passwordHash     String
+  displayName      String
+  createdAt        DateTime  @default(now())
+  lastLoginAt      DateTime?
+  failedLoginCount Int       @default(0)
+  lockedUntil      DateTime?
+}
+
+model LinkedinConnection {
+  id                    Int                    @id @default(autoincrement())
+  ownerAdminUserId      Int
+  provider              String                 @default("linkedin")
+  encryptedAccessToken  String?
+  encryptedRefreshToken String?
+  accessTokenExpiresAt  DateTime?
+  grantedScopes         String[]
+  connectionStatus      ConnectionStatus       @default(NOT_CONNECTED)
+  lastVerifiedAt        DateTime?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  organizations         LinkedinOrganization[]
+  permissions           LinkedinPermission[]
+}
+
+model LinkedinOrganization {
+  id                      Int                @id @default(autoincrement())
+  connectionId            Int
+  connection              LinkedinConnection @relation(fields: [connectionId], references: [id])
+  linkedinOrganizationUrn String
+  displayName             String
+  pageUrl                 String?
+  authenticatedMemberUrn  String?
+  authorizationStatus     String             @default("unknown")
+  publishingAllowed       Boolean            @default(false)
+  analyticsAllowed        Boolean            @default(false)
+  lastCheckedAt           DateTime?
+  createdAt               DateTime           @default(now())
+
+  @@unique([connectionId, linkedinOrganizationUrn])
+}
+
+model LinkedinPermission {
+  id           Int                @id @default(autoincrement())
+  connectionId Int
+  connection   LinkedinConnection @relation(fields: [connectionId], references: [id])
+  scope        String
+  grantedAt    DateTime           @default(now())
+  revokedAt    DateTime?
+}
+
+model ContentPillar {
+  id               Int            @id @default(autoincrement())
+  key              String         @unique
+  name             String
+  description      String
+  targetPercentage Int
+  active           Boolean        @default(true)
+  createdAt        DateTime       @default(now())
+  ideas            ContentIdea[]
+  briefs           ContentBrief[]
+}
+
+model ContentCampaign {
+  id        Int              @id @default(autoincrement())
+  key       String           @unique
+  name      String
+  goal      String
+  status    CampaignStatus   @default(DRAFT)
+  startDate DateTime?
+  endDate   DateTime?
+  createdAt DateTime         @default(now())
+  ideas     ContentIdea[]
+  drafts    ContentDraft[]
+}
+
+model ContentIdea {
+  id         Int              @id @default(autoincrement())
+  pillarId   Int?
+  pillar     ContentPillar?   @relation(fields: [pillarId], references: [id])
+  campaignId Int?
+  campaign   ContentCampaign? @relation(fields: [campaignId], references: [id])
+  title      String
+  notes      String?
+  status     String           @default("idea")
+  createdBy  Int?
+  createdAt  DateTime         @default(now())
+  briefs     ContentBrief[]
+}
+
+// Fields exactly per spec §12.
+model ContentBrief {
+  id                           Int            @id @default(autoincrement())
+  ideaId                       Int?
+  idea                         ContentIdea?   @relation(fields: [ideaId], references: [id])
+  pillarId                     Int?
+  pillar                       ContentPillar? @relation(fields: [pillarId], references: [id])
+  objective                    String
+  audience                     String
+  mainIdea                     String
+  evidenceSource               String?
+  productStage                 String
+  desiredReaderAction          String
+  tone                         String
+  format                       ContentFormat  @default(TEXT_ONLY)
+  maxLength                    Int            @default(3000)
+  claimsRequiringVerification  Json?
+  relevantLink                 String?
+  creativeAssetId              Int?
+  discussesPricing             Boolean        @default(false)
+  discussesUsersOrOutcomes     Boolean        @default(false)
+  createdBy                    Int?
+  createdAt                    DateTime       @default(now())
+  drafts                       ContentDraft[]
+}
+
+// Fields exactly per spec §27 "content_drafts".
+model ContentDraft {
+  id                 Int                   @id @default(autoincrement())
+  campaignId         Int?
+  campaign           ContentCampaign?      @relation(fields: [campaignId], references: [id])
+  briefId            Int?
+  brief              ContentBrief?         @relation(fields: [briefId], references: [id])
+  contentType        String
+  body               String
+  title              String?
+  destinationUrl     String?
+  mediaAssetId       Int?
+  mediaAsset         MediaAsset?           @relation(fields: [mediaAssetId], references: [id])
+  generationProvider String
+  generationModel    String?
+  status             ContentStatus         @default(IDEA)
+  createdBy          Int?
+  approvedBy         Int?
+  approvedAt         DateTime?
+  scheduledFor       DateTime?
+  publishedAt        DateTime?
+  currentVersionId   Int?
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  versions           ContentVersion[]
+  approvals          ContentApproval[]
+  schedule           ContentSchedule?
+  publishedPost      PublishedPost?
+  attempts           PublicationAttempt[]
+  generationRuns     GenerationRun[]
+
+  @@index([status])
+  @@index([scheduledFor])
+}
+
+// Fields exactly per spec §27 "content_versions". Every edit and every AI
+// regeneration creates a new row; nothing is ever overwritten in place.
+model ContentVersion {
+  id              Int          @id @default(autoincrement())
+  draftId         Int
+  draft           ContentDraft @relation(fields: [draftId], references: [id])
+  versionNumber   Int
+  content         String
+  editorType      EditorType
+  editorUserId    Int?
+  generationRunId Int?
+  changeSummary   String?
+  createdAt       DateTime     @default(now())
+
+  @@unique([draftId, versionNumber])
+}
+
+model ContentApproval {
+  id        Int            @id @default(autoincrement())
+  draftId   Int
+  draft     ContentDraft   @relation(fields: [draftId], references: [id])
+  action    ApprovalAction
+  actorId   Int?
+  notes     String?
+  createdAt DateTime       @default(now())
+}
+
+// scheduledForUtc is always stored in UTC; timezoneAtScheduling records the
+// display timezone in force when the founder scheduled it (DEFAULT_TIMEZONE),
+// so the calendar can render historically-accurate local times even if the
+// configured timezone changes later.
+model ContentSchedule {
+  id                   Int          @id @default(autoincrement())
+  draftId              Int          @unique
+  draft                ContentDraft @relation(fields: [draftId], references: [id])
+  scheduledForUtc      DateTime
+  timezoneAtScheduling String
+  status               String       @default("scheduled")
+  createdBy            Int?
+  createdAt            DateTime     @default(now())
+
+  @@index([scheduledForUtc])
+}
+
+// Fields exactly per spec §27 "published_posts".
+model PublishedPost {
+  id                  Int             @id @default(autoincrement())
+  draftId             Int             @unique
+  draft               ContentDraft    @relation(fields: [draftId], references: [id])
+  provider            String          @default("linkedin")
+  organizationUrn     String?
+  linkedinPostUrn     String
+  publishedUrl        String?
+  publishedAt         DateTime        @default(now())
+  lastAnalyticsSyncAt DateTime?
+  analytics           PostAnalytics[]
+}
+
+// Fields per spec §23, plus isSimulated so demo-mode figures are never
+// mistaken for real LinkedIn analytics.
+model PostAnalytics {
+  id                Int           @id @default(autoincrement())
+  publishedPostId   Int
+  publishedPost     PublishedPost @relation(fields: [publishedPostId], references: [id])
+  capturedAt        DateTime      @default(now())
+  impressions       Int?
+  uniqueImpressions Int?
+  reactions         Int?
+  comments          Int?
+  shares            Int?
+  clicks            Int?
+  followerGrowth    Int?
+  engagementRate    Float?
+  postFormat        String?
+  contentPillarKey  String?
+  targetAudience    String?
+  callToAction      String?
+  campaignKey       String?
+  isSimulated       Boolean       @default(false)
+}
+
+// Fields exactly per spec §13. Content generation may only read facts that
+// are isPublic and currently within [validFrom, expiresAt).
+model MarketingFact {
+  id                   Int                    @id @default(autoincrement())
+  factKey              String                 @unique
+  value                String
+  source               String
+  approvedBy           String
+  approvalDate         DateTime
+  validFrom            DateTime               @default(now())
+  expiresAt            DateTime?
+  isPublic             Boolean                @default(true)
+  containsPersonalInfo Boolean                @default(false)
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  sources              MarketingFactSource[]
+}
+
+model MarketingFactSource {
+  id          Int           @id @default(autoincrement())
+  factId      Int
+  fact        MarketingFact @relation(fields: [factId], references: [id])
+  description String
+  reference   String?
+  createdAt   DateTime      @default(now())
+}
+
+model MediaAsset {
+  id          Int             @id @default(autoincrement())
+  filename    String
+  storageKey  String
+  mimeType    String
+  kind        MediaKind
+  consentId   Int?
+  consent     ContentConsent? @relation(fields: [consentId], references: [id])
+  attribution String?
+  usageRights String
+  createdBy   Int?
+  createdAt   DateTime        @default(now())
+  drafts      ContentDraft[]
+}
+
+// Fields exactly per spec §14. Withdrawal is recorded (withdrawnAt) rather
+// than deleted, so already-published material can be flagged for review
+// without destroying the consent history.
+model ContentConsent {
+  id                    Int          @id @default(autoincrement())
+  subjectDescription    String
+  scope                 String
+  approvedWording       String?
+  approvedImageAssetId  Int?
+  platformsAllowed      String[]
+  startDate             DateTime     @default(now())
+  expiryDate            DateTime?
+  withdrawnAt           DateTime?
+  evidenceReference     String
+  createdBy             Int?
+  createdAt             DateTime     @default(now())
+  mediaAssets           MediaAsset[]
+}
+
+model GenerationRun {
+  id            Int           @id @default(autoincrement())
+  draftId       Int?
+  draft         ContentDraft? @relation(fields: [draftId], references: [id])
+  provider      String
+  model         String?
+  promptSummary String
+  inputTokens   Int?
+  outputTokens  Int?
+  status        String
+  error         String?
+  createdAt     DateTime      @default(now())
+}
+
+// Tracks which provider is currently selected/healthy. API keys are NEVER
+// written here — they stay in environment variables only (see
+// docs/marketing-agent/MARKETING_AGENT_SECURITY.md), so this table carries no
+// secrets and adding it doesn't create a second secret store to protect.
+model GenerationProviderConfig {
+  id                Int                    @id @default(autoincrement())
+  name              String                 @unique
+  type              GenerationProviderType
+  isActive          Boolean                @default(false)
+  config            Json?
+  lastHealthCheckAt DateTime?
+  lastHealthCheckOk Boolean?
+  updatedAt         DateTime               @updatedAt
+}
+
+// Fields exactly per spec §27 "publication_attempts".
+model PublicationAttempt {
+  id                   Int           @id @default(autoincrement())
+  draftId              Int
+  draft                ContentDraft  @relation(fields: [draftId], references: [id])
+  attemptNumber        Int
+  requestId            String?
+  status               AttemptStatus
+  providerResponseCode Int?
+  safeErrorMessage     String?
+  attemptedAt          DateTime      @default(now())
+  completedAt          DateTime?
+
+  @@index([draftId])
+}
+
+// Same shape as apps/api's AuditLog: actorId is a plain int with no FK, so
+// the trail survives even if the admin account is later removed.
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  actorId    Int?
+  action     String
+  entityType String?
+  entityId   Int?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}

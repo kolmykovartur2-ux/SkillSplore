@@ -14,9 +14,9 @@ export function AdminDashboard() {
     ['Total users', s.users, '/admin/users'],
     ['Approved tutors', s.approvedTutors, '/admin/applications?status=APPROVED'],
     ['Pending applications', s.pendingApplications, '/admin/applications'],
-    ['Open requests', s.openRequests, '/admin'],
-    ['Engagements', s.engagements, '/admin'],
-    ['Completed', s.completedEngagements, '/admin'],
+    ['Open requests', s.openRequests, '/admin/requests'],
+    ['Engagements', s.engagements, '/admin/requests'],
+    ['Completed', s.completedEngagements, '/admin/requests'],
     ['Reviews', s.reviews, '/admin/reviews'],
     ['Open reports', s.openReports, '/admin/reports'],
   ];

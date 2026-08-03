@@ -14,7 +14,7 @@ export function CreateRequest() {
   const toast = useToast();
   const { data: cats, reload: reloadCats } = useApi<{ categories: Category[] }>('/taxonomy/categories');
   const { data: lvls } = useApi<{ levels: Level[] }>('/taxonomy/levels');
-  const [form, setForm] = useState({ subjectId: '', levelId: '', title: '', description: '', deliveryMode: 'BOTH', country: '', city: '', budgetMin: '', budgetMax: '', timing: '' });
+  const [form, setForm] = useState({ kind: 'LEARNING', subjectId: '', levelId: '', title: '', description: '', deliveryMode: 'BOTH', country: '', city: '', budgetMin: '', budgetMax: '', timing: '' });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
@@ -25,6 +25,7 @@ export function CreateRequest() {
     setError(null); setBusy(true);
     try {
       const body = {
+        kind: form.kind,
         subjectId: Number(form.subjectId),
         levelId: form.levelId ? Number(form.levelId) : null,
         title: form.title,
@@ -47,12 +48,26 @@ export function CreateRequest() {
 
   const onSubmit = (e: FormEvent) => { e.preventDefault(); submit(true); };
 
+  const isLearning = form.kind === 'LEARNING';
+
   return (
     <div className="container-narrow" style={{ margin: '0 auto' }}>
-      <h1>Post what you want to learn</h1>
+      <h1>{isLearning ? 'Post what you want to learn' : 'Post a service request'}</h1>
       <Card><div className="card-body">
         {error && <Alert type="error">{error}</Alert>}
         <form onSubmit={onSubmit}>
+          <Field label="What type of request?">
+            <Select value={form.kind} onChange={(e) => set({ kind: e.target.value })}>
+              <option value="LEARNING">Learning: I want to learn something (find someone to teach me)</option>
+              <option value="SERVICE">Service: I need someone to do something for me</option>
+            </Select>
+          </Field>
+          {form.kind === 'LEARNING' && (
+            <p className="muted" style={{ fontSize: '0.9rem', marginBottom: 16 }}>You're looking for a teacher or coach who can help you learn.</p>
+          )}
+          {form.kind === 'SERVICE' && (
+            <p className="muted" style={{ fontSize: '0.9rem', marginBottom: 16 }}>You're looking for someone with a specific skill to provide a service or help you with a project.</p>
+          )}
           <Field label="Subject or skill">
             <Select value={form.subjectId} onChange={(e) => set({ subjectId: e.target.value })} required>
               <option value="">Choose a subject or skill…</option>
@@ -84,8 +99,8 @@ export function CreateRequest() {
               {lvls?.levels.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
             </Select>
           </Field>
-          <Field label="Title"><Input value={form.title} onChange={(e) => set({ title: e.target.value })} required minLength={4} placeholder="e.g. Help with NCEA Level 3 calculus, or beginner saxophone lessons" /></Field>
-          <Field label="What help do you need?"><Textarea value={form.description} onChange={(e) => set({ description: e.target.value })} required minLength={10} /></Field>
+          <Field label="Title"><Input value={form.title} onChange={(e) => set({ title: e.target.value })} required minLength={4} placeholder={isLearning ? "e.g. Help with NCEA Level 3 calculus, or beginner saxophone lessons" : "e.g. I need help painting my living room, or website design for my small business"} /></Field>
+          <Field label={isLearning ? "What help do you need?" : "What would you like help with?"}><Textarea value={form.description} onChange={(e) => set({ description: e.target.value })} required minLength={10} placeholder={isLearning ? "Describe what you want to learn..." : "Describe the task or project in detail..."} /></Field>
           <Field label="Format">
             <Select value={form.deliveryMode} onChange={(e) => set({ deliveryMode: e.target.value })}>
               <option value="BOTH">Online or in person</option>
