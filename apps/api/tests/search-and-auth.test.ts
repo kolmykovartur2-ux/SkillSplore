@@ -99,6 +99,48 @@ describe('registration, login, logout', () => {
   });
 });
 
+describe('resending the email confirmation', () => {
+  it('issues a fresh token and retires the previous one', async () => {
+    const user = await createUser('unverified@test.local', ['STUDENT'], false);
+    const original = await prisma.emailToken.create({
+      data: {
+        userId: user.id,
+        type: 'VERIFY_EMAIL',
+        tokenHash: 'original-hash',
+        expiresAt: new Date(Date.now() + 60_000),
+      },
+    });
+
+    const agent = await loginAs('unverified@test.local');
+    const res = await agent.post('/api/auth/resend-verification');
+
+    expect(res.status).toBe(200);
+    // The old link must stop working, or an intercepted earlier email stays live.
+    const retired = await prisma.emailToken.findUniqueOrThrow({ where: { id: original.id } });
+    expect(retired.usedAt).not.toBeNull();
+
+    const live = await prisma.emailToken.findMany({
+      where: { userId: user.id, type: 'VERIFY_EMAIL', usedAt: null },
+    });
+    expect(live).toHaveLength(1);
+    expect(live[0]!.tokenHash).not.toBe('original-hash');
+  });
+
+  it('refuses when the address is already confirmed', async () => {
+    await createUser('verified@test.local', ['STUDENT'], true);
+    const agent = await loginAs('verified@test.local');
+
+    const res = await agent.post('/api/auth/resend-verification');
+
+    expect(res.status).toBe(400);
+  });
+
+  it('requires a session, so it cannot be used to email arbitrary addresses', async () => {
+    const res = await anon().post('/api/auth/resend-verification');
+    expect(res.status).toBe(401);
+  });
+});
+
 describe('messaging: conversation membership and blocking', () => {
   it('a user who is not a participant cannot open the conversation', async () => {
     const a = await createUser('a@test.local');

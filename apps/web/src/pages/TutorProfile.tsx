@@ -8,6 +8,7 @@ import type { Money, PublicUser, Verification } from '../lib/types.js';
 import { Avatar, Badge, Button, Card, EmptyState, Field, Modal, Spinner, Stars, Textarea } from '../components/ui.js';
 import { deliveryLabel, money, slotLabel, dateStr } from '../lib/format.js';
 import { PAYMENT_DISCLAIMER } from '../lib/pricingCopy.js';
+import { VerifyEmailNotice } from '../components/VerifyEmailNotice.js';
 
 interface Review { id: number; rating: number; title: string | null; body: string; createdAt: string; student: PublicUser; tutorResponse: string | null; tutorRespondedAt: string | null; categoryRatings: Record<string, number> | null }
 interface Profile {
@@ -179,10 +180,16 @@ export function TutorProfile() {
 
       {contactOpen && (
         <Modal title={`Message ${p.displayName}`} onClose={() => setContactOpen(false)}>
+          <VerifyEmailNotice action="message people" />
           <Field label="Your message">
-            <Textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Introduce yourself and what you need help with…" />
+            <Textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Introduce yourself and what you need help with…"
+              disabled={!user?.emailVerified}
+            />
           </Field>
-          <Button variant="primary" className="btn-block" loading={busy} disabled={message.trim().length < 1} onClick={sendContact}>Send message</Button>
+          <Button variant="primary" className="btn-block" loading={busy} disabled={!user?.emailVerified || message.trim().length < 1} onClick={sendContact}>Send message</Button>
         </Modal>
       )}
       {reportOpen && (

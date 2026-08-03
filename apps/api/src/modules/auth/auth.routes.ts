@@ -49,6 +49,18 @@ authRouter.post(
   }),
 );
 
+// Rate limited: this sends an email on demand, so it must not be usable to
+// flood someone's inbox.
+authRouter.post(
+  '/resend-verification',
+  authLimiter,
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    await auth.resendVerification(req.user!.id);
+    res.json({ ok: true });
+  }),
+);
+
 authRouter.post(
   '/login',
   authLimiter,

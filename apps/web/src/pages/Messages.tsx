@@ -6,6 +6,7 @@ import { useAuth } from '../lib/auth.js';
 import { useToast } from '../lib/toast.js';
 import type { PublicUser } from '../lib/types.js';
 import { Avatar, Button, Card, EmptyState, Field, Input, Modal, Spinner } from '../components/ui.js';
+import { VerifyEmailNotice } from '../components/VerifyEmailNotice.js';
 import { dateTime, timeAgo } from '../lib/format.js';
 
 interface ConvSummary { id: number; context: string; lastMessageAt: string; otherParticipant: PublicUser | null; lastMessage: { body: string; createdAt: string } | null; unreadCount: number }
@@ -57,6 +58,7 @@ function Thread({ conversationId, onChanged, onBack }: { conversationId: number;
   const [arrangeOpen, setArrangeOpen] = useState(false);
   const [arrangeTitle, setArrangeTitle] = useState('');
   const [confirmBlock, setConfirmBlock] = useState(false);
+  const canSend = !!user?.emailVerified;
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const load = async () => {
@@ -160,9 +162,16 @@ function Thread({ conversationId, onChanged, onBack }: { conversationId: number;
           <div ref={bottomRef} />
         </div>
 
+        <div style={{ padding: '0 12px' }}><VerifyEmailNotice /></div>
         <form onSubmit={send} className="row" style={{ padding: 12, borderTop: '1px solid var(--border)' }}>
-          <input className="input" value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a message…" />
-          <Button type="submit" variant="primary" loading={busy} disabled={!text.trim()}>Send</Button>
+          <input
+            className="input"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={canSend ? 'Type a message…' : 'Confirm your email to send messages'}
+            disabled={!canSend}
+          />
+          <Button type="submit" variant="primary" loading={busy} disabled={!canSend || !text.trim()}>Send</Button>
         </form>
       </div>
 

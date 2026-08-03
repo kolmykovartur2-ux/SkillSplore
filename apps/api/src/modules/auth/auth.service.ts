@@ -54,6 +54,38 @@ export async function register(input: {
   return user;
 }
 
+// Verification tokens expire after 24 hours, and messaging is gated behind a
+// confirmed address. Without a resend, anyone who loses or outlasts that first
+// email is permanently unable to message anybody, with no way back.
+export async function resendVerification(userId: number): Promise<void> {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user || user.deletedAt) throw badRequest('Account not found.');
+  if (user.emailVerifiedAt) throw badRequest('Your email address is already confirmed.');
+
+  // Retire any outstanding tokens so an old link in an older email can't be
+  // used after this point.
+  await prisma.emailToken.updateMany({
+    where: { userId: user.id, type: 'VERIFY_EMAIL', usedAt: null },
+    data: { usedAt: new Date() },
+  });
+
+  const { token, tokenHash } = generateToken();
+  await prisma.emailToken.create({
+    data: {
+      userId: user.id,
+      type: 'VERIFY_EMAIL',
+      tokenHash,
+      expiresAt: new Date(Date.now() + VERIFY_TTL_MS),
+    },
+  });
+  await sendMail({
+    to: user.email,
+    subject: 'Confirm your SkillSplore email',
+    text: verificationEmail(user.displayName, link('/verify-email', token)),
+  });
+  await writeAudit({ actorId: user.id, action: 'user.verification_resent', entityType: 'User', entityId: user.id });
+}
+
 export async function verifyEmail(token: string): Promise<void> {
   const record = await prisma.emailToken.findUnique({ where: { tokenHash: hashToken(token) } });
   if (!record || record.type !== 'VERIFY_EMAIL' || record.usedAt || record.expiresAt < new Date()) {
