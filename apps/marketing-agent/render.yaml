@@ -7,67 +7,53 @@
 #      — GitHub itself doesn't run anything, Render does).
 #   2. Render dashboard -> New -> Blueprint -> pick this repo -> point it at
 #      this file (apps/marketing-agent/render.yaml), not the root one.
-#   3. First deploy runs in demo mode (APP_ENV=demo, MOCK_LINKEDIN_API=true)
-#      so it boots successfully with zero extra config — you'll get a real
-#      HTTPS URL like https://skillsplore-marketing.onrender.com.
-#   4. To go live with real LinkedIn publishing: in the Render dashboard's
-#      Environment tab for this service, fill in LINKEDIN_CLIENT_ID,
-#      LINKEDIN_CLIENT_SECRET, LINKEDIN_ORGANIZATION_URN, and
-#      LINKEDIN_REDIRECT_URI (= your Render URL + /api/linkedin/oauth/callback
+#   3. This does NOT provision its own database (Render's free tier only
+#      allows one free database per account, and the main app already uses
+#      it). Instead, add a SECOND, separate database inside your EXISTING
+#      free Postgres instance:
+#        a. Open your existing database in the Render dashboard (the one the
+#           main SkillSplore app uses) -> "Connect" tab -> open its PSQL
+#           shell (or copy the "External Connection String" and connect with
+#           any Postgres client).
+#        b. Run:  CREATE DATABASE skillsplore_marketing;
+#        c. Take the same connection string you used to connect, and change
+#           only the database name at the very end from your main app's
+#           database name to skillsplore_marketing.
+#        d. After this Blueprint syncs (it will show a DATABASE_URL field
+#           under the "skillsplore-marketing-shared" env var group waiting to
+#           be filled in) — paste that edited connection string there.
+#      This keeps the marketing agent's data completely separate from the
+#      marketplace's (different database, same free server), at no cost.
+#   4. First deploy runs in demo mode (APP_ENV=demo, MOCK_LINKEDIN_API=true)
+#      so it boots successfully with no LinkedIn config needed yet — you'll
+#      get a real HTTPS URL like https://skillsplore-marketing.onrender.com.
+#   5. To go live with real LinkedIn publishing: in the Render dashboard,
+#      open the "skillsplore-marketing-shared" env var group and fill in
+#      LINKEDIN_CLIENT_ID, LINKEDIN_CLIENT_SECRET, LINKEDIN_ORGANIZATION_URN,
+#      and LINKEDIN_REDIRECT_URI (= your Render URL + /api/linkedin/oauth/callback
 #      — e.g. https://skillsplore-marketing.onrender.com/api/linkedin/oauth/callback),
-#      then change APP_ENV to "production" and MOCK_LINKEDIN_API to "false"
-#      and LINKEDIN_PUBLISHING_ENABLED to "true". Save -> triggers a redeploy.
-#   5. Register that exact same redirect URL in the LinkedIn Developer
+#      then change LINKEDIN_PUBLISHING_ENABLED to "true" and MOCK_LINKEDIN_API
+#      to "false", and change APP_ENV to "production" on both services below.
+#      Saving triggers a redeploy.
+#   6. Register that exact same redirect URL in the LinkedIn Developer
 #      Portal's Auth tab before trying to connect (LinkedIn rejects a
 #      mismatch — see docs/marketing-agent/LINKEDIN_TROUBLESHOOTING.md).
 
-databases:
-  - name: skillsplore-marketing-db
-    plan: free
-    databaseName: skillsplore_marketing
-    user: skillsplore
-
-services:
-  - type: web
-    name: skillsplore-marketing
-    runtime: docker
-    plan: free
-    rootDir: apps/marketing-agent
-    dockerfilePath: ./Dockerfile
-    healthCheckPath: /api/health
+# Shared between the web service and the worker, so both processes agree on
+# the database, and — critically — so they encrypt/decrypt LinkedIn tokens
+# with the *same* TOKEN_ENCRYPTION_KEY. Defining these per-service instead
+# (e.g. two separate `generateValue: true` entries) would silently give each
+# process a different random key, and the worker would fail to decrypt
+# tokens the web process had encrypted.
+envVarGroups:
+  - name: skillsplore-marketing-shared
     envVars:
-      - key: APP_ENV
-        value: demo
-      - key: API_PORT
-        value: 4100
       - key: DATABASE_URL
-        fromDatabase:
-          name: skillsplore-marketing-db
-          property: connectionString
-      - key: APP_URL
-        fromService:
-          type: web
-          name: skillsplore-marketing
-          envVarKey: RENDER_EXTERNAL_URL
-      - key: DASHBOARD_ORIGIN
-        fromService:
-          type: web
-          name: skillsplore-marketing
-          envVarKey: RENDER_EXTERNAL_URL
+        sync: false
       - key: SESSION_SECRET
         generateValue: true
       - key: TOKEN_ENCRYPTION_KEY
         generateValue: true
-      - key: FORCE_SECURE_COOKIES
-        value: 1
-      # First-boot founder account. Set your own before the first deploy,
-      # or leave blank for a printed demo-only credential (check logs).
-      - key: ADMIN_BOOTSTRAP_EMAIL
-        sync: false
-      - key: ADMIN_BOOTSTRAP_PASSWORD
-        sync: false
-      # --- LinkedIn: fill these in via the Render dashboard when ready to
-      # go live (never commit real values here) ---
       - key: LINKEDIN_CLIENT_ID
         sync: false
       - key: LINKEDIN_CLIENT_SECRET
@@ -82,13 +68,47 @@ services:
         value: false
       - key: MOCK_LINKEDIN_API
         value: true
+      - key: AUTO_PUBLISH_APPROVED_POSTS
+        value: false
+
+services:
+  - type: web
+    name: skillsplore-marketing
+    runtime: docker
+    plan: free
+    rootDir: apps/marketing-agent
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVarGroups:
+      - skillsplore-marketing-shared
+    envVars:
+      - key: APP_ENV
+        value: demo
+      - key: API_PORT
+        value: 4100
+      - key: APP_URL
+        fromService:
+          type: web
+          name: skillsplore-marketing
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: DASHBOARD_ORIGIN
+        fromService:
+          type: web
+          name: skillsplore-marketing
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: FORCE_SECURE_COOKIES
+        value: 1
+      # First-boot founder account. Set your own before the first deploy,
+      # or leave blank for a printed demo-only credential (check logs).
+      - key: ADMIN_BOOTSTRAP_EMAIL
+        sync: false
+      - key: ADMIN_BOOTSTRAP_PASSWORD
+        sync: false
       # --- Content generation: template needs no AI provider or API key ---
       - key: CONTENT_AI_PROVIDER
         value: template
       - key: DEFAULT_TIMEZONE
         value: Pacific/Auckland
-      - key: AUTO_PUBLISH_APPROVED_POSTS
-        value: false
       # Render's free tier doesn't persist disk across redeploys -- local
       # media uploads WILL be lost. Fine for testing; switch to
       # OBJECT_STORAGE_PROVIDER=s3 with real credentials (sync: false, added
@@ -114,8 +134,7 @@ services:
 
   # Scheduler worker -- same image, different process. Only matters once
   # AUTO_PUBLISH_APPROVED_POSTS=true; "Publish now" in the dashboard works
-  # without it. Free tier: comment this out if you don't need automatic
-  # publishing yet, to stay within Render's free-tier service count.
+  # without it.
   - type: worker
     name: skillsplore-marketing-worker
     runtime: docker
@@ -123,28 +142,8 @@ services:
     rootDir: apps/marketing-agent
     dockerfilePath: ./Dockerfile
     dockerCommand: node dist/worker.js
+    envVarGroups:
+      - skillsplore-marketing-shared
     envVars:
       - key: APP_ENV
         value: demo
-      - key: DATABASE_URL
-        fromDatabase:
-          name: skillsplore-marketing-db
-          property: connectionString
-      - key: SESSION_SECRET
-        generateValue: true
-      - key: TOKEN_ENCRYPTION_KEY
-        generateValue: true
-      - key: LINKEDIN_CLIENT_ID
-        sync: false
-      - key: LINKEDIN_CLIENT_SECRET
-        sync: false
-      - key: LINKEDIN_ORGANIZATION_URN
-        sync: false
-      - key: LINKEDIN_REDIRECT_URI
-        sync: false
-      - key: LINKEDIN_PUBLISHING_ENABLED
-        value: false
-      - key: MOCK_LINKEDIN_API
-        value: true
-      - key: AUTO_PUBLISH_APPROVED_POSTS
-        value: false
