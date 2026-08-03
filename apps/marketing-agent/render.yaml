@@ -79,9 +79,8 @@ services:
     rootDir: apps/marketing-agent
     dockerfilePath: ./Dockerfile
     healthCheckPath: /api/health
-    envVarGroups:
-      - skillsplore-marketing-shared
     envVars:
+      - fromGroup: skillsplore-marketing-shared
       - key: APP_ENV
         value: demo
       - key: API_PORT
@@ -142,8 +141,7 @@ services:
     rootDir: apps/marketing-agent
     dockerfilePath: ./Dockerfile
     dockerCommand: node dist/worker.js
-    envVarGroups:
-      - skillsplore-marketing-shared
     envVars:
+      - fromGroup: skillsplore-marketing-shared
       - key: APP_ENV
         value: demo
