@@ -202,10 +202,34 @@ export const TAXONOMY: CategoryDef[] = [
     icon: '💄',
     subjects: [
       'Makeup application',
+      'Special occasion & bridal makeup',
       'Skincare basics',
+      'Facials & skin treatments',
       'Hairstyling basics',
+      'Hair colouring',
+      'Barbering',
       'Nail care basics',
+      'Nail art',
+      'Lash extensions',
+      'Brow shaping & tinting',
+      'Waxing & hair removal',
+      'Beauty therapy fundamentals',
       'Personal grooming',
+    ],
+  },
+  {
+    // Cosmetic tattooing is a licensed activity in New Zealand and Australia.
+    // Listed here as something to learn about; whether providers may offer it
+    // as a service needs the prohibited-services policy to say so explicitly.
+    name: 'Tattoo & Permanent Makeup',
+    icon: '🖋️',
+    subjects: [
+      'Tattoo design & flash',
+      'Tattoo aftercare',
+      'Cosmetic tattooing',
+      'Microblading',
+      'Lip blush & powder brows',
+      'Henna & temporary body art',
     ],
   },
   {
@@ -238,6 +262,89 @@ export const TAXONOMY: CategoryDef[] = [
       'Acting & drama',
       'Improv',
       'Voice coaching',
+    ],
+  },
+  {
+    // Taught as craft, tradition and interest. Anything presented as medical
+    // treatment or a substitute for healthcare is a moderation matter, not a
+    // taxonomy one -- see the prohibited-services policy.
+    name: 'Esoteric & Spiritual Practice',
+    icon: '🔮',
+    subjects: [
+      'Tarot reading',
+      'Astrology',
+      'Witchcraft & folk traditions',
+      'Crystals & stones',
+      'Numerology',
+      'Runes & divination',
+      'Herbalism & plant lore',
+      'Meditation & mindfulness',
+      'Dream interpretation',
+    ],
+  },
+  {
+    name: 'Crafts & Handmade',
+    icon: '🧵',
+    subjects: [
+      'Knitting',
+      'Crochet',
+      'Sewing & dressmaking',
+      'Embroidery',
+      'Pottery & ceramics',
+      'Jewellery making',
+      'Candle & soap making',
+      'Calligraphy & lettering',
+      'Bookbinding',
+      'Leatherwork',
+    ],
+  },
+  {
+    name: 'Games & Strategy',
+    icon: '♟️',
+    subjects: [
+      'Chess',
+      'Poker strategy',
+      'Esports coaching',
+      'Game design',
+      'Tabletop roleplaying',
+      'Board game strategy',
+    ],
+  },
+  {
+    name: 'Animals & Pets',
+    icon: '🐕',
+    subjects: [
+      'Dog training',
+      'Puppy basics',
+      'Pet grooming',
+      'Horse riding',
+      'Animal care & husbandry',
+      'Beekeeping',
+    ],
+  },
+  {
+    name: 'Outdoors & Nature',
+    icon: '🏕️',
+    subjects: [
+      'Bushcraft & survival',
+      'Foraging',
+      'Fishing',
+      'Hiking & navigation',
+      'Camping skills',
+      'Birdwatching',
+      'Astronomy & stargazing',
+    ],
+  },
+  {
+    name: 'Home & Living',
+    icon: '🏠',
+    subjects: [
+      'Interior design',
+      'Home organisation & decluttering',
+      'Personal budgeting',
+      'Car maintenance basics',
+      'Bike maintenance',
+      'Sustainable living',
     ],
   },
 ];
