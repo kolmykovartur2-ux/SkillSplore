@@ -33,5 +33,13 @@ if (appEnv !== 'production') {
   }
 }
 
+// Always sync the catalogue, in every environment. The demo seed above only
+// runs on an empty database, so without this a deployment that already has
+// users can never pick up newly-added categories or subjects -- which is
+// exactly how production drifted behind the code. Additive only: it inserts
+// what's missing and never deletes or moves anything (see syncTaxonomy.ts).
+console.log('[bootstrap] syncing subject catalogue...');
+run('npx', ['tsx', 'apps/api/prisma/syncTaxonomy.ts']);
+
 console.log('[bootstrap] starting server...');
 await import('../dist/index.js');
