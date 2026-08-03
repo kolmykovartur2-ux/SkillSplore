@@ -91,18 +91,31 @@ Status legend: **Working** / **Partially working** (functions but has a real gap
 
 ## High-priority fixes needed
 
-Ordered by how likely a real user hits the problem in normal use (not theoretical edge cases):
+Ordered by how likely a real user hits the problem in normal use (not theoretical edge cases).
+
+**Items 1-4 and 6 are now fixed** (2026-08-03) and are kept below with a note rather than deleted,
+so the original finding stays readable next to what was done about it. Items 5 and 7 remain open.
 
 1. **Homepage category browsing is broken** — `apps/web/src/pages/Home.tsx:89` links to `/search?categoryId=X`, but `apps/web/src/pages/Search.tsx:17` reads the query string key `category` instead of `categoryId`. Every visitor who clicks a category tile on the homepage (one of the two primary calls-to-action) lands on an unfiltered "browse everyone" page instead of the category they picked. One-line key mismatch, highest visibility.
 
+   **Fixed 2026-08-03.** `Search.tsx` now reads `categoryId`, matching the link the homepage emits. Live-verified against a running dev server.
+
 2. **Admins cannot browse or moderate open requests proactively** — `GET /admin/requests` (`apps/api/src/modules/admin/admin.routes.ts:352-373`) is fully implemented but has zero frontend surface. The Admin Dashboard's "Open requests", "Engagements" and "Completed" tiles (`apps/web/src/pages/admin/AdminDashboard.tsx:17-19`) link back to `/admin` itself — a dead click for an admin trying to drill in. Requests can currently only be reached reactively via a report.
+
+   **Fixed 2026-08-03.** Added `apps/web/src/pages/admin/AdminRequests.tsx`, wired into `App.tsx` and `AdminNav.tsx`, and repointed the dashboard tiles that previously dead-linked to `/admin`.
 
 3. **Posted requests cannot be edited after creation** — `PATCH /requests/:id` works server-side (`apps/api/src/modules/requests/requests.routes.ts:247-261`) but no frontend page calls it (`apps/web/src/pages/requests/MyRequests.tsx` and `RequestDetail.tsx` only wire publish/pause/close). A learner who makes a typo or wants to adjust budget/description has no way to fix it short of closing and re-posting.
 
+   **Fixed 2026-08-03.** Edit action added to `MyRequests.tsx`, opening a modal for title, description, format and timing; closed requests do not offer it, matching the server rule, and the modal warns when responses already exist. Two API tests added (edit preserves OPEN status and existing responses; an optional field sent empty is actually cleared).
+
 4. **Unverified students hit an unexplained wall when messaging** — `requireVerified` gates `POST /conversations/contact` and `POST /conversations/:id/messages` (`apps/api/src/modules/conversations/conversations.routes.ts:36,153`), but there is no "resend verification email" capability anywhere and the Contact button gives no upfront warning — the failure only surfaces as a toast after the user has already written a message.
+
+   **Fixed 2026-08-03.** Added rate-limited `POST /auth/resend-verification`, which retires outstanding tokens before issuing a new one, plus a shared `VerifyEmailNotice` component wired into the message composer and the contact modal. Both now disable their input up front rather than failing after the message is written. Three API tests added.
 
 5. **Reporting is incomplete for requests, reviews and user accounts** — the backend fully supports reporting `REQUEST`, `REVIEW` and `USER` entities (`apps/api/src/modules/reports/reports.routes.ts:13`, `admin.moderation.ts`), but the frontend only ever reports `TUTOR_PROFILE` and `MESSAGE`. A tutor who spots a spam/abusive request, or anyone who wants to flag a bad review, has no in-app way to do so — undermines the "moderated noticeboard" positioning.
 
 6. **No unblock capability** — `DELETE /conversations/block/:userId` works but is never called from the UI (`apps/web/src/pages/Messages.tsx` only has a Block button, no Unblock). A mistaken block is permanent from the user's perspective.
+
+   **Fixed 2026-08-03.** Added `GET /conversations/blocks` and a "Blocked people" section in Account settings; the Block button now confirms first and states that blocking works both ways and is reversible. Writing the test exposed a routing bug -- `/blocks` sat below `/:id`, so Express parsed "blocks" as a conversation id and returned 500; moved above `/:id` and every other router audited for the same pattern. Four API tests added.
 
 7. **Tutors lose visibility into their own response history** — once a request they responded to is paused/closed by the student, it drops out of `GET /requests/feed` (filtered to `status:'OPEN'`, `apps/api/src/modules/requests/requests.routes.ts:73-76`) and there is no equivalent of "my responses" anywhere, so PENDING/DECLINED/WITHDRAWN responses become permanently invisible to the tutor who made them.

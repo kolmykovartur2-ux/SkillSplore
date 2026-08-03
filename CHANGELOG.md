@@ -4,6 +4,41 @@ All notable changes to SkillSplore are documented here.
 
 ## [Unreleased]
 
+### Fixed (2026-08-03) — The live catalogue could never pick up new categories
+The demo seed only runs against a database with zero users, so any deployment that already had
+users could never receive newly-added categories or subjects. Migrations were applying correctly,
+but the taxonomy had no path into an existing database, which is why the live site still showed 13
+categories after Beauty & Personal Care, Writing & Content, Trades & Practical Skills and
+Performing Arts & Dance were added.
+- Added `apps/api/prisma/syncTaxonomy.ts`, run from `bootstrap.mjs` on every boot in every
+  environment. Deliberately **additive only**: it inserts missing categories/subjects and backfills
+  a null icon, and never deletes, renames or reassigns. Administrators create categories at
+  runtime and real users attach to them, so reconciling the database down to match the file would
+  destroy live data.
+- Six tests pin both halves of that contract, including that admin-created rows absent from the
+  file survive and that a subject an admin moved is not dragged back.
+- Verified against the live deployment after redeploy: 17 categories, 125 subjects.
+
+### Added (2026-08-03) — Closing the highest-priority gaps from the journey audit
+Three of the "Partially working" items logged in `docs/USER_JOURNEY_AUDIT.md`, each a case where
+the server already supported the action and only the interface was missing.
+- **Unblocking.** `DELETE /conversations/block/:userId` existed but nothing called it, and there
+  was no way to see who you had blocked, so a mis-tap permanently severed contact. Added
+  `GET /conversations/blocks` and a "Blocked people" section in Account settings; the block button
+  now confirms first and explains that blocking cuts both ways. Writing the test surfaced a routing
+  bug: `/blocks` sat below `/:id`, so Express parsed "blocks" as a conversation id and returned
+  500. Audited every other router for the same shadowing pattern; none found.
+- **Email confirmation.** Messaging is gated behind a confirmed address, but nothing said so until
+  a 403 after the message was written, and the token expires after 24 hours with no resend, which
+  locked people out permanently. Added rate-limited `POST /auth/resend-verification` (retires
+  outstanding tokens before issuing a new one) and a shared `VerifyEmailNotice` wired into the
+  message composer and contact modal, both of which now disable their input up front.
+- **Editing a posted request.** `PATCH /requests/:id` had ownership and closed-request rules
+  enforced and tested, but no caller, so fixing a typo meant closing the request and losing its
+  responses. Added an Edit action on My requests, warning when responses already exist.
+
+API suite is now 69 tests, all passing.
+
 ### Added (2026-08-03) — Optional LinkedIn marketing agent
 New, fully independent service at `apps/marketing-agent/` (own database, own founder auth, own
 Docker image/compose stack) for planning, generating, reviewing, approving, scheduling and
