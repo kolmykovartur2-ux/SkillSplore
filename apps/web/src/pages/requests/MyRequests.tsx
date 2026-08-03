@@ -1,15 +1,21 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError } from '../../lib/api.js';
 import { useApi } from '../../lib/useApi.js';
 import { useToast } from '../../lib/toast.js';
-import { Badge, Button, Card, EmptyState, Spinner, StatusBadge } from '../../components/ui.js';
+import { Alert, Badge, Button, Card, EmptyState, Field, Input, Modal, Select, Spinner, StatusBadge, Textarea } from '../../components/ui.js';
 import { dateStr, deliveryLabel } from '../../lib/format.js';
 
-interface Req { id: number; kind: string; title: string; status: string; subject: { name: string }; level: { name: string } | null; deliveryMode: string; responseCount: number; createdAt: string }
+interface Req {
+  id: number; kind: string; title: string; description: string; status: string;
+  subject: { name: string }; level: { name: string } | null; deliveryMode: string;
+  timing: string | null; responseCount: number; createdAt: string;
+}
 
 export function MyRequests() {
   const { data, loading, reload } = useApi<{ requests: Req[] }>('/requests/mine');
   const toast = useToast();
+  const [editing, setEditing] = useState<Req | null>(null);
 
   const act = async (id: number, action: 'publish' | 'pause' | 'close') => {
     try { await api.post(`/requests/${id}/${action}`); toast('Updated', 'success'); reload(); }
@@ -40,6 +46,7 @@ export function MyRequests() {
               </div>
               <div className="row-wrap" style={{ marginTop: 12 }}>
                 <Link className="btn btn-sm" to={`/requests/${r.id}`}>View {r.responseCount > 0 ? 'responses' : ''}</Link>
+                {r.status !== 'CLOSED' && <Button className="btn-sm" onClick={() => setEditing(r)}>Edit</Button>}
                 {(r.status === 'DRAFT' || r.status === 'PAUSED') && <Button className="btn-sm" variant="primary" onClick={() => act(r.id, 'publish')}>Publish</Button>}
                 {r.status === 'OPEN' && <Button className="btn-sm" onClick={() => act(r.id, 'pause')}>Pause</Button>}
                 {r.status !== 'CLOSED' && <Button className="btn-sm" onClick={() => act(r.id, 'close')}>Close</Button>}
@@ -48,6 +55,79 @@ export function MyRequests() {
           ))}
         </div>
       )}
+      {editing && (
+        <EditRequestModal
+          request={editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => { setEditing(null); reload(); }}
+        />
+      )}
     </div>
+  );
+}
+
+// The API has allowed editing a request since it was written, but nothing ever
+// called it, so a typo in a posted request could only be fixed by closing it
+// and starting again -- losing any responses already received.
+function EditRequestModal({ request, onClose, onSaved }: { request: Req; onClose: () => void; onSaved: () => void }) {
+  const toast = useToast();
+  const [title, setTitle] = useState(request.title);
+  const [description, setDescription] = useState(request.description);
+  const [deliveryMode, setDeliveryMode] = useState(request.deliveryMode);
+  const [timing, setTiming] = useState(request.timing ?? '');
+  const [busy, setBusy] = useState(false);
+
+  const isService = request.kind === 'SERVICE';
+
+  const save = async () => {
+    setBusy(true);
+    try {
+      await api.patch(`/requests/${request.id}`, {
+        title: title.trim(),
+        description: description.trim(),
+        deliveryMode,
+        // Sent even when empty: omitting the key would leave the old value in
+        // place, so clearing the field in the form would silently do nothing.
+        timing: timing.trim(),
+      });
+      toast('Request updated', 'success');
+      onSaved();
+    } catch (e) {
+      toast(e instanceof ApiError ? e.message : 'Could not save changes', 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const valid = title.trim().length >= 4 && description.trim().length >= 10;
+
+  return (
+    <Modal title="Edit request" onClose={onClose}>
+      {request.responseCount > 0 && (
+        <Alert type="info">
+          {request.responseCount} {request.responseCount === 1 ? 'person has' : 'people have'} already responded. Large changes may make their replies less relevant.
+        </Alert>
+      )}
+      <Field label="Title">
+        <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+      </Field>
+      <Field label={isService ? 'What do you need done?' : 'What do you want to learn?'}>
+        <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={5} />
+      </Field>
+      <Field label="Format">
+        <Select value={deliveryMode} onChange={(e) => setDeliveryMode(e.target.value)}>
+          <option value="BOTH">Online or in person</option>
+          <option value="ONLINE">Online</option>
+          <option value="IN_PERSON">In person</option>
+        </Select>
+      </Field>
+      <Field label="Timing (optional)" hint="When you would like this to happen.">
+        <Input value={timing} onChange={(e) => setTiming(e.target.value)} placeholder="e.g. Weekday evenings" />
+      </Field>
+      <div className="row">
+        <Button variant="primary" loading={busy} disabled={!valid} onClick={save}>Save changes</Button>
+        <Button onClick={onClose}>Cancel</Button>
+      </div>
+    </Modal>
   );
 }

@@ -64,6 +64,52 @@ describe('learning request creation', () => {
     const res = await agent.patch(`/api/requests/${request.id}`).send({ title: 'Hijacked title' });
     expect(res.status).toBe(403);
   });
+
+  it('an owner can edit an open request without disturbing its status or responses', async () => {
+    const student = await createUser('student@test.local');
+    const tutorUser = await createUser('tutor@test.local', ['TUTOR']);
+    const subject = await createSubject('Algebra');
+    const profile = await createTutorProfile(tutorUser.id, { status: 'APPROVED', subjectId: subject.id });
+    const request = await prisma.tutoringRequest.create({
+      data: { studentId: student.id, subjectId: subject.id, title: 'Algebra help', description: 'Need help with algebra basics.', status: 'OPEN', publishedAt: new Date() },
+    });
+    await prisma.requestResponse.create({
+      data: { requestId: request.id, tutorProfileId: profile.id, introduction: 'I can help with this.' },
+    });
+
+    const agent = await loginAs('student@test.local');
+    const res = await agent.patch(`/api/requests/${request.id}`).send({
+      title: 'Algebra help, corrected',
+      description: 'Need help with algebra basics before an exam.',
+      deliveryMode: 'ONLINE',
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.body.request.title).toBe('Algebra help, corrected');
+    expect(res.body.request.deliveryMode).toBe('ONLINE');
+    // Editing must not quietly unpublish the request or discard replies.
+    expect(res.body.request.status).toBe('OPEN');
+    expect(await prisma.requestResponse.count({ where: { requestId: request.id } })).toBe(1);
+  });
+
+  it('clears an optional field when it is sent empty, rather than keeping the old value', async () => {
+    const student = await createUser('student@test.local');
+    const subject = await createSubject('Algebra');
+    const request = await prisma.tutoringRequest.create({
+      data: {
+        studentId: student.id, subjectId: subject.id, title: 'Algebra help',
+        description: 'Need help with algebra basics.', status: 'OPEN',
+        publishedAt: new Date(), timing: 'Weekday evenings',
+      },
+    });
+
+    const agent = await loginAs('student@test.local');
+    const res = await agent.patch(`/api/requests/${request.id}`).send({ timing: '' });
+
+    expect(res.status).toBe(200);
+    const after = await prisma.tutoringRequest.findUniqueOrThrow({ where: { id: request.id } });
+    expect(after.timing).toBe('');
+  });
 });
 
 describe('tutor request feed access', () => {
