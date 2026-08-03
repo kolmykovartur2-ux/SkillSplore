@@ -218,9 +218,8 @@ export const TAXONOMY: CategoryDef[] = [
     ],
   },
   {
-    // Cosmetic tattooing is a licensed activity in New Zealand and Australia.
-    // Listed here as something to learn about; whether providers may offer it
-    // as a service needs the prohibited-services policy to say so explicitly.
+    // Note: cosmetic tattooing is a licensed activity in New Zealand and
+    // Australia. Listed here as something to learn about.
     name: 'Tattoo & Permanent Makeup',
     icon: '🖋️',
     subjects: [
@@ -265,9 +264,7 @@ export const TAXONOMY: CategoryDef[] = [
     ],
   },
   {
-    // Taught as craft, tradition and interest. Anything presented as medical
-    // treatment or a substitute for healthcare is a moderation matter, not a
-    // taxonomy one -- see the prohibited-services policy.
+    // Taught as craft, tradition and interest.
     name: 'Esoteric & Spiritual Practice',
     icon: '🔮',
     subjects: [
