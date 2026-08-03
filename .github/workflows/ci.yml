@@ -38,10 +38,12 @@ jobs:
           --health-retries 10
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
+          # Matches the Dockerfile and package.json engines, so CI exercises the
+          # version this actually ships on rather than a newer one.
           node-version: '20'
           cache: npm
 
