@@ -1,0 +1,65 @@
+# Runs the checks that were previously only ever run by hand. Replaces an
+# unconfigured Amazon ECS deploy template that shipped with the repository and
+# failed on every push; deployment is handled by Render, not from here.
+#
+# Deliberately scoped to the marketplace (apps/api, apps/web). The optional
+# marketing agent has its own dependencies and database and is not wired in.
+
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Typecheck, lint and test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        # Credentials and database name must match apps/api/vitest.config.ts,
+        # which points the suite at an isolated skillsplore_test database.
+        image: postgres:17
+        env:
+          POSTGRES_USER: skillsplore
+          POSTGRES_PASSWORD: skillsplore
+          POSTGRES_DB: skillsplore_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U skillsplore"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npm run prisma:generate
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      # vitest applies migrations to the test database itself via globalSetup.
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
