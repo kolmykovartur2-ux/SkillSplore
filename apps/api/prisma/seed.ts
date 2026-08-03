@@ -293,27 +293,33 @@ async function main() {
 
   await writeAudit(admin.id, 'seed.tutors_approved', approved.length);
 
-  // --- Student requests ----------------------------------------------------
+  // --- Student requests (learning and service) ----------------------------
   console.log('Seeding student requests...');
-  interface ReqDef { student: number; subject: string; level?: string; title: string; description: string; mode: DeliveryMode; country?: string; city?: string; min?: number; max?: number; status?: 'OPEN' | 'PAUSED' | 'CLOSED'; }
+  interface ReqDef { student: number; subject: string; level?: string; kind?: 'LEARNING' | 'SERVICE'; title: string; description: string; mode: DeliveryMode; country?: string; city?: string; min?: number; max?: number; status?: 'OPEN' | 'PAUSED' | 'CLOSED'; }
   const reqDefs: ReqDef[] = [
-    { student: demoStudent.id, subject: 'Thermodynamics', level: 'Undergraduate', title: 'Help with second-year thermodynamics', description: 'Struggling with entropy and the second law ahead of my mid-semester test. Need weekly sessions.', mode: 'BOTH', country: 'New Zealand', city: 'Auckland', min: 50, max: 90 },
-    { student: demoStudent.id, subject: 'Piano', level: 'Adult / Hobby', title: 'Adult beginner piano lessons', description: 'Complete beginner, would love relaxed in-person lessons to learn some pop songs.', mode: 'IN_PERSON', country: 'New Zealand', city: 'Auckland', max: 70 },
-    { student: liam.id, subject: 'NCEA calculus', level: 'NCEA Level 3', title: 'NCEA Level 3 calculus exam prep', description: 'Need help preparing for externals — differentiation and integration especially.', mode: 'ONLINE', min: 40, max: 60 },
-    { student: liam.id, subject: 'Programming', level: 'Adult / Hobby', title: 'Learn Python from scratch', description: 'Career-changer wanting to learn Python basics and build a small project.', mode: 'ONLINE', max: 90 },
-    { student: mia.id, subject: 'Vietnamese', level: 'Adult / Hobby', title: 'Conversational Vietnamese', description: 'Want to practise conversational Vietnamese before visiting family.', mode: 'ONLINE' },
-    { student: mia.id, subject: 'Engineering mathematics', level: 'Undergraduate', title: 'First-year engineering maths support', description: 'Linear algebra and calculus for first-year engineering. Weekly online sessions preferred.', mode: 'ONLINE', min: 45, max: 80 },
-    { student: demoStudent.id, subject: 'SolidWorks', level: 'Undergraduate', title: 'SolidWorks for a design project', description: 'Need to learn SolidWorks quickly for a university design paper.', mode: 'BOTH', country: 'New Zealand', city: 'Auckland', min: 60, max: 100 },
-    { student: liam.id, subject: 'Saxophone', level: 'Intermediate', title: 'Intermediate saxophone lessons', description: 'Grade 3-ish, want to work on tone and improvisation.', mode: 'IN_PERSON', country: 'New Zealand', city: 'Wellington', status: 'PAUSED' },
-    { student: mia.id, subject: 'English', level: 'NCEA Level 3', title: 'Essay writing help for NCEA English', description: 'Want to lift my essay marks — structure and analysis.', mode: 'ONLINE', min: 40, max: 60 },
-    { student: demoStudent.id, subject: 'Russian', level: 'Adult / Hobby', title: 'Beginner Russian', description: 'Starting from zero, keen to learn the alphabet and basics.', mode: 'ONLINE', status: 'CLOSED' },
-    { student: liam.id, subject: 'Programming', level: 'Undergraduate', title: 'Data structures & algorithms coaching', description: 'Preparing for technical interviews, need DSA practice.', mode: 'ONLINE', min: 60, max: 120 },
+    // Learning requests
+    { student: demoStudent.id, subject: 'Thermodynamics', level: 'Undergraduate', kind: 'LEARNING', title: 'Help with second-year thermodynamics', description: 'Struggling with entropy and the second law ahead of my mid-semester test. Need weekly sessions.', mode: 'BOTH', country: 'New Zealand', city: 'Auckland', min: 50, max: 90 },
+    { student: demoStudent.id, subject: 'Piano', level: 'Adult / Hobby', kind: 'LEARNING', title: 'Adult beginner piano lessons', description: 'Complete beginner, would love relaxed in-person lessons to learn some pop songs.', mode: 'IN_PERSON', country: 'New Zealand', city: 'Auckland', max: 70 },
+    { student: liam.id, subject: 'NCEA calculus', level: 'NCEA Level 3', kind: 'LEARNING', title: 'NCEA Level 3 calculus exam prep', description: 'Need help preparing for externals — differentiation and integration especially.', mode: 'ONLINE', min: 40, max: 60 },
+    { student: liam.id, subject: 'Programming', level: 'Adult / Hobby', kind: 'LEARNING', title: 'Learn Python from scratch', description: 'Career-changer wanting to learn Python basics and build a small project.', mode: 'ONLINE', max: 90 },
+    { student: mia.id, subject: 'Vietnamese', level: 'Adult / Hobby', kind: 'LEARNING', title: 'Conversational Vietnamese', description: 'Want to practise conversational Vietnamese before visiting family.', mode: 'ONLINE' },
+    { student: mia.id, subject: 'Engineering mathematics', level: 'Undergraduate', kind: 'LEARNING', title: 'First-year engineering maths support', description: 'Linear algebra and calculus for first-year engineering. Weekly online sessions preferred.', mode: 'ONLINE', min: 45, max: 80 },
+    { student: demoStudent.id, subject: 'SolidWorks', level: 'Undergraduate', kind: 'LEARNING', title: 'SolidWorks for a design project', description: 'Need to learn SolidWorks quickly for a university design paper.', mode: 'BOTH', country: 'New Zealand', city: 'Auckland', min: 60, max: 100 },
+    { student: liam.id, subject: 'Saxophone', level: 'Intermediate', kind: 'LEARNING', title: 'Intermediate saxophone lessons', description: 'Grade 3-ish, want to work on tone and improvisation.', mode: 'IN_PERSON', country: 'New Zealand', city: 'Wellington', status: 'PAUSED' },
+    { student: mia.id, subject: 'English', level: 'NCEA Level 3', kind: 'LEARNING', title: 'Essay writing help for NCEA English', description: 'Want to lift my essay marks — structure and analysis.', mode: 'ONLINE', min: 40, max: 60 },
+    { student: demoStudent.id, subject: 'Russian', level: 'Adult / Hobby', kind: 'LEARNING', title: 'Beginner Russian', description: 'Starting from zero, keen to learn the alphabet and basics.', mode: 'ONLINE', status: 'CLOSED' },
+    { student: liam.id, subject: 'Programming', level: 'Undergraduate', kind: 'LEARNING', title: 'Data structures & algorithms coaching', description: 'Preparing for technical interviews, need DSA practice.', mode: 'ONLINE', min: 60, max: 120 },
+    // Service requests (new)
+    { student: mia.id, subject: 'DIY home repair', kind: 'SERVICE', title: 'Help painting living room', description: 'Interior walls need a fresh coat of paint — light grey. I have paint and supplies. Looking for someone experienced to help with prep and application.', mode: 'IN_PERSON', country: 'New Zealand', city: 'Wellington', min: 25, max: 40 },
+    { student: liam.id, subject: 'Makeup application', kind: 'SERVICE', title: 'Makeup for wedding', description: 'Wedding guest next month. Professional makeup needed for the day — natural but polished look.', mode: 'IN_PERSON', country: 'New Zealand', city: 'Auckland', min: 50, max: 80 },
+    { student: demoStudent.id, subject: 'Copywriting', kind: 'SERVICE', title: 'Help editing business website copy', description: 'I have website content for my small business but need someone to refine and polish it. Clear, persuasive language for clients.', mode: 'ONLINE', min: 30, max: 60 },
   ];
   const requests: Array<{ id: number; subjectName: string }> = [];
   for (const r of reqDefs) {
     const created = await prisma.tutoringRequest.create({
       data: {
         studentId: r.student,
+        kind: r.kind ?? 'LEARNING',
         subjectId: subjects[r.subject]!,
         levelId: r.level ? levels[r.level]! : null,
         title: r.title,
