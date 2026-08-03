@@ -93,8 +93,8 @@ Status legend: **Working** / **Partially working** (functions but has a real gap
 
 Ordered by how likely a real user hits the problem in normal use (not theoretical edge cases).
 
-**Items 1-4 and 6 are now fixed** (2026-08-03) and are kept below with a note rather than deleted,
-so the original finding stays readable next to what was done about it. Items 5 and 7 remain open.
+**All seven are now fixed** (2026-08-03). Each is kept below with a note rather than deleted, so
+the original finding stays readable next to what was done about it.
 
 1. **Homepage category browsing is broken** — `apps/web/src/pages/Home.tsx:89` links to `/search?categoryId=X`, but `apps/web/src/pages/Search.tsx:17` reads the query string key `category` instead of `categoryId`. Every visitor who clicks a category tile on the homepage (one of the two primary calls-to-action) lands on an unfiltered "browse everyone" page instead of the category they picked. One-line key mismatch, highest visibility.
 
@@ -114,8 +114,12 @@ so the original finding stays readable next to what was done about it. Items 5 a
 
 5. **Reporting is incomplete for requests, reviews and user accounts** — the backend fully supports reporting `REQUEST`, `REVIEW` and `USER` entities (`apps/api/src/modules/reports/reports.routes.ts:13`, `admin.moderation.ts`), but the frontend only ever reports `TUTOR_PROFILE` and `MESSAGE`. A tutor who spots a spam/abusive request, or anyone who wants to flag a bad review, has no in-app way to do so — undermines the "moderated noticeboard" positioning.
 
+   **Fixed 2026-08-03.** Added a shared `ReportButton` covering all five entity types, replacing the ad-hoc modal previously copied into the profile page. It offers preset reasons plus optional free-text detail, giving moderators structured data instead of one unbounded string. Wired into requests (for non-owners), each review on a profile, and the other person in a conversation. Four API tests, including one walking all five types end to end.
+
 6. **No unblock capability** — `DELETE /conversations/block/:userId` works but is never called from the UI (`apps/web/src/pages/Messages.tsx` only has a Block button, no Unblock). A mistaken block is permanent from the user's perspective.
 
    **Fixed 2026-08-03.** Added `GET /conversations/blocks` and a "Blocked people" section in Account settings; the Block button now confirms first and states that blocking works both ways and is reversible. Writing the test exposed a routing bug -- `/blocks` sat below `/:id`, so Express parsed "blocks" as a conversation id and returned 500; moved above `/:id` and every other router audited for the same pattern. Four API tests added.
 
 7. **Tutors lose visibility into their own response history** — once a request they responded to is paused/closed by the student, it drops out of `GET /requests/feed` (filtered to `status:'OPEN'`, `apps/api/src/modules/requests/requests.routes.ts:73-76`) and there is no equivalent of "my responses" anywhere, so PENDING/DECLINED/WITHDRAWN responses become permanently invisible to the tutor who made them.
+
+   **Fixed 2026-08-03.** Added `GET /responses/mine` and a My responses page, linked from the dashboard and the account menu (kept out of the main nav, which this same audit flags as overcrowded on mobile). Closed or moderation-removed requests appear without a link and say which happened. Three API tests, one asserting the feed drops the response in the same test that asserts the history keeps it.

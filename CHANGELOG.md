@@ -36,8 +36,16 @@ the server already supported the action and only the interface was missing.
 - **Editing a posted request.** `PATCH /requests/:id` had ownership and closed-request rules
   enforced and tested, but no caller, so fixing a typo meant closing the request and losing its
   responses. Added an Edit action on My requests, warning when responses already exist.
+- **Reporting.** The moderation backend has always accepted five entity types; the interface only
+  ever submitted two, so a spam request, a retaliatory review or an abusive account could not be
+  flagged at all. Added a shared `ReportButton` covering all five, with preset reasons plus
+  optional detail, wired into requests, reviews and conversations.
+- **Provider response history.** A response was only visible inside the OPEN-only request feed, so
+  it vanished the moment the learner paused or closed the request. Added `GET /responses/mine` and
+  a My responses page.
 
-API suite is now 69 tests, all passing.
+All seven "High-priority fixes needed" items from `docs/USER_JOURNEY_AUDIT.md` are now closed. API
+suite is now 76 tests across 6 files, all passing.
 
 ### Added (2026-08-03) — Optional LinkedIn marketing agent
 New, fully independent service at `apps/marketing-agent/` (own database, own founder auth, own
