@@ -18,7 +18,7 @@ authRouter.post(
   '/login',
   authLimiter,
   validate({ body: loginSchema }),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req, res, next) => {
     const admin = await prisma.adminUser.findUnique({ where: { email: req.body.email.toLowerCase() } });
     // Same generic response whether the account doesn't exist, the password
     // is wrong, or the account is locked — avoids leaking account existence.
@@ -44,13 +44,17 @@ authRouter.post(
     });
 
     // Regenerate the session on login to prevent session fixation.
+    // These are Node-style callbacks, not promises — a `throw` in here would
+    // escape asyncHandler's try/catch entirely and crash the process instead
+    // of producing an error response, so errors must go through next(err).
     req.session.regenerate((err) => {
-      if (err) throw err;
+      if (err) return next(err);
       req.session.adminUserId = admin.id;
-      req.session.save(async (saveErr) => {
-        if (saveErr) throw saveErr;
-        await writeAudit({ actorId: admin.id, action: 'admin.login', entityType: 'AdminUser', entityId: admin.id });
-        res.json({ id: admin.id, email: admin.email, displayName: admin.displayName });
+      req.session.save((saveErr) => {
+        if (saveErr) return next(saveErr);
+        writeAudit({ actorId: admin.id, action: 'admin.login', entityType: 'AdminUser', entityId: admin.id })
+          .then(() => res.json({ id: admin.id, email: admin.email, displayName: admin.displayName }))
+          .catch(next);
       });
     });
   }),
