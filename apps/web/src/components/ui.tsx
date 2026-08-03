@@ -109,14 +109,58 @@ export function Modal({ title, onClose, children }: { title: string; onClose: ()
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Remember what opened the dialog so focus can go back there on close.
+    // Without this, dismissing a dialog drops focus to the top of the
+    // document and a keyboard user loses their place on the page.
+    const opener = document.activeElement as HTMLElement | null;
+
+    const focusable = (): HTMLElement[] =>
+      Array.from(
+        cardRef.current?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      ).filter((el) => el.offsetParent !== null || el === document.activeElement);
+
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
+      if (e.key !== 'Tab') return;
+      // Keep Tab inside the dialog. aria-modal alone does not stop the
+      // browser tabbing into the page behind the overlay.
+      const items = focusable();
+      if (items.length === 0) {
+        e.preventDefault();
+        return;
+      }
+      const first = items[0]!;
+      const last = items[items.length - 1]!;
+      const active = document.activeElement;
+      if (e.shiftKey && (active === first || active === cardRef.current)) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
+
     document.addEventListener('keydown', onKeyDown);
     // Move focus into the dialog so keyboard/screen-reader users land inside
     // it rather than staying on whatever triggered it behind the overlay.
     cardRef.current?.focus();
-    return () => document.removeEventListener('keydown', onKeyDown);
+
+    // Stop the page behind the overlay scrolling, which on a phone otherwise
+    // moves the content out from under the dialog.
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      opener?.focus?.();
+    };
   }, [onClose]);
 
   return (
