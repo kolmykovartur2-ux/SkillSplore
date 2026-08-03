@@ -5,6 +5,7 @@ import { useApi } from '../../lib/useApi.js';
 import { useToast } from '../../lib/toast.js';
 import type { Money, PublicUser } from '../../lib/types.js';
 import { Avatar, Badge, Button, Card, EmptyState, Field, Input, Spinner, StatusBadge, Stars, Textarea } from '../../components/ui.js';
+import { ReportButton } from '../../components/ReportButton.js';
 import { dateStr, deliveryLabel, money } from '../../lib/format.js';
 
 interface ReqCore { id: number; kind: string; title: string; description: string; deliveryMode: string; country: string | null; city: string | null; budgetMin: Money | null; budgetMax: Money | null; timing: string | null; status: string; subject: { name: string }; level: { name: string } | null; createdAt: string }
@@ -32,6 +33,13 @@ export function RequestDetail() {
           {r.timing && <span>. Timing: {r.timing}</span>}
           <span>. Posted {dateStr(r.createdAt)} by {data.student.displayName}</span>
         </div>
+        {/* Anyone who can see a request needs a way to flag it, not just the
+            people who happen to be looking at a profile or a message. */}
+        {!data.isOwner && (
+          <div className="row-wrap" style={{ marginTop: 12 }}>
+            <ReportButton entityType="REQUEST" entityId={r.id} label="Report this request" what="this request" />
+          </div>
+        )}
       </div></Card>
 
       {data.isOwner ? <OwnerView kind={r.kind} responses={data.responses ?? []} currency={r.budgetMin?.currency ?? 'NZD'} onChanged={reload} />

@@ -7,6 +7,7 @@ import { useToast } from '../lib/toast.js';
 import type { PublicUser } from '../lib/types.js';
 import { Avatar, Button, Card, EmptyState, Field, Input, Modal, Spinner } from '../components/ui.js';
 import { VerifyEmailNotice } from '../components/VerifyEmailNotice.js';
+import { ReportButton } from '../components/ReportButton.js';
 import { dateTime, timeAgo } from '../lib/format.js';
 
 interface ConvSummary { id: number; context: string; lastMessageAt: string; otherParticipant: PublicUser | null; lastMessage: { body: string; createdAt: string } | null; unreadCount: number }
@@ -134,6 +135,9 @@ function Thread({ conversationId, onChanged, onBack }: { conversationId: number;
           <div className="row">
             <Button className="btn-sm" onClick={() => setArrangeOpen(true)}>Record arrangement</Button>
             <Button className="btn-sm" onClick={archive}>Archive</Button>
+            {conv.otherParticipant && (
+              <ReportButton entityType="USER" entityId={conv.otherParticipant.id} label="Report" what="this person" />
+            )}
             <Button className="btn-sm" onClick={() => setConfirmBlock(true)}>Block</Button>
           </div>
         </div>

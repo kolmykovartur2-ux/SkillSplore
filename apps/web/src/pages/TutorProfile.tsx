@@ -9,6 +9,7 @@ import { Avatar, Badge, Button, Card, EmptyState, Field, Modal, Spinner, Stars, 
 import { deliveryLabel, money, slotLabel, dateStr } from '../lib/format.js';
 import { PAYMENT_DISCLAIMER } from '../lib/pricingCopy.js';
 import { VerifyEmailNotice } from '../components/VerifyEmailNotice.js';
+import { ReportButton } from '../components/ReportButton.js';
 
 interface Review { id: number; rating: number; title: string | null; body: string; createdAt: string; student: PublicUser; tutorResponse: string | null; tutorRespondedAt: string | null; categoryRatings: Record<string, number> | null }
 interface Profile {
@@ -33,9 +34,7 @@ export function TutorProfile() {
   const { user } = useAuth();
   const { data, loading, error, setData } = useApi<{ profile: Profile }>(`/tutors/${id}`);
   const [contactOpen, setContactOpen] = useState(false);
-  const [reportOpen, setReportOpen] = useState(false);
   const [message, setMessage] = useState('');
-  const [reportReason, setReportReason] = useState('');
   const [busy, setBusy] = useState(false);
 
   if (loading) return <Spinner />;
@@ -61,16 +60,6 @@ export function TutorProfile() {
       toast('Message sent', 'success');
       navigate(`/messages/${conversationId}`);
     } catch (e) { toast(e instanceof ApiError ? e.message : 'Failed to send', 'error'); }
-    finally { setBusy(false); }
-  };
-
-  const submitReport = async () => {
-    setBusy(true);
-    try {
-      await api.post('/reports', { entityType: 'TUTOR_PROFILE', entityId: p.id, reason: reportReason });
-      toast('Report submitted. Thank you.', 'success');
-      setReportOpen(false); setReportReason('');
-    } catch (e) { toast(e instanceof ApiError ? e.message : 'Failed', 'error'); }
     finally { setBusy(false); }
   };
 
@@ -148,6 +137,9 @@ export function TutorProfile() {
                   <div className="muted" style={{ fontSize: '0.82rem' }}>{r.student.displayName} · {dateStr(r.createdAt)}</div>
                   <p style={{ margin: '6px 0 0' }}>{r.body}</p>
                   {r.tutorResponse && <div className="alert alert-info" style={{ marginTop: 8 }}><strong>Response from {p.displayName}:</strong> {r.tutorResponse}</div>}
+                  <div style={{ marginTop: 6 }}>
+                    <ReportButton entityType="REVIEW" entityId={r.id} label="Report review" what="this review" className="btn-sm btn-ghost" />
+                  </div>
                 </li>
               ))}
             </ul>
@@ -174,7 +166,9 @@ export function TutorProfile() {
             <li className="spread"><span className="muted">Reviews</span><strong>{p.trustIndicators.reviewCount}</strong></li>
             <li className="spread"><span className="muted">Member since</span><strong>{dateStr(p.trustIndicators.memberSince)}</strong></li>
           </ul>
-          {user && <Button className="btn-block btn-sm" style={{ marginTop: 12 }} onClick={() => setReportOpen(true)}>Report profile</Button>}
+          <div style={{ marginTop: 12 }}>
+            <ReportButton entityType="TUTOR_PROFILE" entityId={p.id} label="Report profile" what="this profile" className="btn-sm btn-block" />
+          </div>
         </div></Card>
       </aside>
 
@@ -190,12 +184,6 @@ export function TutorProfile() {
             />
           </Field>
           <Button variant="primary" className="btn-block" loading={busy} disabled={!user?.emailVerified || message.trim().length < 1} onClick={sendContact}>Send message</Button>
-        </Modal>
-      )}
-      {reportOpen && (
-        <Modal title="Report this profile" onClose={() => setReportOpen(false)}>
-          <Field label="Reason"><Textarea value={reportReason} onChange={(e) => setReportReason(e.target.value)} placeholder="Tell us what's wrong…" /></Field>
-          <Button variant="danger" className="btn-block" loading={busy} disabled={reportReason.trim().length < 3} onClick={submitReport}>Submit report</Button>
         </Modal>
       )}
     </div>
