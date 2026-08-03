@@ -44,6 +44,12 @@ export function createApp() {
   // table in a distinct database from the marketplace's own sessions.
   const PgStore = connectPgSimple(session);
   const sessionPool = new Pool({ connectionString: env.DATABASE_URL });
+  // pg.Pool is an EventEmitter — without this listener, an async error on an
+  // idle client (a normal occurrence: network blip, server-side idle reap)
+  // throws unhandled and crashes the whole process.
+  sessionPool.on('error', (err) => {
+    logger.error({ err }, 'session pool: unexpected error on idle client');
+  });
   app.use(
     session({
       name: 'skillsplore-marketing.sid',
