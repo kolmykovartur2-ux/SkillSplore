@@ -60,6 +60,13 @@ enum RequestStatus {
   CLOSED
 }
 
+// LEARNING: "teach me this". SERVICE: "do this for me". Same request/response/
+// messaging pipeline either way — only the framing and a few copy strings differ.
+enum RequestKind {
+  LEARNING
+  SERVICE
+}
+
 enum ResponseStatus {
   PENDING
   WITHDRAWN
@@ -370,6 +377,7 @@ model TutoringRequest {
   subject      Subject       @relation(fields: [subjectId], references: [id])
   levelId      Int?
   level        TeachingLevel? @relation(fields: [levelId], references: [id], onDelete: SetNull)
+  kind         RequestKind   @default(LEARNING)
   title        String
   description  String
   deliveryMode DeliveryMode  @default(BOTH)
@@ -392,6 +400,7 @@ model TutoringRequest {
 
   @@index([status, subjectId])
   @@index([studentId])
+  @@index([kind])
 }
 
 model RequestResponse {

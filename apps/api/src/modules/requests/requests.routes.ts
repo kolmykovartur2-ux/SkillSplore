@@ -17,6 +17,7 @@ async function approvedTutorProfile(userId: number) {
 
 function serializeRequestCore(r: {
   id: number;
+  kind: string;
   title: string;
   description: string;
   deliveryMode: string;
@@ -35,6 +36,7 @@ function serializeRequestCore(r: {
 }) {
   return {
     id: r.id,
+    kind: r.kind,
     title: r.title,
     description: r.description,
     deliveryMode: r.deliveryMode,
@@ -78,6 +80,7 @@ requestsRouter.get(
     if (qp.levelId) where.levelId = qp.levelId;
     if (qp.mode === 'online') where.deliveryMode = { in: ['ONLINE', 'BOTH'] };
     if (qp.mode === 'in_person') where.deliveryMode = { in: ['IN_PERSON', 'BOTH'] };
+    if (qp.kind) where.kind = qp.kind;
 
     const [total, rows] = await Promise.all([
       prisma.tutoringRequest.count({ where }),
@@ -140,6 +143,7 @@ requestsRouter.post(
     const created = await prisma.tutoringRequest.create({
       data: {
         studentId: req.user!.id,
+        kind: b.kind,
         subjectId: b.subjectId,
         levelId: b.levelId ?? null,
         title: b.title,

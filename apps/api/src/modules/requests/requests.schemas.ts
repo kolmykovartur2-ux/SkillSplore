@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export const createRequestSchema = z.object({
+  kind: z.enum(['LEARNING', 'SERVICE']).default('LEARNING'),
   subjectId: z.number().int().positive(),
   levelId: z.number().int().positive().nullable().optional(),
   title: z.string().min(4).max(140),
@@ -19,6 +20,7 @@ export const createRequestSchema = z.object({
 export const updateRequestSchema = createRequestSchema.partial().omit({ publish: true });
 
 export const feedQuerySchema = z.object({
+  kind: z.enum(['LEARNING', 'SERVICE']).optional(),
   subjectId: z.coerce.number().int().positive().optional(),
   levelId: z.coerce.number().int().positive().optional(),
   mode: z.enum(['online', 'in_person']).optional(),
