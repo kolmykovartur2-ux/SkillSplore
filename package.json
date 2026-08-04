@@ -2,7 +2,7 @@
   "name": "skillsplore",
   "version": "0.1.0",
   "private": true,
-  "description": "SkillSplore — a sovereign, self-hostable tutoring marketplace (MVP).",
+  "description": "SkillSplore \u2014 a sovereign, self-hostable tutoring marketplace (MVP).",
   "license": "UNLICENSED",
   "workspaces": [
     "apps/api",
@@ -30,7 +30,8 @@
     "build:marketing": "npm --prefix apps/marketing-agent run build:web && npm --prefix apps/marketing-agent run build",
     "typecheck:marketing": "npm --prefix apps/marketing-agent run typecheck && npm --prefix apps/marketing-agent run typecheck:web",
     "test:marketing": "npm --prefix apps/marketing-agent run test",
-    "migrate:marketing": "npm --prefix apps/marketing-agent run migrate"
+    "migrate:marketing": "npm --prefix apps/marketing-agent run migrate",
+    "e2e": "npm run e2e -w @skillsplore/web"
   },
   "devDependencies": {
     "@eslint/js": "^9.14.0",

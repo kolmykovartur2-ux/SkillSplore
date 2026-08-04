@@ -20,7 +20,8 @@
     "demo:seed": "tsx prisma/seed.ts",
     "demo:reset": "tsx prisma/reset.ts",
     "demo:accounts": "tsx prisma/accounts.ts",
-    "export": "tsx prisma/export.ts"
+    "export": "tsx prisma/export.ts",
+    "e2e:api": "prisma migrate deploy && tsx prisma/seed.ts && tsx src/index.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

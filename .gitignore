@@ -13,3 +13,10 @@ storage-data/
 minio-data/
 pg-data/
 .vite/
+
+# Playwright end-to-end artefacts
+test-results/
+playwright-report/
+apps/api/storage-e2e/
+apps/web/test-results/
+apps/web/playwright-report/
