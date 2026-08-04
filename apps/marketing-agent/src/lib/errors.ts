@@ -18,3 +18,8 @@ export const forbidden = (msg = 'You do not have permission to do that') => new 
 export const notFound = (msg = 'Not found') => new AppError(404, 'not_found', msg);
 export const conflict = (msg: string, details?: unknown) => new AppError(409, 'conflict', msg, details);
 export const tooMany = (msg = 'Too many requests') => new AppError(429, 'rate_limited', msg);
+// An upstream service (LinkedIn) refused or failed. Carries their own wording
+// through to the founder rather than collapsing it into a generic 500 — the
+// difference between "Something went wrong" and "your app is not approved for
+// w_organization_social".
+export const upstreamFailed = (msg: string, details?: unknown) => new AppError(502, 'linkedin_error', msg, details);

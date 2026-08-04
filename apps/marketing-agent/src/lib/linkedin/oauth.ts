@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { env } from '../../config/env.js';
 import { logger } from '../logger.js';
+import { upstreamFailed } from '../errors.js';
 
 // Real LinkedIn OAuth 2.0 (3-legged, authorization code + PKCE) — §5, §28.
 // Only the official, documented flow: no scraping, no stored passwords, no
@@ -42,6 +43,26 @@ export function buildAuthorizationUrl(state: string, codeChallenge: string): str
   return url.toString();
 }
 
+// LinkedIn answers a failed token call with an OAuth error object
+// ({error, error_description}) and no token, so its body is safe to log and to
+// show the founder — and it is usually the only thing that explains the
+// failure (e.g. "unauthorized_scope_error" when the app has not been approved
+// for the Community Management API product yet).
+async function describeFailure(res: Response, what: string): Promise<Error> {
+  const text = await res.text().catch(() => '');
+  let detail = text.slice(0, 300);
+  try {
+    const parsed = JSON.parse(text) as { error?: string; error_description?: string };
+    if (parsed.error || parsed.error_description) {
+      detail = [parsed.error, parsed.error_description].filter(Boolean).join(': ');
+    }
+  } catch {
+    /* not JSON — fall back to the raw text above */
+  }
+  logger.warn({ status: res.status, detail }, `LinkedIn ${what} failed`);
+  return upstreamFailed(`LinkedIn ${what} failed (HTTP ${res.status}): ${detail || 'no detail returned'}`);
+}
+
 export interface TokenResponse {
   accessToken: string;
   refreshToken?: string;
@@ -63,11 +84,7 @@ export async function exchangeCodeForToken(code: string, codeVerifier: string): 
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
     body,
   });
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    logger.warn({ status: res.status }, 'LinkedIn token exchange failed');
-    throw new Error(`LinkedIn token exchange failed: ${res.status} ${text.slice(0, 200)}`);
-  }
+  if (!res.ok) throw await describeFailure(res, 'token exchange');
   const data = (await res.json()) as { access_token: string; refresh_token?: string; expires_in: number; scope?: string };
   return { accessToken: data.access_token, refreshToken: data.refresh_token, expiresInSeconds: data.expires_in, scope: data.scope };
 }
@@ -84,10 +101,7 @@ export async function refreshAccessToken(refreshToken: string): Promise<TokenRes
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
     body,
   });
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`LinkedIn token refresh failed: ${res.status} ${text.slice(0, 200)}`);
-  }
+  if (!res.ok) throw await describeFailure(res, 'token refresh');
   const data = (await res.json()) as { access_token: string; refresh_token?: string; expires_in: number };
   return { accessToken: data.access_token, refreshToken: data.refresh_token, expiresInSeconds: data.expires_in };
 }
