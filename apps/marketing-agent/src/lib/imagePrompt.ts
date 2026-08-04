@@ -14,6 +14,8 @@ export interface Persona {
   subject: string;
   setting: string;
   props: string[];
+  /** Lowercase cues used to pick a persona straight from a draft's own words. */
+  keywords: string[];
 }
 
 // A deliberately broad catalogue: the point of the imagery is that SkillSplore
@@ -26,6 +28,7 @@ export const PERSONAS: Persona[] = [
     subject: 'an adult maths tutor mid-explanation',
     setting: 'a bright, tidy study space with a whiteboard',
     props: ['handwritten equations on a whiteboard', 'notebook and pen', 'a laptop to one side'],
+    keywords: ['maths', 'math', 'algebra', 'calculus', 'exam', 'tutor', 'homework', 'study', 'ncea'],
   },
   {
     key: 'plant_based_cook',
@@ -33,6 +36,7 @@ export const PERSONAS: Persona[] = [
     subject: 'an adult plant-based cooking coach preparing a colourful vegetable dish',
     setting: 'a warm, naturally lit home kitchen',
     props: ['fresh vegetables on a wooden board', 'a chef’s knife', 'simple ceramic bowls'],
+    keywords: ['vegan', 'plant-based', 'vegetarian', 'nutrition', 'healthy eating', 'wholefood'],
   },
   {
     key: 'chef',
@@ -40,6 +44,7 @@ export const PERSONAS: Persona[] = [
     subject: 'an adult chef demonstrating a technique to camera',
     setting: 'a clean professional-style kitchen bench',
     props: ['a pan on a stovetop', 'prepped ingredients in small bowls', 'a folded tea towel'],
+    keywords: ['cook', 'cooking', 'chef', 'recipe', 'kitchen', 'baking', 'knife skills', 'food'],
   },
   {
     key: 'electronics_teacher',
@@ -47,6 +52,7 @@ export const PERSONAS: Persona[] = [
     subject: 'an adult electronics teacher pointing at a small circuit build',
     setting: 'a workbench with good task lighting',
     props: ['a breadboard with jumper wires', 'a multimeter', 'a soldering iron on its stand'],
+    keywords: ['electronics', 'circuit', 'arduino', 'soldering', 'robotics', 'raspberry pi', 'wiring'],
   },
   {
     key: 'music_teacher',
@@ -54,6 +60,7 @@ export const PERSONAS: Persona[] = [
     subject: 'an adult music teacher demonstrating a chord',
     setting: 'a relaxed practice room',
     props: ['an acoustic guitar', 'a music stand with sheet music'],
+    keywords: ['music', 'guitar', 'piano', 'singing', 'drums', 'instrument', 'chord'],
   },
   {
     key: 'language_tutor',
@@ -61,6 +68,7 @@ export const PERSONAS: Persona[] = [
     subject: 'an adult language tutor speaking during an online lesson',
     setting: 'a calm desk setup with a headset',
     props: ['a laptop showing a neutral video-call layout', 'flashcards', 'a mug'],
+    keywords: ['language', 'english', 'spanish', 'mandarin', 'te reo', 'esol', 'conversation practice'],
   },
   {
     key: 'fitness_coach',
@@ -68,6 +76,7 @@ export const PERSONAS: Persona[] = [
     subject: 'an adult fitness coach demonstrating a stretch',
     setting: 'an uncluttered studio space with natural light',
     props: ['a yoga mat', 'a water bottle'],
+    keywords: ['fitness', 'gym', 'yoga', 'strength', 'training', 'pilates', 'stretch'],
   },
   {
     key: 'craft_maker',
@@ -75,11 +84,51 @@ export const PERSONAS: Persona[] = [
     subject: 'an adult craft teacher showing a work-in-progress piece',
     setting: 'a creative workshop table',
     props: ['hand tools laid out neatly', 'raw materials', 'a partly finished project'],
+    keywords: ['craft', 'woodwork', 'sewing', 'pottery', 'maker', 'diy', 'restoration', 'car', 'mechanic', 'welding'],
   },
 ];
 
 export function findPersona(key: string): Persona | undefined {
   return PERSONAS.find((p) => p.key === key);
+}
+
+/**
+ * Picks the persona whose keywords the draft's own words hit most often, so
+ * "Generate image" on a post about soldering doesn't hand back a maths tutor.
+ * Deliberately a plain keyword count rather than a model call: it must be
+ * deterministic, instant, and work in template mode with no AI provider.
+ * Falls back to the first persona when nothing matches.
+ */
+export function suggestPersonaForText(text: string): Persona {
+  const haystack = ` ${text.toLowerCase()} `;
+  let best = PERSONAS[0]!;
+  let bestScore = 0;
+  for (const persona of PERSONAS) {
+    let score = 0;
+    for (const keyword of persona.keywords) {
+      // Word-boundary-ish match so "car" doesn't fire on "carefully".
+      if (new RegExp(`[^a-z]${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[^a-z]`).test(haystack)) score++;
+    }
+    if (score > bestScore) {
+      best = persona;
+      bestScore = score;
+    }
+  }
+  return best;
+}
+
+/**
+ * Reduces a draft to a short mood hint for the image prompt. Prefers the most
+ * deliberate summary available (title, then the brief's main idea) before
+ * falling back to the opening sentence of the post itself.
+ */
+export function deriveTopicFromDraft(input: { title?: string | null; mainIdea?: string | null; body: string }): string {
+  const candidate =
+    [input.title, input.mainIdea].map((c) => c?.trim()).find((c) => c && c.length > 0) ??
+    input.body.trim().split(/(?<=[.!?])\s+/)[0] ??
+    '';
+  const collapsed = candidate.replace(/\s+/g, ' ').trim();
+  return collapsed.length > 160 ? `${collapsed.slice(0, 157).trimEnd()}…` : collapsed;
 }
 
 // A consistent look across every generated ad, so a set of persona images

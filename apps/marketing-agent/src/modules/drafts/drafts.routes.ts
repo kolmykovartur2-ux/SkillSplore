@@ -4,7 +4,17 @@ import { asyncHandler } from '../../lib/asyncHandler.js';
 import { validate } from '../../lib/validate.js';
 import { requireAuth } from '../../middleware/auth.js';
 import { prisma } from '../../lib/prisma.js';
-import { badRequest, conflict, notFound } from '../../lib/errors.js';
+import { badRequest, conflict, notFound, upstreamFailed } from '../../lib/errors.js';
+import { env } from '../../config/env.js';
+import { configuredImageProvider } from '../../lib/imageGenerationProvider.js';
+import { storage } from '../../lib/storage.js';
+import {
+  buildImagePrompt,
+  deriveTopicFromDraft,
+  findPersona,
+  generatedUsageRights,
+  suggestPersonaForText,
+} from '../../lib/imagePrompt.js';
 import { writeAudit } from '../../lib/audit.js';
 import { withProviderFallback } from '../../lib/contentGenerationProvider.js';
 import { getLaunchContext } from '../../lib/launch.js';
@@ -209,6 +219,120 @@ draftsRouter.patch(
 
     await writeAudit({ actorId: req.adminUser!.id, action: 'draft.edit', entityType: 'ContentDraft', entityId: draft.id, metadata: { bodyChanged } });
     res.json({ draft: updated });
+  }),
+);
+
+const draftImageSchema = z.object({
+  personaKey: z.string().min(1).optional(),
+  topic: z.string().max(300).optional(),
+});
+
+// Generate creative for a specific draft, using that draft's own words for
+// context. Distinct from POST /media/generate (a standalone library asset):
+// this one derives its subject and mood from the post and attaches the result.
+draftsRouter.post(
+  '/:id/generate-image',
+  validate({ body: draftImageSchema, params: z.object({ id: z.coerce.number().int() }) }),
+  asyncHandler(async (req, res) => {
+    if (!env.imageGenerationConfigured) {
+      res.status(501).json({
+        error: {
+          code: 'not_configured',
+          message:
+            'Image generation is not configured. Set IMAGE_AI_PROVIDER (openai_compatible or automatic1111) and IMAGE_AI_BASE_URL for this service, then restart. See docs/marketing-agent/IMAGE_GENERATION.md.',
+        },
+      });
+      return;
+    }
+
+    const draft = await prisma.contentDraft.findUnique({
+      where: { id: Number(req.params.id) },
+      include: { brief: { include: { pillar: true } } },
+    });
+    if (!draft) throw notFound();
+    // Attaching creative changes the post, so it follows the same rule as
+    // editing the text: only while the draft is still editable.
+    if (!EDITABLE_STATUSES.includes(draft.status as (typeof EDITABLE_STATUSES)[number])) {
+      throw conflict(`Drafts with status ${draft.status} can no longer be edited.`);
+    }
+
+    const persona = req.body.personaKey
+      ? findPersona(req.body.personaKey)
+      : suggestPersonaForText(`${draft.title ?? ''} ${draft.brief?.mainIdea ?? ''} ${draft.body}`);
+    if (!persona) throw badRequest(`Unknown persona "${req.body.personaKey}".`);
+
+    const prompt = buildImagePrompt({
+      persona,
+      topic:
+        req.body.topic ??
+        deriveTopicFromDraft({ title: draft.title, mainIdea: draft.brief?.mainIdea, body: draft.body }),
+      pillarName: draft.brief?.pillar?.name,
+      launch: getLaunchContext(),
+    });
+
+    let image;
+    try {
+      image = await configuredImageProvider.generateImage(prompt);
+    } catch (err) {
+      throw upstreamFailed(err instanceof Error ? err.message : 'Image generation failed.', 'image_generation_error');
+    }
+
+    const filename = `draft-${draft.id}-${persona.key}-${Date.now()}.png`;
+    const stored = await storage.put('media/generated', filename, image.bytes, image.mimeType);
+
+    const wasApprovedOrScheduled = draft.status === 'APPROVED' || draft.status === 'SCHEDULED';
+
+    const { asset, updated } = await prisma.$transaction(async (tx) => {
+      const created = await tx.mediaAsset.create({
+        data: {
+          filename,
+          storageKey: stored.key,
+          mimeType: stored.contentType,
+          kind: 'POST_IMAGE',
+          usageRights: generatedUsageRights(configuredImageProvider.name, image.model),
+          attribution: `AI-generated (${configuredImageProvider.name})`,
+          isAiGenerated: true,
+          generationProvider: configuredImageProvider.name,
+          generationModel: image.model,
+          generationPrompt: image.revisedPrompt ?? prompt.prompt,
+          personaKey: persona.key,
+          createdBy: req.adminUser!.id,
+        },
+      });
+      // Swapping the creative on an already-approved post means the reviewer
+      // approved something different from what would go out, so send it back
+      // for reapproval exactly as a text edit does.
+      const next = await tx.contentDraft.update({
+        where: { id: draft.id },
+        data: {
+          mediaAssetId: created.id,
+          ...(wasApprovedOrScheduled
+            ? { status: 'CHANGES_REQUESTED', approvedBy: null, approvedAt: null, scheduledFor: null }
+            : {}),
+        },
+      });
+      if (wasApprovedOrScheduled) {
+        await tx.contentSchedule.deleteMany({ where: { draftId: draft.id } });
+        await tx.contentApproval.create({
+          data: {
+            draftId: draft.id,
+            action: 'REAPPROVAL_REQUIRED',
+            actorId: req.adminUser!.id,
+            notes: 'Image attached after approval; reapproval required.',
+          },
+        });
+      }
+      return { asset: created, updated: next };
+    });
+
+    await writeAudit({
+      actorId: req.adminUser!.id,
+      action: 'draft.generateImage',
+      entityType: 'ContentDraft',
+      entityId: draft.id,
+      metadata: { mediaAssetId: asset.id, personaKey: persona.key, reapprovalRequired: wasApprovedOrScheduled },
+    });
+    res.status(201).json({ asset, draft: updated, personaKey: persona.key, reapprovalRequired: wasApprovedOrScheduled });
   }),
 );
 

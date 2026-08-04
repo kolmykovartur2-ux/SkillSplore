@@ -4,7 +4,7 @@ import { useApi } from '../lib/useApi.js';
 import { api, ApiError } from '../lib/api.js';
 import { useToast } from '../lib/toast.js';
 import { useAuth } from '../lib/auth.js';
-import { Button, Card, Spinner, StatusBadge, Textarea, Field, Input, Modal } from '../components/ui.js';
+import { Badge, Button, Card, Spinner, StatusBadge, Textarea, Field, Input, Modal } from '../components/ui.js';
 import { formatDate } from '../lib/format.js';
 
 interface Version { id: number; versionNumber: number; content: string; editorType: string; changeSummary: string | null; createdAt: string }
@@ -22,6 +22,7 @@ interface Draft {
   publishedAt: string | null;
   brief: { maxLength: number; pillar?: { name: string } | null } | null;
   campaign: { name: string } | null;
+  mediaAsset: { id: number; filename: string; isAiGenerated: boolean; personaKey: string | null } | null;
   versions: Version[];
   approvals: Approval[];
   schedule: { scheduledForUtc: string; timezoneAtScheduling: string } | null;
@@ -67,6 +68,15 @@ export function DraftEditor() {
     setWarnings(res.warnings.map((w) => w.message));
   };
 
+  // Persona and mood are derived from this draft's own words server-side, so
+  // the founder gets contextual creative in one click rather than re-describing
+  // the post on the Media page.
+  const generateImage = () =>
+    run(async () => {
+      const res = await api.post<{ reapprovalRequired: boolean }>(`/drafts/${draft.id}/generate-image`, {});
+      if (res.reapprovalRequired) toast('Image attached — this draft needs approving again.', 'success');
+    }, 'Image generated and attached.');
+
   const save = () => run(() => api.patch(`/drafts/${draft.id}`, { body: currentBody, title: currentTitle || undefined }), 'Saved as a new version.');
   const approve = () => run(() => api.post(`/drafts/${draft.id}/approve`), 'Approved.');
   const requestChanges = () =>
@@ -105,8 +115,35 @@ export function DraftEditor() {
           <Button onClick={() => void duplicate()} disabled={busy}>
             Duplicate
           </Button>
+          {['IDEA', 'RESEARCHING', 'DRAFT', 'AWAITING_REVIEW', 'CHANGES_REQUESTED', 'APPROVED', 'SCHEDULED'].includes(
+            draft.status,
+          ) && (
+            <Button onClick={() => void generateImage()} loading={busy}>
+              {draft.mediaAsset ? 'Regenerate image' : 'Generate image'}
+            </Button>
+          )}
         </div>
       </div>
+
+      {draft.mediaAsset && (
+        <Card style={{ marginBottom: 16 }}>
+          <div className="card-body">
+            <div className="row-wrap" style={{ alignItems: 'center', gap: 8 }}>
+              <h3 style={{ margin: 0 }}>Attached image</h3>
+              {draft.mediaAsset.isAiGenerated && (
+                <Badge variant="warning" title="Synthetic image — depicts no real person">
+                  AI-generated
+                </Badge>
+              )}
+            </div>
+            <p className="muted" style={{ marginBottom: 0 }}>
+              {draft.mediaAsset.filename}
+              {draft.mediaAsset.personaKey ? ` · audience: ${draft.mediaAsset.personaKey}` : ''}
+            </p>
+            <p className="muted">Check the image before approving — models occasionally add text or stray details.</p>
+          </div>
+        </Card>
+      )}
 
       {warnings && (
         <Card style={{ marginBottom: 16 }}>

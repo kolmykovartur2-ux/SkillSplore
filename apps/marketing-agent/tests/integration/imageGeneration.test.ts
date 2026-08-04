@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createAdmin, loginAs, prisma, resetDb } from '../helpers.js';
+import { createAdmin, createBrief, createDraft, createPillar, loginAs, prisma, resetDb } from '../helpers.js';
 import { env } from '../../src/config/env.js';
 import { configuredImageProvider } from '../../src/lib/imageGenerationProvider.js';
 import { IMAGE_SAFETY_CONSTRAINTS } from '../../src/lib/imagePrompt.js';
@@ -120,5 +120,116 @@ describe('generating an image', () => {
     // and the shared 502 helper previously hard-coded that code.
     expect(res.body.error.code).toBe('image_generation_error');
     expect(await prisma.mediaAsset.count()).toBe(0);
+  });
+});
+
+describe('generating an image for a specific draft', () => {
+  beforeEach(() => {
+    (env as { imageGenerationConfigured: boolean }).imageGenerationConfigured = true;
+  });
+
+  it('derives persona and mood from the draft’s own words, and attaches the result', async () => {
+    const spy = vi
+      .spyOn(configuredImageProvider, 'generateImage')
+      .mockResolvedValue({ bytes: FAKE_PNG, mimeType: 'image/png', model: 'test-model' });
+    const draft = await createDraft({
+      body: 'We are looking for soldering and Arduino teachers to join as founding providers.',
+    });
+
+    const agent = await loginAs('founder@test.local');
+    const res = await agent.post(`/api/drafts/${draft.id}/generate-image`).send({});
+
+    expect(res.status).toBe(201);
+    // Picked from the post text — not a default unrelated to the subject.
+    expect(res.body.personaKey).toBe('electronics_teacher');
+    const updated = await prisma.contentDraft.findUniqueOrThrow({ where: { id: draft.id } });
+    expect(updated.mediaAssetId).toBe(res.body.asset.id);
+    expect(spy.mock.calls[0]![0].prompt).toContain('electronics teacher');
+  });
+
+  it('uses the brief’s main idea as the mood when the draft has no title', async () => {
+    const spy = vi.spyOn(configuredImageProvider, 'generateImage').mockResolvedValue({ bytes: FAKE_PNG, mimeType: 'image/png' });
+    const pillar = await createPillar();
+    const brief = await createBrief(pillar.id);
+    const draft = await createDraft({ briefId: brief.id });
+
+    const agent = await loginAs('founder@test.local');
+    await agent.post(`/api/drafts/${draft.id}/generate-image`).send({});
+
+    expect(spy.mock.calls[0]![0].prompt).toContain('Test main idea');
+  });
+
+  it('honours an explicit persona over the suggestion', async () => {
+    const spy = vi.spyOn(configuredImageProvider, 'generateImage').mockResolvedValue({ bytes: FAKE_PNG, mimeType: 'image/png' });
+    const draft = await createDraft({ body: 'A post about soldering and circuits.' });
+
+    const agent = await loginAs('founder@test.local');
+    const res = await agent.post(`/api/drafts/${draft.id}/generate-image`).send({ personaKey: 'chef' });
+
+    expect(res.body.personaKey).toBe('chef');
+    expect(spy.mock.calls[0]![0].prompt).toContain('chef');
+  });
+
+  // Swapping the creative changes what would actually be published, so the
+  // reviewer's earlier approval no longer covers it.
+  it('sends an approved draft back for reapproval and drops its schedule', async () => {
+    vi.spyOn(configuredImageProvider, 'generateImage').mockResolvedValue({ bytes: FAKE_PNG, mimeType: 'image/png' });
+    const draft = await createDraft({ status: 'APPROVED' });
+    await prisma.contentDraft.update({
+      where: { id: draft.id },
+      data: { approvedBy: 1, approvedAt: new Date(), scheduledFor: new Date(Date.now() + 86400000) },
+    });
+    await prisma.contentSchedule.create({
+      data: { draftId: draft.id, scheduledForUtc: new Date(Date.now() + 86400000), timezoneAtScheduling: 'Pacific/Auckland' },
+    });
+
+    const agent = await loginAs('founder@test.local');
+    const res = await agent.post(`/api/drafts/${draft.id}/generate-image`).send({});
+
+    expect(res.body.reapprovalRequired).toBe(true);
+    const updated = await prisma.contentDraft.findUniqueOrThrow({ where: { id: draft.id } });
+    expect(updated.status).toBe('CHANGES_REQUESTED');
+    expect(updated.approvedAt).toBeNull();
+    expect(updated.scheduledFor).toBeNull();
+    expect(await prisma.contentSchedule.count({ where: { draftId: draft.id } })).toBe(0);
+    const approvals = await prisma.contentApproval.findMany({ where: { draftId: draft.id, action: 'REAPPROVAL_REQUIRED' } });
+    expect(approvals).toHaveLength(1);
+  });
+
+  it('leaves a draft awaiting review in that state', async () => {
+    vi.spyOn(configuredImageProvider, 'generateImage').mockResolvedValue({ bytes: FAKE_PNG, mimeType: 'image/png' });
+    const draft = await createDraft({ status: 'AWAITING_REVIEW' });
+
+    const agent = await loginAs('founder@test.local');
+    const res = await agent.post(`/api/drafts/${draft.id}/generate-image`).send({});
+
+    expect(res.body.reapprovalRequired).toBe(false);
+    const updated = await prisma.contentDraft.findUniqueOrThrow({ where: { id: draft.id } });
+    expect(updated.status).toBe('AWAITING_REVIEW');
+  });
+
+  it('refuses once the draft is beyond editing, and stores nothing', async () => {
+    const spy = vi.spyOn(configuredImageProvider, 'generateImage');
+    const draft = await createDraft();
+    await prisma.contentDraft.update({ where: { id: draft.id }, data: { status: 'PUBLISHED' } });
+
+    const agent = await loginAs('founder@test.local');
+    const res = await agent.post(`/api/drafts/${draft.id}/generate-image`).send({});
+
+    expect(res.status).toBe(409);
+    expect(spy).not.toHaveBeenCalled();
+    expect(await prisma.mediaAsset.count()).toBe(0);
+  });
+
+  it('records the generation against the draft in the audit log', async () => {
+    vi.spyOn(configuredImageProvider, 'generateImage').mockResolvedValue({ bytes: FAKE_PNG, mimeType: 'image/png' });
+    const draft = await createDraft();
+
+    const agent = await loginAs('founder@test.local');
+    await agent.post(`/api/drafts/${draft.id}/generate-image`).send({});
+
+    const entries = await prisma.auditLog.findMany({ where: { action: 'draft.generateImage' } });
+    expect(entries).toHaveLength(1);
+    expect(entries[0]!.entityId).toBe(draft.id);
   });
 });

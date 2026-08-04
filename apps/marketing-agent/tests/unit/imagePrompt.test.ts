@@ -3,8 +3,10 @@ import {
   IMAGE_SAFETY_CONSTRAINTS,
   PERSONAS,
   buildImagePrompt,
+  deriveTopicFromDraft,
   findPersona,
   generatedUsageRights,
+  suggestPersonaForText,
 } from '../../src/lib/imagePrompt.js';
 
 const launch = { country: 'NZ', city: 'Auckland', category: 'Tutoring', stage: 'Pre-launch' };
@@ -77,6 +79,48 @@ describe('buildImagePrompt', () => {
       'Advice for providers',
     );
     expect(buildImagePrompt({ persona, launch }).prompt).not.toContain('content theme');
+  });
+});
+
+describe('suggestPersonaForText', () => {
+  it('picks the persona the post is actually about', () => {
+    expect(suggestPersonaForText('We are looking for soldering and Arduino teachers').key).toBe('electronics_teacher');
+    expect(suggestPersonaForText('A note for guitar and piano teachers').key).toBe('music_teacher');
+    expect(suggestPersonaForText('Advice on NCEA calculus revision').key).toBe('maths_tutor');
+  });
+
+  it('handles the founder’s own car-flipping angle', () => {
+    expect(suggestPersonaForText('I have been flipping a car for years but still need a mechanic').key).toBe('craft_maker');
+  });
+
+  it('does not fire on a keyword buried inside a longer word', () => {
+    // "car" must not match "carefully" — otherwise most posts become craft_maker.
+    expect(suggestPersonaForText('We carefully reviewed every profile').key).not.toBe('craft_maker');
+  });
+
+  it('falls back to a valid persona when nothing matches', () => {
+    const persona = suggestPersonaForText('an entirely unrelated sentence about nothing');
+    expect(PERSONAS.map((p) => p.key)).toContain(persona.key);
+  });
+});
+
+describe('deriveTopicFromDraft', () => {
+  it('prefers the title, then the brief’s main idea, then the opening sentence', () => {
+    expect(deriveTopicFromDraft({ title: 'A title', mainIdea: 'An idea', body: 'A body.' })).toBe('A title');
+    expect(deriveTopicFromDraft({ title: null, mainIdea: 'An idea', body: 'A body.' })).toBe('An idea');
+    expect(deriveTopicFromDraft({ title: '  ', mainIdea: null, body: 'First sentence. Second one.' })).toBe(
+      'First sentence.',
+    );
+  });
+
+  it('collapses whitespace and truncates a long opening sentence', () => {
+    const topic = deriveTopicFromDraft({ body: `${'word '.repeat(80)}.` });
+    expect(topic.length).toBeLessThanOrEqual(160);
+    expect(topic).not.toContain('  ');
+  });
+
+  it('returns empty string for an empty draft rather than throwing', () => {
+    expect(deriveTopicFromDraft({ body: '' })).toBe('');
   });
 });
 
