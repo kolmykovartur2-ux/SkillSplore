@@ -20,6 +20,7 @@ import { withProviderFallback } from '../../lib/contentGenerationProvider.js';
 import { getLaunchContext } from '../../lib/launch.js';
 import { getActiveApprovedFacts } from '../../lib/facts.js';
 import { evaluateDraftContent } from '../../lib/contentValidation.js';
+import { CREATIVE_ANGLES, buildAnglePrompt, findCreativeAngle } from '../../lib/creativeAngles.js';
 import { addVersion, EDITABLE_STATUSES } from './drafts.service.js';
 
 export const draftsRouter = Router();
@@ -63,6 +64,22 @@ draftsRouter.get(
   }),
 );
 
+// Declared before '/:id' — otherwise Express matches "creative-angles" as an
+// id and this 404s inside the id handler.
+draftsRouter.get(
+  '/creative-angles',
+  asyncHandler(async (_req, res) => {
+    res.json({
+      angles: CREATIVE_ANGLES.map((a) => ({ key: a.key, label: a.label, summary: a.summary })),
+      // Template mode cannot follow an angle — it assembles from fixed
+      // sentence banks — so the dashboard can say so instead of the founder
+      // wondering why the setting had no effect.
+      anglesEffective: env.CONTENT_AI_PROVIDER !== 'template',
+      contentProvider: env.CONTENT_AI_PROVIDER,
+    });
+  }),
+);
+
 draftsRouter.get(
   '/:id',
   validate({ params: z.object({ id: z.coerce.number().int() }) }),
@@ -73,7 +90,11 @@ draftsRouter.get(
   }),
 );
 
-const generateSchema = z.object({ briefId: z.number().int(), variantCount: z.number().int().min(1).max(3).default(3) });
+const generateSchema = z.object({
+  briefId: z.number().int(),
+  variantCount: z.number().int().min(1).max(3).default(3),
+  angleKey: z.string().min(1).optional(),
+});
 
 // §16 steps 1-13: brief -> approved facts only -> up to 3 variants -> stored
 // as real drafts in AWAITING_REVIEW, never auto-approved.
@@ -84,8 +105,12 @@ draftsRouter.post(
     const brief = await prisma.contentBrief.findUnique({ where: { id: req.body.briefId }, include: { pillar: true, idea: true } });
     if (!brief) throw notFound('Brief not found.');
 
+    const angle = req.body.angleKey ? findCreativeAngle(req.body.angleKey) : undefined;
+    if (req.body.angleKey && !angle) throw badRequest(`Unknown creative angle "${req.body.angleKey}".`);
+
     const facts = await getActiveApprovedFacts();
     const briefInput = {
+      angleInstruction: angle ? buildAnglePrompt(angle) : undefined,
       objective: brief.objective,
       audience: brief.audience,
       pillarName: brief.pillar?.name ?? 'Building SkillSplore',

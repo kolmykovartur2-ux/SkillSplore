@@ -53,6 +53,12 @@ export interface BriefInput {
   maxLength: number;
   facts: FactRef[];
   launch: LaunchContext;
+  /**
+   * Optional creative formula (src/lib/creativeAngles.ts) shaping how the post
+   * is written. Rendered to a prompt fragment by the caller so providers stay
+   * unaware of the angle catalogue itself.
+   */
+  angleInstruction?: string;
 }
 
 export interface GeneratedDraft {

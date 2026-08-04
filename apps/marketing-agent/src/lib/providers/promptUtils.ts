@@ -8,6 +8,24 @@ export const BRAND_VOICE_SYSTEM_PROMPT = `You write LinkedIn content for SkillSp
 pre-launch services marketplace. Voice: honest, modest, curious, clear, human, practical,
 locally relevant, confident enough to be credible, never boastful.
 
+CRAFT — the rules below stop the copy being untrue; these stop it being boring. Both matter.
+Modesty is not an excuse for vagueness: the writing should be specific, sharp and worth reading.
+
+- The first line must earn the second. Open on something concrete and particular. Never open with
+  throat-clearing ("I'm excited to announce", "In today's fast-paced world", "As a founder,").
+- One idea per post. If there are two, the post is two posts.
+- Prefer concrete nouns and real detail over abstraction. "The gearbox on a 1998 Corolla" beats
+  "automotive challenges". Detail is what makes a reader stop; it is also what makes modesty
+  credible rather than empty.
+- Vary sentence length. Short sentences carry weight. Let one land on its own.
+- Write like one person talking to one person. Contractions are fine. Jargon is not.
+- Self-deprecating beats boastful, and admitting a specific limit is more persuasive than claiming
+  a strength — but the limit must be real and specific, never false modesty.
+- End with a genuine question or one specific ask. Not a slogan, not "thoughts?".
+- No emoji strings, no hashtag walls (three at most), no engagement-bait openers.
+- Being unable to cite numbers is not a reason to be generic. Specific *observations* and specific
+  *situations* need no statistics.
+
 Never use: revolutionary, disrupting, market-leading, the number-one platform, thousands of users,
 transforming everything, game-changing, unprecedented growth, guaranteed work, guaranteed customers,
 best providers, fully verified professionals — unless a fact explicitly supplied to you says otherwise.
@@ -23,7 +41,15 @@ Always respond with ONLY a single JSON object matching the requested shape — n
 commentary before or after it.`;
 
 export function buildUserPrompt(task: string, payload: unknown): string {
-  return `Task: ${task}\n\nInput (JSON):\n${JSON.stringify(payload, null, 2)}`;
+  // A creative angle is an instruction, not data. Escaped into a JSON string
+  // field it reads as trivia and gets largely ignored, so hoist it above the
+  // payload where it carries the weight of an instruction.
+  const angle =
+    payload && typeof payload === 'object' && 'angleInstruction' in payload
+      ? (payload as { angleInstruction?: unknown }).angleInstruction
+      : undefined;
+  const anglePart = typeof angle === 'string' && angle.trim() ? `\n\n${angle.trim()}` : '';
+  return `Task: ${task}${anglePart}\n\nInput (JSON):\n${JSON.stringify(payload, null, 2)}`;
 }
 
 export function parseJsonResponse<T>(text: string): T {

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useApi } from '../lib/useApi.js';
 import { api, ApiError } from '../lib/api.js';
 import { useToast } from '../lib/toast.js';
-import { Button, Card, Spinner, Field, Input } from '../components/ui.js';
+import { Button, Card, Spinner, Field, Input, Select } from '../components/ui.js';
 
 interface Brief {
   id: number;
@@ -16,12 +16,17 @@ interface Brief {
   pillar?: { name: string } | null;
 }
 
+interface Angle { key: string; label: string; summary: string }
+interface AngleData { angles: Angle[]; anglesEffective: boolean; contentProvider: string }
+
 export function BriefDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data, loading } = useApi<{ brief: Brief }>(`/briefs/${id}`);
+  const { data: angleData } = useApi<AngleData>('/drafts/creative-angles');
   const toast = useToast();
   const [variantCount, setVariantCount] = useState(3);
+  const [angleKey, setAngleKey] = useState('');
   const [busy, setBusy] = useState(false);
 
   if (loading) return <Spinner />;
@@ -34,6 +39,7 @@ export function BriefDetail() {
       const res = await api.post<{ drafts: { id: number }[]; providerUsed: string; fellBackToTemplate: boolean }>('/drafts/generate', {
         briefId: brief.id,
         variantCount,
+        ...(angleKey ? { angleKey } : {}),
       });
       toast(`Generated ${res.drafts.length} draft(s) via ${res.providerUsed}${res.fellBackToTemplate ? ' (fell back to template)' : ''}.`, 'success');
       if (res.drafts[0]) navigate(`/drafts/${res.drafts[0].id}`);
@@ -68,6 +74,30 @@ export function BriefDetail() {
           <Field label="Number of variants (up to 3)">
             <Input type="number" min={1} max={3} value={variantCount} onChange={(e) => setVariantCount(Number(e.target.value))} style={{ width: 90 }} />
           </Field>
+          <Field
+            label="Creative angle"
+            hint={
+              angleKey
+                ? angleData?.angles.find((a) => a.key === angleKey)?.summary
+                : 'Optional. Shapes how the post is written — pick one to get a sharper, more specific piece than the default.'
+            }
+          >
+            <Select value={angleKey} onChange={(e) => setAngleKey(e.target.value)} style={{ maxWidth: 420 }}>
+              <option value="">No particular angle</option>
+              {angleData?.angles.map((a) => (
+                <option key={a.key} value={a.key}>
+                  {a.label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          {angleData && !angleData.anglesEffective && (
+            <p className="muted">
+              Heads up: <code>CONTENT_AI_PROVIDER</code> is <code>{angleData.contentProvider}</code>, which builds posts
+              from fixed sentence patterns and cannot follow a creative angle. Switch it to <code>anthropic</code> or{' '}
+              <code>openai_compatible</code> for these to have any effect.
+            </p>
+          )}
           <Button variant="primary" onClick={() => void generate()} loading={busy}>
             Generate drafts
           </Button>
