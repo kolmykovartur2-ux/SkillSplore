@@ -16,10 +16,79 @@ function link(pathname: string, token: string): string {
   return url.toString();
 }
 
+/**
+ * Records acceptance of the newest version of each document that requires it.
+ *
+ * Best-effort by design: a registration must not fail because the legal sync
+ * has not run yet on a fresh database. The account is still created and
+ * `termsAcceptedAt` is still set -- what is lost is the finer-grained record
+ * of which version, which is recoverable by re-prompting, unlike a failed
+ * signup.
+ */
+async function recordRegistrationAcceptances(
+  userId: number,
+  ipAddress: string | null,
+  userAgent: string | null,
+): Promise<void> {
+  try {
+    const documents = await prisma.legalDocument.findMany({
+      where: { slug: { in: ['TERMS', 'PRIVACY'] } },
+      include: { versions: { orderBy: { createdAt: 'desc' }, take: 1 } },
+    });
+
+    for (const doc of documents) {
+      const version = doc.currentVersionId
+        ? { id: doc.currentVersionId }
+        : doc.versions[0];
+      if (!version) continue;
+
+      await prisma.userLegalAcceptance.upsert({
+        where: { userId_versionId: { userId, versionId: version.id } },
+        create: { userId, versionId: version.id, method: 'registration', ipAddress, userAgent },
+        update: {},
+      });
+    }
+  } catch (err) {
+    console.error('[auth] could not record legal acceptance for user', userId, err);
+  }
+}
+
+/** Same best-effort reasoning as above. */
+async function recordMarketingConsent(
+  userId: number,
+  ipAddress: string | null,
+  userAgent: string | null,
+): Promise<void> {
+  try {
+    const version = await prisma.consentVersion.findFirst({
+      where: { kind: 'MARKETING_EMAIL' },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (!version) return;
+
+    await prisma.userConsent.create({
+      data: {
+        userId,
+        kind: 'MARKETING_EMAIL',
+        versionId: version.id,
+        grantedWording: version.wording,
+        method: 'registration-checkbox',
+        ipAddress,
+        userAgent,
+      },
+    });
+  } catch (err) {
+    console.error('[auth] could not record marketing consent for user', userId, err);
+  }
+}
+
 export async function register(input: {
   email: string;
   password: string;
   displayName: string;
+  marketingOptIn?: boolean;
+  ipAddress?: string | null;
+  userAgent?: string | null;
 }): Promise<User> {
   assertPasswordStrength(input.password);
   const existing = await prisma.user.findUnique({ where: { email: input.email } });
@@ -35,6 +104,18 @@ export async function register(input: {
       termsAcceptedAt: new Date(),
     },
   });
+
+  // Record exactly which version of the Terms and Privacy Policy this person
+  // agreed to. `termsAcceptedAt` above only records that they agreed to
+  // something at some point, which is not much use if the wording is later
+  // disputed.
+  await recordRegistrationAcceptances(user.id, input.ipAddress ?? null, input.userAgent ?? null);
+
+  // Marketing is a separate, optional consent. Nothing is written unless the
+  // user actively opted in, so an omitted field can never become a consent.
+  if (input.marketingOptIn) {
+    await recordMarketingConsent(user.id, input.ipAddress ?? null, input.userAgent ?? null);
+  }
 
   const { token, tokenHash } = generateToken();
   await prisma.emailToken.create({

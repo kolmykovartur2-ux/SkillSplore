@@ -48,3 +48,56 @@ kept.
   workflow exists (not needed while self-service editing covers the same ground).
 
 See `docs/USER_DATA_REQUESTS.md` (Phase 12) for the fuller process documentation once written.
+
+---
+
+# Retention schedule (added 2026-08-04)
+
+**Every period below is UNAPPROVED.** None was derived from a statute, because
+inventing a statutory retention period is worse than admitting the decision is
+outstanding. Each row needs a founder decision and, where a legal basis is
+claimed, confirmation from a lawyer.
+
+The `RetentionRule` table mirrors this. `retainDays` is **nullable and null by
+default**, and any future deletion job must refuse to act on a rule with no
+`approvedBy` — an unapproved rule must never silently start deleting data.
+
+| Category | Proposed period | Basis | Approved |
+|---|---|---|---|
+| Active account | While the account is open | Necessary to provide the service | ☐ |
+| Closed account (anonymised) | Indefinite (current behaviour) | Preserves others' review/message history | ☐ |
+| Tutor profile | With the account | | ☐ |
+| Learning requests | With the account | | ☐ |
+| Responses | With the account | | ☐ |
+| Private messages | **Undecided** | Both participants have an interest; deleting one side's copy is not straightforward | ☐ |
+| Reviews | Indefinite | Public record others rely on | ☐ |
+| Reports and moderation records | **Undecided** — likely longer than the account | Safety evidence and repeat-offender detection | ☐ |
+| Verification documents | **Undecided** — should be short | Sensitive; no reason to keep evidence after the check | ☐ |
+| Billing records | **Undecided** | Tax/accounting law — **needs a lawyer**, do not guess | ☐ |
+| Security and audit logs | **Undecided** | Incident investigation | ☐ |
+| Legal acceptances | Indefinite | Evidence of what was agreed; the point is that it outlives disputes | ☐ |
+| Consent records and withdrawals | Indefinite | Same — evidence that permission existed and when it ended | ☐ |
+| Privacy requests | **Undecided** | Demonstrating we handled requests properly | ☐ |
+| Moderator access logs | **Undecided** | Accountability for message access | ☐ |
+| Backups | Per provider policy — **to confirm with Render** | | ☐ |
+
+## Deletion is not instantaneous
+
+Stated in the Privacy Policy (s14) and repeated here because it is the part
+users most often misunderstand. A deletion request may not immediately remove:
+
+- records we are legally required to keep;
+- records kept to prevent fraud;
+- evidence relevant to a live dispute;
+- copies in ordinary backup cycles, until those cycles expire;
+- content already lawfully supplied to another user (a message they received);
+- properly de-identified information.
+
+## Still missing
+
+- No scheduled deletion or de-identification job exists. Retention is currently
+  "keep everything", which is the honest description of the status quo.
+- `npm run export` dumps everything rather than one user's data. A per-user
+  export is needed to fulfil an access request cleanly.
+
+Both are tracked as gaps rather than described as solved.

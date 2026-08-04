@@ -34,10 +34,10 @@ import { AdminRequests } from './pages/admin/AdminRequests.js';
 import { AdminTaxonomy } from './pages/admin/AdminTaxonomy.js';
 import { AdminSubjectSuggestions } from './pages/admin/AdminSubjectSuggestions.js';
 import { AdminAudit } from './pages/admin/AdminAudit.js';
-import { Terms } from './pages/legal/Terms.js';
-import { Privacy } from './pages/legal/Privacy.js';
+import { PolicyPage } from './pages/legal/PolicyPage.js';
+import { PrivacyRequest } from './pages/legal/PrivacyRequest.js';
+import { Contact } from './pages/legal/Contact.js';
 import { About } from './pages/About.js';
-import { Safety } from './pages/Safety.js';
 
 function RequireAuth({ children, role }: { children: ReactNode; role?: 'TUTOR' | 'ADMIN' }) {
   const { user, loading, hasRole } = useAuth();
@@ -64,10 +64,17 @@ export function App() {
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/terms" element={<Terms />} />
-        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<PolicyPage path="terms" />} />
+        <Route path="/privacy" element={<PolicyPage path="privacy" />} />
+        <Route path="/community-guidelines" element={<PolicyPage path="community-guidelines" />} />
+        <Route path="/academic-integrity" element={<PolicyPage path="academic-integrity" />} />
+        <Route path="/prohibited-services" element={<PolicyPage path="prohibited-services" />} />
+        <Route path="/cookies" element={<PolicyPage path="cookies" />} />
+        <Route path="/subprocessors" element={<PolicyPage path="subprocessors" />} />
+        <Route path="/privacy-request" element={<PrivacyRequest />} />
+        <Route path="/contact" element={<Contact />} />
         <Route path="/about" element={<About />} />
-        <Route path="/safety" element={<Safety />} />
+        <Route path="/safety" element={<PolicyPage path="safety" />} />
 
         <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
         <Route path="/account" element={<RequireAuth><Account /></RequireAuth>} />

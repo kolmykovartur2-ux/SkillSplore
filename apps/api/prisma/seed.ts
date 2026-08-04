@@ -7,7 +7,8 @@
  */
 import { prisma, guardDemoCommand, truncateAll, hash, DEMO_PASSWORD, DEMO_ACCOUNTS } from './_demo.js';
 import { TAXONOMY, TOTAL_SUBJECTS } from './taxonomy.data.js';
-import { normalizeName } from '../src/lib/normalize.js';
+import { syncTaxonomy } from './syncTaxonomy.js';
+import { syncLegalDocuments } from '../src/lib/legalSync.js';
 import { DEFAULT_VERIFICATION_LABELS } from '../src/lib/verification.js';
 import type { DeliveryMode } from '@prisma/client';
 
@@ -20,21 +21,20 @@ async function main() {
   await truncateAll();
 
   // --- Taxonomy ------------------------------------------------------------
+  // Delegates to syncTaxonomy rather than duplicating its insert logic here --
+  // the database was just truncated, so every category/subject/alias in the
+  // file is genuinely new and this behaves as a plain bulk insert. Using the
+  // same function the live site relies on means the demo dataset can never
+  // drift out of sync with what a real deployment ends up with.
   console.log(`Seeding taxonomy (${TAXONOMY.length} categories, ${TOTAL_SUBJECTS} subjects)...`);
-  const subjects: Record<string, number> = {};
-  for (const cat of TAXONOMY) {
-    const category = await prisma.category.create({
-      data: { name: cat.name, normalizedName: normalizeName(cat.name), slug: slug(cat.name), icon: cat.icon },
-    });
-    for (const subjectName of cat.subjects) {
-      // Subject names are unique across the catalogue; skip accidental dupes.
-      if (subjects[subjectName]) continue;
-      const s = await prisma.subject.create({
-        data: { name: subjectName, normalizedName: normalizeName(subjectName), slug: slug(subjectName), categoryId: category.id },
-      });
-      subjects[subjectName] = s.id;
-    }
-  }
+  await syncTaxonomy(prisma);
+
+  // Policy drafts and consent wording. Same idempotent sync the live site
+  // runs on boot, so the demo database matches a real deployment.
+  await syncLegalDocuments(prisma);
+
+  const subjectRows = await prisma.subject.findMany({ select: { id: true, name: true } });
+  const subjects: Record<string, number> = Object.fromEntries(subjectRows.map((s) => [s.name, s.id]));
 
   const levelDefs = ['Primary', 'Intermediate', 'NCEA Level 1', 'NCEA Level 2', 'NCEA Level 3', 'Undergraduate', 'Postgraduate', 'Adult / Hobby'];
   const levels: Record<string, number> = {};

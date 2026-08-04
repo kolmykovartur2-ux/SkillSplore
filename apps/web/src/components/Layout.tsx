@@ -140,8 +140,15 @@ export function Layout({ children }: { children: ReactNode }) {
               <Link to="/requests/new">Post a request</Link>
               <Link to="/tutor/onboarding">Teach on SkillSplore</Link>
               <Link to="/safety">Safety</Link>
+              <Link to="/community-guidelines">Community Guidelines</Link>
+              <Link to="/academic-integrity">Academic Integrity</Link>
+              <Link to="/prohibited-services">Prohibited Services</Link>
               <Link to="/terms">Terms</Link>
               <Link to="/privacy">Privacy</Link>
+              <Link to="/cookies">Cookies</Link>
+              <Link to="/subprocessors">Subprocessors</Link>
+              <Link to="/privacy-request">Privacy requests</Link>
+              <Link to="/contact">Contact</Link>
             </nav>
           </div>
           <div className="footer-bottom muted">© {new Date().getFullYear()} SkillSplore</div>

@@ -144,6 +144,10 @@ model User {
   blocksReceived           Block[]                   @relation("Blocked")
   subjectSuggestionsMade     SubjectSuggestion[]      @relation("SuggestionSubmitter")
   subjectSuggestionsReviewed SubjectSuggestion[]      @relation("SuggestionReviewer")
+  legalAcceptances           UserLegalAcceptance[]
+  consents                   UserConsent[]
+  privacyRequests            PrivacyRequest[]
+  restrictions               AccountRestriction[]
 
   @@index([status])
 }
@@ -173,8 +177,23 @@ model Category {
   normalizedName String    @unique
   slug           String    @unique
   icon           String?
+  description    String?
+  // The catalogue is far too large to show in full on the homepage; only a
+  // handful are featured there, and the rest are reached through search and
+  // the browse page.
+  isFeatured     Boolean   @default(false)
+  // Archived rather than deleted, so historical requests and profiles that
+  // reference a retired category keep working.
+  isActive       Boolean   @default(true)
+  displayOrder   Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @default(now()) @updatedAt
+
   subjects       Subject[]
+  aliases        TaxonomyAlias[]
   suggestions    SubjectSuggestion[] @relation("SuggestedCategory")
+
+  @@index([isFeatured, displayOrder])
 }
 
 model Subject {
@@ -182,15 +201,43 @@ model Subject {
   name           String   @unique
   normalizedName String   @unique
   slug           String   @unique
+  description    String?
   categoryId     Int?
   category       Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  // Archived rather than deleted, matching Category, so a subject that is no
+  // longer offered can drop out of search without breaking rows that
+  // reference it (tutor profiles, past requests, engagements).
+  isActive       Boolean  @default(true)
+  displayOrder   Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
 
   tutorSubjects TutorSubject[]
   requests      TutoringRequest[]
   engagements   Engagement[]
+  aliases       TaxonomyAlias[]
   resolvedFromSuggestions SubjectSuggestion[] @relation("ResolvedSubject")
 
   @@index([categoryId])
+  @@index([isActive])
+}
+
+// Search synonyms ("maths" -> Mathematics, "coding" -> Programming). A row
+// points at exactly one of a category or a subject, never both -- enforced in
+// application code rather than the schema, since Prisma has no portable
+// exactly-one-of-two-columns constraint.
+model TaxonomyAlias {
+  id             Int      @id @default(autoincrement())
+  term           String
+  normalizedTerm String   @unique
+  categoryId     Int?
+  category       Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  subjectId      Int?
+  subject        Subject?  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+
+  @@index([categoryId])
+  @@index([subjectId])
 }
 
 enum SuggestionStatus {
@@ -375,6 +422,12 @@ model TutoringRequest {
   student      User          @relation(fields: [studentId], references: [id], onDelete: Cascade)
   subjectId    Int
   subject      Subject       @relation(fields: [subjectId], references: [id])
+  // Set when the poster chose "Other subject or skill" instead of picking
+  // from the catalogue. subjectId still points at a real row (the seeded
+  // "Other / not yet listed" placeholder) so every existing query that joins
+  // on subject keeps working; this is what actually displays in that case.
+  // Also becomes a SubjectSuggestion so the gap shows up for admin review.
+  customSubjectLabel String?
   levelId      Int?
   level        TeachingLevel? @relation(fields: [levelId], references: [id], onDelete: SetNull)
   kind         RequestKind   @default(LEARNING)
@@ -589,3 +642,408 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([createdAt])
 }
+
+// ===========================================================================
+// Legal documents, consent and privacy operations.
+//
+// Design rules that apply to everything in this section:
+//
+//   * Acceptance and consent evidence is APPEND-ONLY. Nothing here is updated
+//     in place to reflect a newer decision -- a withdrawal is a new row, not
+//     an edit. If a user later disputes what they agreed to, the record has to
+//     show what the wording actually said at the moment they agreed to it,
+//     which an updatable row cannot do.
+//   * Consent rows store the exact text shown, not a reference to today's
+//     version of the text. Documents get reworded; evidence must not move.
+//   * Actor ids are plain integers without a foreign key where the record must
+//     outlive the account (audit, disclosure, incident records).
+// ===========================================================================
+
+enum LegalDocumentSlug {
+  TERMS
+  PRIVACY
+  COMMUNITY_GUIDELINES
+  SAFETY
+  ACADEMIC_INTEGRITY
+  PROHIBITED_SERVICES
+  COOKIES
+  SUBPROCESSORS
+}
+
+// The current pointer for each policy. Content lives in the version rows.
+model LegalDocument {
+  id               Int               @id @default(autoincrement())
+  slug             LegalDocumentSlug @unique
+  title            String
+  // Null until a version has been published. Deliberately nullable so a
+  // document can exist in draft with no publishable version at all.
+  currentVersionId Int?              @unique
+  currentVersion   LegalDocumentVersion? @relation("CurrentVersion", fields: [currentVersionId], references: [id], onDelete: SetNull)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @default(now()) @updatedAt
+
+  versions         LegalDocumentVersion[] @relation("DocumentVersions")
+}
+
+model LegalDocumentVersion {
+  id           Int           @id @default(autoincrement())
+  documentId   Int
+  document     LegalDocument @relation("DocumentVersions", fields: [documentId], references: [id], onDelete: Cascade)
+  // Human-facing version label, e.g. "2026-08-04-draft-1".
+  version      String
+  // The full rendered text as shown to users, frozen at publish time.
+  body         String
+  // Set only when a qualified lawyer has approved this exact version. Until
+  // then the version is a draft and the UI must say so.
+  legalReviewedAt DateTime?
+  legalReviewedBy String?
+  // Populated by the placeholder scanner (see src/lib/legalPlaceholders.ts).
+  // A version with unresolved placeholders can never be marked production
+  // ready, which is what keeps "[LEGAL ENTITY NAME]" off the live site.
+  unresolvedPlaceholders String[] @default([])
+  publishedAt  DateTime?
+  effectiveAt  DateTime?
+  createdAt    DateTime      @default(now())
+
+  currentFor   LegalDocument?        @relation("CurrentVersion")
+  acceptances  UserLegalAcceptance[]
+
+  @@unique([documentId, version])
+  @@index([documentId, publishedAt])
+}
+
+// Append-only. One row per user per version accepted.
+model UserLegalAcceptance {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  versionId  Int
+  version    LegalDocumentVersion @relation(fields: [versionId], references: [id], onDelete: Restrict)
+  // How acceptance happened, e.g. "registration", "reacceptance-prompt".
+  method     String
+  ipAddress  String?
+  userAgent  String?
+  acceptedAt DateTime @default(now())
+
+  @@unique([userId, versionId])
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Consent
+// ---------------------------------------------------------------------------
+
+enum ConsentKind {
+  MARKETING_EMAIL
+  DATA_INSIGHTS
+  ANALYTICS_COOKIES
+}
+
+// The exact wording of a consent request at a point in time. Consent rows
+// reference this so evidence survives rewording.
+model ConsentVersion {
+  id                  Int         @id @default(autoincrement())
+  kind                ConsentKind
+  version             String
+  // Verbatim text shown next to the checkbox.
+  wording             String
+  // What the consent does and does not cover, shown on the consent screen.
+  purpose             String
+  dataCategories      String[]    @default([])
+  excludedCategories  String[]    @default([])
+  recipientCategories String[]    @default([])
+  countries           String[]    @default([])
+  retentionSummary    String?
+  withdrawalSummary   String?
+  // Whether recipients are contractually required to delete on withdrawal,
+  // and whether an already-completed disclosure can be recalled. Recorded
+  // because the consent screen must state both, and the honest answer for a
+  // report already delivered is usually "no".
+  recipientsMustDeleteOnWithdrawal Boolean @default(false)
+  priorDisclosuresReversible       Boolean @default(false)
+  createdAt           DateTime    @default(now())
+
+  consents            UserConsent[]
+
+  @@unique([kind, version])
+}
+
+// Append-only consent evidence. A withdrawal does NOT rewrite these rows; it
+// creates a ConsentWithdrawal and sets withdrawnAt for lookup convenience
+// only. `grantedWording` duplicates the version text on purpose so the
+// evidence is self-contained even if a version row is ever removed.
+model UserConsent {
+  id             Int            @id @default(autoincrement())
+  userId         Int
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind           ConsentKind
+  versionId      Int
+  consentVersion ConsentVersion @relation(fields: [versionId], references: [id], onDelete: Restrict)
+  grantedWording String
+  // "checkbox", "settings-toggle", etc. Never "implied".
+  method         String
+  ipAddress      String?
+  userAgent      String?
+  grantedAt      DateTime       @default(now())
+  withdrawnAt    DateTime?
+  auditReference String?
+
+  withdrawals    ConsentWithdrawal[]
+
+  @@index([userId, kind])
+  @@index([kind, withdrawnAt])
+}
+
+model ConsentWithdrawal {
+  id          Int         @id @default(autoincrement())
+  consentId   Int
+  consent     UserConsent @relation(fields: [consentId], references: [id], onDelete: Cascade)
+  userId      Int
+  reason      String?
+  method      String
+  // Tracks whether downstream recipients confirmed deletion, where the
+  // contract required it. Null means "not applicable / nothing disclosed".
+  downstreamDeletionStatus String?
+  downstreamDeletionAt     DateTime?
+  withdrawnAt DateTime    @default(now())
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Privacy requests (access, correction, export, deletion, complaints)
+// ---------------------------------------------------------------------------
+
+enum PrivacyRequestType {
+  ACCESS
+  CORRECTION
+  EXPORT
+  DEACTIVATION
+  DELETION
+  MARKETING_OPT_OUT
+  CONSENT_WITHDRAWAL
+  COMPLAINT
+  AUTOMATED_DECISION_ENQUIRY
+}
+
+enum PrivacyRequestStatus {
+  RECEIVED
+  IDENTITY_CHECK
+  IN_PROGRESS
+  AWAITING_USER
+  COMPLETED
+  REFUSED
+  WITHDRAWN
+}
+
+model PrivacyRequest {
+  id                Int                  @id @default(autoincrement())
+  // Nullable: a person may make a privacy request about information held
+  // about them without currently having (or ever having had) an account.
+  userId            Int?
+  user              User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
+  contactEmail      String
+  type              PrivacyRequestType
+  status            PrivacyRequestStatus @default(RECEIVED)
+  details           String
+  // Free text rather than an enum: the proportionate check differs per
+  // request and the reviewer needs to record what they actually did.
+  identityCheckNote String?
+  outcomeNote       String?
+  // Recorded when a request is refused or narrowed, since the user has to be
+  // told the reason and it may be reviewed by a regulator later.
+  refusalReason     String?
+  handledBy         Int?
+  dueAt             DateTime?
+  closedAt          DateTime?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @default(now()) @updatedAt
+
+  events            PrivacyRequestEvent[]
+
+  @@index([status, createdAt])
+  @@index([userId])
+}
+
+model PrivacyRequestEvent {
+  id        Int            @id @default(autoincrement())
+  requestId Int
+  request   PrivacyRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  actorId   Int?
+  action    String
+  note      String?
+  createdAt DateTime       @default(now())
+
+  @@index([requestId])
+}
+
+// ---------------------------------------------------------------------------
+// Data governance registers
+// ---------------------------------------------------------------------------
+
+model Subprocessor {
+  id                 Int      @id @default(autoincrement())
+  name               String
+  service            String
+  // Country where the data actually rests. Never guessed -- left blank until
+  // confirmed against the provider's own documentation.
+  country            String?
+  purpose            String
+  dataCategories     String[] @default([])
+  contractStatus     String   @default("NOT_REVIEWED")
+  securityReviewedAt DateTime?
+  retentionTerms     String?
+  // Whether this provider is actually wired up right now, as opposed to being
+  // planned. The public /subprocessors page lists only active ones.
+  isActive           Boolean  @default(true)
+  notes              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @default(now()) @updatedAt
+
+  @@unique([name, service])
+}
+
+model DataCategory {
+  id               Int      @id @default(autoincrement())
+  key              String   @unique
+  label            String
+  description      String
+  // Whether this category may ever appear in an aggregate insights report.
+  // Sensitive categories are false and the code checks this, so adding a new
+  // sensitive field defaults it to excluded rather than included.
+  insightsEligible Boolean  @default(false)
+  isSensitive      Boolean  @default(false)
+  createdAt        DateTime @default(now())
+
+  retentionRules   RetentionRule[]
+}
+
+model RetentionRule {
+  id         Int          @id @default(autoincrement())
+  categoryId Int
+  category   DataCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  // Null means "no period decided yet" -- deliberately not defaulted to a
+  // number, because inventing a retention period is worse than admitting the
+  // decision is outstanding.
+  retainDays Int?
+  basis      String?
+  // Every rule starts unapproved. The retention job refuses to act on a rule
+  // that no human has signed off.
+  approvedBy String?
+  approvedAt DateTime?
+  notes      String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @default(now()) @updatedAt
+
+  @@index([categoryId])
+}
+
+// Record of an actual disclosure of personal information to a third party,
+// including under legal compulsion. Append-only.
+model DataDisclosureRecord {
+  id                Int      @id @default(autoincrement())
+  recipientName     String
+  recipientType     String
+  legalBasis        String
+  dataCategories    String[] @default([])
+  // Null when the disclosure was not about identifiable individuals (for
+  // example an aggregate report).
+  affectedUserCount Int?
+  requestReference  String?
+  disclosedBy       Int?
+  disclosedAt       DateTime @default(now())
+  notes             String?
+
+  @@index([disclosedAt])
+}
+
+// Every time a moderator or administrator opens private message content.
+// A reason is mandatory at the API layer; this table is the evidence.
+model ModeratorAccessLog {
+  id             Int      @id @default(autoincrement())
+  moderatorId    Int
+  conversationId Int?
+  messageId      Int?
+  targetUserId   Int?
+  reason         String
+  // One of the permitted grounds in the Privacy Policy, e.g. "report",
+  // "support", "fraud", "legal", "serious-harm".
+  ground         String
+  reportId       Int?
+  createdAt      DateTime @default(now())
+
+  @@index([moderatorId, createdAt])
+  @@index([conversationId])
+}
+
+// ---------------------------------------------------------------------------
+// Privacy incidents
+// ---------------------------------------------------------------------------
+
+enum PrivacyIncidentStatus {
+  DETECTED
+  CONTAINED
+  ASSESSING
+  NOTIFIED
+  CLOSED
+}
+
+model PrivacyIncident {
+  id                  Int                   @id @default(autoincrement())
+  reference           String                @unique
+  summary             String
+  status              PrivacyIncidentStatus @default(DETECTED)
+  detectedAt          DateTime
+  containedAt         DateTime?
+  dataCategories      String[]              @default([])
+  affectedUserCount   Int?
+  // Deliberately nullable and unset by default. Whether a breach is notifiable
+  // is a case-by-case assessment recorded in BreachAssessment, not a value
+  // this system decides on its own.
+  regulatorNotifiedAt DateTime?
+  usersNotifiedAt     DateTime?
+  remediation         String?
+  postIncidentReview  String?
+  createdBy           Int?
+  closedAt            DateTime?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @default(now()) @updatedAt
+
+  assessments         BreachAssessment[]
+
+  @@index([status, detectedAt])
+}
+
+model BreachAssessment {
+  id                Int             @id @default(autoincrement())
+  incidentId        Int
+  incident          PrivacyIncident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  assessorId        Int?
+  // The serious-harm question, answered explicitly rather than inferred.
+  seriousHarmLikely Boolean?
+  reasoning         String
+  // Recorded separately from the incident so a changed conclusion leaves a
+  // trail rather than overwriting the earlier view.
+  recommendRegulatorNotification Boolean?
+  recommendUserNotification      Boolean?
+  assessedAt        DateTime        @default(now())
+
+  @@index([incidentId])
+}
+
+// Restrictions short of full suspension (posting limits, messaging limits).
+model AccountRestriction {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      String
+  reason    String
+  imposedBy Int?
+  expiresAt DateTime?
+  liftedAt  DateTime?
+  liftedBy  Int?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, liftedAt])
+}
+

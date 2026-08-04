@@ -52,6 +52,34 @@ const schema = z.object({
   // account from many IPs, which IP-based rate limiting alone would miss.
   LOGIN_LOCKOUT_THRESHOLD: z.coerce.number().int().positive().default(8),
   LOGIN_LOCKOUT_MINUTES: z.coerce.number().int().positive().default(15),
+
+  // -------------------------------------------------------------------------
+  // Data monetisation kill switches.
+  //
+  // Every one of these defaults to false and stays false unless somebody
+  // deliberately sets it. They are declared here rather than being implicit so
+  // that "are we selling user data?" is answerable by reading one file, and so
+  // that the production guard below can refuse to boot on an unsafe
+  // combination instead of leaving it to a code path nobody tests.
+  //
+  // SELL_PERSONAL_DATA and SELL_CHILD_DATA have no supporting implementation
+  // at all -- nothing reads them to enable a feature. They exist so that
+  // enabling data selling is an explicit, greppable, test-failing act rather
+  // than something that can be quietly added later.
+  // -------------------------------------------------------------------------
+  SELL_PERSONAL_DATA: bool(false),
+  SELL_CHILD_DATA: bool(false),
+  BEHAVIOURAL_ADVERTISING_ENABLED: bool(false),
+  USE_MESSAGES_FOR_ADVERTISING: bool(false),
+
+  // The optional Data Insights Programme (aggregated/de-identified statistical
+  // reports only). Disabled pending the legal review recorded in
+  // docs/LEGAL_REVIEW_REQUIRED.md. Even when enabled it never authorises
+  // user-level disclosure; see DATA_INSIGHTS_PRECONDITIONS below.
+  DATA_INSIGHTS_PROGRAM_ENABLED: bool(false),
+  // Set only once a qualified lawyer has signed off. Recorded as free text
+  // (name + date) so the value itself is the evidence.
+  DATA_INSIGHTS_LEGAL_REVIEW_REF: z.string().default(''),
 });
 
 const parsed = schema.safeParse(process.env);
@@ -91,6 +119,35 @@ if (isProduction) {
   if (raw.STORAGE_DRIVER === 's3' && (!raw.S3_ACCESS_KEY || !raw.S3_SECRET_KEY || !raw.S3_ENDPOINT)) {
     failures.push('S3 storage in production requires S3_ENDPOINT, S3_ACCESS_KEY and S3_SECRET_KEY.');
   }
+
+  // Data monetisation guards. These are hard failures rather than warnings:
+  // the cost of booting with one of them silently on is a privacy breach and
+  // a regulator complaint, which is not recoverable by fixing the config
+  // afterwards. See docs/LEGAL_REVIEW_REQUIRED.md.
+  if (raw.SELL_PERSONAL_DATA) {
+    failures.push(
+      'SELL_PERSONAL_DATA must be false. Selling personal information or user-level behavioural '
+      + 'profiles is not implemented and must not be enabled without legal review, separate '
+      + 'consent, recipient contracts and a withdrawal path.',
+    );
+  }
+  if (raw.SELL_CHILD_DATA) {
+    failures.push("SELL_CHILD_DATA must be false. Children's information is never included in any data programme.");
+  }
+  if (raw.USE_MESSAGES_FOR_ADVERTISING) {
+    failures.push('USE_MESSAGES_FOR_ADVERTISING must be false. Private message content is not used for profiling or advertising.');
+  }
+  if (raw.BEHAVIOURAL_ADVERTISING_ENABLED) {
+    failures.push('BEHAVIOURAL_ADVERTISING_ENABLED must be false. Behavioural advertising is not implemented and requires legal review first.');
+  }
+  // The insights programme is aggregate-only, but still must not run in
+  // production before a lawyer has actually looked at it.
+  if (raw.DATA_INSIGHTS_PROGRAM_ENABLED && !raw.DATA_INSIGHTS_LEGAL_REVIEW_REF.trim()) {
+    failures.push(
+      'DATA_INSIGHTS_PROGRAM_ENABLED requires DATA_INSIGHTS_LEGAL_REVIEW_REF to record who reviewed it and when.',
+    );
+  }
+
   if (failures.length > 0) {
     console.error(
       `\nRefusing to start in production with insecure demonstration settings:\n` +
@@ -111,6 +168,18 @@ export const env = {
   demoToolsEnabled: !isProduction,
   showDemoBanner: raw.SHOW_DEMO_BANNER && !isProduction,
   secureCookies: isProduction || raw.FORCE_SECURE_COOKIES,
+
+  // Derived, safety-corrected monetisation flags. Read these, never the raw
+  // values: outside production the guard above does not run, so the raw flags
+  // could be anything a developer put in their .env. Forcing them false here
+  // means no code path can act on user-level data selling by accident in any
+  // environment.
+  sellPersonalData: false as const,
+  sellChildData: false as const,
+  useMessagesForAdvertising: false as const,
+  behaviouralAdvertisingEnabled: false as const,
+  // The one flag that can genuinely be on, and only for aggregate reports.
+  dataInsightsProgramEnabled: raw.DATA_INSIGHTS_PROGRAM_ENABLED && !!raw.DATA_INSIGHTS_LEGAL_REVIEW_REF.trim(),
 };
 
 export type Env = typeof env;

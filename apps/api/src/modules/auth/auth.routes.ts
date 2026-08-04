@@ -34,7 +34,11 @@ authRouter.post(
   authLimiter,
   validate({ body: registerSchema }),
   asyncHandler(async (req, res) => {
-    const user = await auth.register(req.body);
+    const user = await auth.register({
+      ...req.body,
+      ipAddress: req.ip ?? null,
+      userAgent: req.get('user-agent') ?? null,
+    });
     await loginSession(req, user.id);
     res.status(201).json({ user: selfUser(user) });
   }),

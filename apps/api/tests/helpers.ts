@@ -12,6 +12,26 @@ const PASSWORD = 'password123';
 
 export async function resetDb(): Promise<void> {
   await prisma.$transaction([
+    // Legal / consent / privacy tables first. UserLegalAcceptance holds a
+    // Restrict reference to LegalDocumentVersion, so it has to go before the
+    // documents it points at; everything else here is either cascaded from
+    // User or standalone.
+    prisma.moderatorAccessLog.deleteMany(),
+    prisma.privacyRequestEvent.deleteMany(),
+    prisma.privacyRequest.deleteMany(),
+    prisma.consentWithdrawal.deleteMany(),
+    prisma.userConsent.deleteMany(),
+    prisma.consentVersion.deleteMany(),
+    prisma.userLegalAcceptance.deleteMany(),
+    prisma.legalDocument.deleteMany(),
+    prisma.accountRestriction.deleteMany(),
+    prisma.breachAssessment.deleteMany(),
+    prisma.privacyIncident.deleteMany(),
+    prisma.dataDisclosureRecord.deleteMany(),
+    prisma.retentionRule.deleteMany(),
+    prisma.dataCategory.deleteMany(),
+    prisma.subprocessor.deleteMany(),
+
     prisma.review.deleteMany(),
     prisma.engagement.deleteMany(),
     prisma.message.deleteMany(),

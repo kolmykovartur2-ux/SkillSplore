@@ -10,7 +10,17 @@ export function Register() {
   const { setUser } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
-  const [form, setForm] = useState({ displayName: '', email: '', password: '', acceptTerms: false });
+  // Every consent field starts false. `marketingOptIn` in particular is
+  // separate from acceptTerms and is never pre-ticked -- bundling it into
+  // account creation is what makes marketing consent invalid.
+  const [form, setForm] = useState({
+    displayName: '',
+    email: '',
+    password: '',
+    acceptTerms: false,
+    confirmAdult: false,
+    marketingOptIn: false,
+  });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -44,10 +54,39 @@ export function Register() {
             <Field label="Password" hint="At least 10 characters, with letters and numbers.">
               <Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required autoComplete="new-password" />
             </Field>
-            <label className="check" style={{ marginBottom: 14 }}>
-              <input type="checkbox" checked={form.acceptTerms} onChange={(e) => setForm({ ...form, acceptTerms: e.target.checked })} required />
-              <span>I accept the <Link to="/terms" target="_blank">terms of service</Link> and <Link to="/privacy" target="_blank">privacy policy</Link>.</span>
+            {/* Contextual privacy notice — what is collected here and why,
+                shown at the point of collection rather than only in the
+                policy. */}
+            <div className="alert alert-info" style={{ marginBottom: 14, fontSize: '0.9rem' }}>
+              <strong>What we collect here:</strong> your name, email and a secure hash of your
+              password — never the password itself. We use them to create and secure your account
+              and to send essential messages such as email verification. Your name may be shown
+              publicly if you publish a profile; your email address is not.{' '}
+              <Link to="/privacy" target="_blank">Read the privacy policy</Link>.
+            </div>
+
+            <label className="check" style={{ marginBottom: 10 }}>
+              <input type="checkbox" checked={form.confirmAdult} onChange={(e) => setForm({ ...form, confirmAdult: e.target.checked })} required />
+              <span>
+                I am 18 or over. <span className="muted">If you are arranging learning for a
+                child, use your own account and stay responsible for it.</span>
+              </span>
             </label>
+
+            <label className="check" style={{ marginBottom: 10 }}>
+              <input type="checkbox" checked={form.acceptTerms} onChange={(e) => setForm({ ...form, acceptTerms: e.target.checked })} required />
+              <span>I accept the <Link to="/terms" target="_blank">terms of use</Link> and <Link to="/privacy" target="_blank">privacy policy</Link>.</span>
+            </label>
+
+            {/* Optional and clearly marked as such. No `required`. */}
+            <label className="check" style={{ marginBottom: 14 }}>
+              <input type="checkbox" checked={form.marketingOptIn} onChange={(e) => setForm({ ...form, marketingOptIn: e.target.checked })} />
+              <span>
+                <span className="muted">Optional.</span> Email me occasional product updates and
+                tips. You do not need this to use SkillSplore, and you can unsubscribe at any time.
+              </span>
+            </label>
+
             <Button type="submit" variant="primary" className="btn-block" loading={busy}>Create account</Button>
           </form>
           <p className="muted" style={{ marginTop: 12 }}>Already have an account? <Link to="/login">Log in</Link></p>

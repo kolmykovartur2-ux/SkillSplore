@@ -7,6 +7,7 @@ import { useToast } from '../lib/toast.js';
 import { dateStr } from '../lib/format.js';
 import type { SelfUser } from '../lib/types.js';
 import { Avatar, Button, Card, Field, Input, Modal, Textarea } from '../components/ui.js';
+import { PrivacySettings } from './account/PrivacySettings.js';
 
 export function Account() {
   const { user, setUser, refresh } = useAuth();
@@ -69,6 +70,8 @@ export function Account() {
       </div></Card>
 
       <BlockedPeople />
+
+      <PrivacySettings />
 
       <Card><div className="card-body">
         <h3 className="mt-0">Delete account</h3>

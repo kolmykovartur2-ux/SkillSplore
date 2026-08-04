@@ -1,8 +1,12 @@
 import { z } from 'zod';
 
-export const createRequestSchema = z.object({
+const createRequestFields = {
   kind: z.enum(['LEARNING', 'SERVICE']).default('LEARNING'),
-  subjectId: z.number().int().positive(),
+  // Optional so "Other subject or skill" can be chosen instead of picking
+  // from the catalogue -- see the refine below and requests.routes.ts, which
+  // resolves the required DB column to a placeholder row in that case.
+  subjectId: z.number().int().positive().optional(),
+  customSubjectLabel: z.string().trim().min(2).max(120).optional(),
   levelId: z.number().int().positive().nullable().optional(),
   title: z.string().min(4).max(140),
   description: z.string().min(10).max(4000),
@@ -15,9 +19,14 @@ export const createRequestSchema = z.object({
   currency: z.enum(['NZD', 'AUD']).default('NZD'),
   timing: z.string().max(300).optional(),
   publish: z.boolean().optional(),
-});
+};
 
-export const updateRequestSchema = createRequestSchema.partial().omit({ publish: true });
+export const createRequestSchema = z.object(createRequestFields).refine(
+  (d) => !!d.subjectId || !!d.customSubjectLabel,
+  { message: 'Choose a subject, or describe it under "Other subject or skill".', path: ['subjectId'] },
+);
+
+export const updateRequestSchema = z.object(createRequestFields).partial().omit({ publish: true });
 
 export const feedQuerySchema = z.object({
   kind: z.enum(['LEARNING', 'SERVICE']).optional(),

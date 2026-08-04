@@ -15,6 +15,9 @@ import { taxonomyRouter } from './modules/taxonomy/taxonomy.routes.js';
 import { subjectsRouter } from './modules/subjects/subjects.routes.js';
 import { adminRouter } from './modules/admin/admin.routes.js';
 import { filesRouter } from './modules/files/files.routes.js';
+import { legalRouter } from './modules/legal/legal.routes.js';
+import { consentRouter } from './modules/legal/consent.routes.js';
+import { privacyRequestsRouter } from './modules/legal/privacyRequests.routes.js';
 import { prisma } from './lib/prisma.js';
 
 export const apiRouter = Router();
@@ -53,3 +56,6 @@ apiRouter.use('/taxonomy', taxonomyRouter);
 apiRouter.use('/subjects', subjectsRouter);
 apiRouter.use('/admin', adminRouter);
 apiRouter.use('/files', filesRouter);
+apiRouter.use('/legal', legalRouter);
+apiRouter.use('/consents', consentRouter);
+apiRouter.use('/privacy-requests', privacyRequestsRouter);

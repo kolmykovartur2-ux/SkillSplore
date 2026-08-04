@@ -7,6 +7,7 @@ import { prisma } from '../../lib/prisma.js';
 import { paginate, pageMeta } from '../../lib/pagination.js';
 import { money, publicUser } from '../../lib/serializers.js';
 import { activeVerifications } from '../../lib/verification.js';
+import { normalizeName } from '../../lib/normalize.js';
 
 export const searchRouter = Router();
 
@@ -52,15 +53,20 @@ searchRouter.get(
 
     if (qp.q) {
       const q = qp.q.trim();
-      and.push({
-        OR: [
-          { headline: { contains: q, mode: 'insensitive' } },
-          { experience: { contains: q, mode: 'insensitive' } },
-          { teachingStyle: { contains: q, mode: 'insensitive' } },
-          { user: { displayName: { contains: q, mode: 'insensitive' } } },
-          { subjects: { some: { subject: { name: { contains: q, mode: 'insensitive' } } } } },
-        ],
-      });
+      // Resolves colloquial search terms ("maths", "coding") to the catalogue
+      // entry a learner actually means, so profiles under the formal subject
+      // name ("Mathematics") still turn up. See taxonomy.data.ts ALIASES.
+      const alias = await prisma.taxonomyAlias.findUnique({ where: { normalizedTerm: normalizeName(q) } });
+      const or: Prisma.TutorProfileWhereInput[] = [
+        { headline: { contains: q, mode: 'insensitive' } },
+        { experience: { contains: q, mode: 'insensitive' } },
+        { teachingStyle: { contains: q, mode: 'insensitive' } },
+        { user: { displayName: { contains: q, mode: 'insensitive' } } },
+        { subjects: { some: { subject: { name: { contains: q, mode: 'insensitive' } } } } },
+      ];
+      if (alias?.subjectId) or.push({ subjects: { some: { subjectId: alias.subjectId } } });
+      if (alias?.categoryId) or.push({ subjects: { some: { subject: { categoryId: alias.categoryId } } } });
+      and.push({ OR: or });
     }
     if (and.length) where.AND = and;
 

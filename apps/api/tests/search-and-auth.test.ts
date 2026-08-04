@@ -60,6 +60,7 @@ describe('registration, login, logout', () => {
       password: 'password12345',
       displayName: 'New Person',
       acceptTerms: true,
+      confirmAdult: true,
     });
     expect(res.status).toBe(201);
     const cookie = res.headers['set-cookie'];
@@ -74,6 +75,7 @@ describe('registration, login, logout', () => {
       password: 'password12345',
       displayName: 'No Terms',
       acceptTerms: false,
+      confirmAdult: true,
     });
     expect(res.status).toBe(400);
   });

@@ -41,5 +41,10 @@ if (appEnv !== 'production') {
 console.log('[bootstrap] syncing subject catalogue...');
 run('npx', ['tsx', 'apps/api/prisma/syncTaxonomy.ts']);
 
+// Same reasoning for the policy documents and consent wording. Drafts land
+// unpublished; nothing here promotes text to a live policy on its own.
+console.log('[bootstrap] syncing legal documents and consent wording...');
+run('npx', ['tsx', 'apps/api/prisma/syncLegal.ts']);
+
 console.log('[bootstrap] starting server...');
 await import('../dist/index.js');

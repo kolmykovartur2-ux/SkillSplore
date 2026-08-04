@@ -7,12 +7,52 @@ import { prisma } from '../../lib/prisma.js';
 import { paginate, pageMeta } from '../../lib/pagination.js';
 import { badRequest, forbidden, notFound } from '../../lib/errors.js';
 import { money, publicUser } from '../../lib/serializers.js';
+import { normalizeName } from '../../lib/normalize.js';
+import { OTHER_SUBJECT_NAME } from '../../lib/taxonomyConstants.js';
 import { createRequestSchema, updateRequestSchema, feedQuerySchema } from './requests.schemas.js';
 
 export const requestsRouter = Router();
 
 async function approvedTutorProfile(userId: number) {
   return prisma.tutorProfile.findFirst({ where: { userId, status: 'APPROVED' } });
+}
+
+// TutoringRequest.subjectId is a required column, but a poster can describe
+// what they want under "Other subject or skill" instead of picking from the
+// catalogue. Both cases resolve to a real subjectId here: either the one they
+// chose, or the seeded placeholder (see taxonomy.data.ts), with what they
+// actually typed kept in customSubjectLabel for display.
+let cachedOtherSubjectId: number | null = null;
+async function otherSubjectId(): Promise<number> {
+  if (cachedOtherSubjectId != null) return cachedOtherSubjectId;
+  const row = await prisma.subject.findUniqueOrThrow({ where: { normalizedName: normalizeName(OTHER_SUBJECT_NAME) } });
+  cachedOtherSubjectId = row.id;
+  return row.id;
+}
+
+async function resolveSubject(input: { subjectId?: number; customSubjectLabel?: string }): Promise<{ subjectId: number; customSubjectLabel: string | null }> {
+  if (input.subjectId) {
+    const subject = await prisma.subject.findUnique({ where: { id: input.subjectId } });
+    if (!subject) throw badRequest('Invalid subject.');
+    return { subjectId: input.subjectId, customSubjectLabel: null };
+  }
+  return { subjectId: await otherSubjectId(), customSubjectLabel: input.customSubjectLabel!.trim() };
+}
+
+// Surfaces "Other subject or skill" entries to admins as taxonomy gaps,
+// without blocking the request on review -- the poster's request goes live
+// immediately; the suggestion is purely for expanding the catalogue later.
+async function suggestFromCustomLabel(userId: number, label: string): Promise<void> {
+  const normalized = normalizeName(label);
+  const existingSubject = await prisma.subject.findUnique({ where: { normalizedName: normalized } });
+  if (existingSubject) return; // already a real catalogue entry, nothing to suggest
+  const existingSuggestion = await prisma.subjectSuggestion.findFirst({
+    where: { normalizedName: normalized, status: 'PENDING' },
+  });
+  if (existingSuggestion) return;
+  await prisma.subjectSuggestion.create({
+    data: { name: label, normalizedName: normalized, note: 'Typed under "Other subject or skill" on a request.', submittedById: userId },
+  });
 }
 
 function serializeRequestCore(r: {
@@ -32,6 +72,7 @@ function serializeRequestCore(r: {
   createdAt: Date;
   publishedAt: Date | null;
   subject: { id: number; name: string };
+  customSubjectLabel: string | null;
   level: { id: number; name: string } | null;
 }) {
   return {
@@ -50,7 +91,10 @@ function serializeRequestCore(r: {
     status: r.status,
     createdAt: r.createdAt,
     publishedAt: r.publishedAt,
-    subject: r.subject,
+    // The subject displayed is whatever the poster actually described, when
+    // they used "Other subject or skill" -- not the internal placeholder name.
+    subject: r.customSubjectLabel ? { id: r.subject.id, name: r.customSubjectLabel } : r.subject,
+    isCustomSubject: !!r.customSubjectLabel,
     level: r.level,
   };
 }
@@ -137,14 +181,14 @@ requestsRouter.post(
     if (b.budgetMinCents != null && b.budgetMaxCents != null && b.budgetMinCents > b.budgetMaxCents) {
       throw badRequest('Minimum budget cannot exceed maximum budget.');
     }
-    const subject = await prisma.subject.findUnique({ where: { id: b.subjectId } });
-    if (!subject) throw badRequest('Invalid subject.');
+    const { subjectId, customSubjectLabel } = await resolveSubject(b);
 
     const created = await prisma.tutoringRequest.create({
       data: {
         studentId: req.user!.id,
         kind: b.kind,
-        subjectId: b.subjectId,
+        subjectId,
+        customSubjectLabel,
         levelId: b.levelId ?? null,
         title: b.title,
         description: b.description,
@@ -161,6 +205,7 @@ requestsRouter.post(
       },
       include: { subject: true, level: true },
     });
+    if (customSubjectLabel) await suggestFromCustomLabel(req.user!.id, customSubjectLabel);
     res.status(201).json({ request: serializeRequestCore(created) });
   }),
 );
@@ -255,11 +300,24 @@ requestsRouter.patch(
   asyncHandler(async (req, res) => {
     const existing = await ownRequest(req.user!.id, Number(req.params.id));
     if (existing.status === 'CLOSED') throw badRequest('A closed request cannot be edited.');
+    const b = req.body as import('zod').infer<typeof updateRequestSchema>;
+
+    // Only touch subjectId/customSubjectLabel together, and only if the
+    // request actually asked to change the subject -- otherwise leave both as
+    // they were (b.subjectId undefined here just means "not changing it",
+    // it must not fall through to the "Other" placeholder).
+    let subjectFields: { subjectId?: number; customSubjectLabel?: string | null } = {};
+    if (b.subjectId != null || b.customSubjectLabel != null) {
+      const resolved = await resolveSubject(b);
+      subjectFields = resolved;
+    }
+
     const updated = await prisma.tutoringRequest.update({
       where: { id: existing.id },
-      data: req.body,
+      data: { ...req.body, ...subjectFields },
       include: { subject: true, level: true },
     });
+    if (subjectFields.customSubjectLabel) await suggestFromCustomLabel(req.user!.id, subjectFields.customSubjectLabel);
     res.json({ request: serializeRequestCore(updated) });
   }),
 );
