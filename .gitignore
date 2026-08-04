@@ -10,6 +10,7 @@ npm-debug.log*
 .DS_Store
 apps/api/prisma/*.db
 storage-data/
+storage-data-test/
 minio-data/
 pg-data/
 .vite/

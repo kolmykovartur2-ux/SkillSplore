@@ -111,6 +111,18 @@ services:
       # --- Content generation: template needs no AI provider or API key ---
       - key: CONTENT_AI_PROVIDER
         value: template
+      # Image generation for post creative. "none" keeps the service fully
+      # functional with no image vendor. To enable: set IMAGE_AI_PROVIDER to
+      # openai_compatible, then add IMAGE_AI_BASE_URL and IMAGE_AI_API_KEY via
+      # the dashboard (they are sync: false so secrets never live in git).
+      - key: IMAGE_AI_PROVIDER
+        value: none
+      - key: IMAGE_AI_BASE_URL
+        sync: false
+      - key: IMAGE_AI_API_KEY
+        sync: false
+      - key: IMAGE_AI_MODEL
+        sync: false
       - key: DEFAULT_TIMEZONE
         value: Pacific/Auckland
       # Render's free tier doesn't persist disk across redeploys -- local

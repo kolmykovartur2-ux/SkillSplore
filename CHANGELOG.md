@@ -4,6 +4,48 @@ All notable changes to SkillSplore are documented here.
 
 ## [Unreleased]
 
+### Added (2026-08-04) — Persona-targeted image generation for the marketing agent
+Post creative can now be generated for a chosen audience persona (maths tutor, chef, electronics
+teacher, plant-based cooking coach, music teacher, language tutor, fitness coach, craft maker), so
+the imagery reflects that SkillSplore is for any skill rather than only academic tutoring.
+- New `ImageGenerationProvider` adapter mirroring the existing `ContentGenerationProvider`
+  sovereignty pattern: `openai_compatible` (OpenAI or any gateway speaking the same shape) and
+  `automatic1111` (fully self-hosted Stable Diffusion, no API key, nothing leaves the machine).
+  Defaults to `none`, so no image vendor is ever a runtime requirement.
+- Deliberately **no offline fallback**, unlike text generation. A deterministic template post is
+  still genuinely useful; a placeholder image is not, and could be published unnoticed — so a
+  missing provider fails loudly.
+- Prompts are composed server-side by a pure, unit-tested function. The client picks only a persona
+  and an optional theme, so the safety constraints cannot be edited away from the browser: no
+  recognisable real people, no minors, no text/statistics/ratings rendered into the image, no fake
+  dashboards, no logos, no health or outcome claims. A theme is treated as mood only and explicitly
+  forbidden from becoming on-image text — otherwise "trusted by 10,000 students" could be typed
+  into the theme box and printed onto the creative.
+- `MediaAsset` gained `isAiGenerated`, `generationProvider`, `generationModel`, `generationPrompt`
+  and `personaKey` (additive migration). Usage rights are written automatically and record that the
+  image is synthetic and depicts no real person; the library shows an **AI-generated** badge so a
+  generated image can never be quietly taken for a real photo. Generation is audited.
+- 18 new tests covering prompt determinism, every safety constraint surviving a hostile theme,
+  provenance recording, unknown-persona rejection, and provider failure storing nothing.
+- Documented in `docs/marketing-agent/IMAGE_GENERATION.md`.
+
+### Fixed (2026-08-04) — LinkedIn OAuth failures reported as an opaque 500
+A failed token exchange threw a plain `Error`, which the error handler collapsed into "Something
+went wrong", and the response body was never logged — so the actual cause was invisible. Failed
+token calls carry an OAuth error object and no token, so the body is safe to both log and show.
+Now surfaces LinkedIn's own wording (e.g. `unauthorized_scope_error`).
+
+### Fixed (2026-08-04) — Marketing agent crashed on every login attempt
+Two independent faults, both returning 502 from `POST /api/auth/login` on the deployed service.
+- The login route called `throw` inside `req.session.regenerate`/`save`, which are Node-style
+  callbacks rather than promises. The throw escaped `asyncHandler`'s catch and became an uncaught
+  exception, killing the process instead of producing an error response. Errors now route through
+  `next(err)`.
+- The underlying error was `SSL/TLS required`: Prisma negotiates TLS to Render's managed Postgres
+  automatically, but the raw `pg.Pool` behind the session store does not. Added `DATABASE_SSL`
+  (default off, so local docker-compose Postgres is unaffected). The pool also had no `error`
+  listener, so an idle-client error would crash the process; it now logs instead.
+
 ### Fixed (2026-08-03) — The live catalogue could never pick up new categories
 The demo seed only runs against a database with zero users, so any deployment that already had
 users could never receive newly-added categories or subjects. Migrations were applying correctly,

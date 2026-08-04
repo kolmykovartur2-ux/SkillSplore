@@ -22,4 +22,5 @@ export const tooMany = (msg = 'Too many requests') => new AppError(429, 'rate_li
 // through to the founder rather than collapsing it into a generic 500 — the
 // difference between "Something went wrong" and "your app is not approved for
 // w_organization_social".
-export const upstreamFailed = (msg: string, details?: unknown) => new AppError(502, 'linkedin_error', msg, details);
+export const upstreamFailed = (msg: string, code = 'upstream_error', details?: unknown) =>
+  new AppError(502, code, msg, details);

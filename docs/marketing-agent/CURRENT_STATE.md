@@ -32,6 +32,11 @@ exercised against the live LinkedIn API in this build environment — see `KNOWN
   warnings, approve/request-changes/schedule/publish-now/retry/duplicate/cancel/archive), Review
   queue, Scheduled/Published/Failed views, Campaigns, Pillars, Facts, Media library, Consents,
   LinkedIn connection status, Analytics, Audit log, Settings.
+- Persona-targeted image generation for post creative (`IMAGE_AI_PROVIDER`, default `none`):
+  `openai_compatible` or fully self-hosted `automatic1111`. Prompts are built server-side by a
+  pure, unit-tested function carrying non-bypassable safety constraints (no real people, no minors,
+  no on-image text/statistics, no logos, no outcome claims). Generated assets record full
+  provenance and show an **AI-generated** badge. See `IMAGE_GENERATION.md`.
 - Export endpoints: full JSON dump, CSV for drafts and analytics.
 - One-click LinkedIn disconnect: wipes stored tokens, preserves historical published-post
   records.
@@ -50,6 +55,9 @@ exercised against the live LinkedIn API in this build environment — see `KNOWN
   (no outbound network access in the build environment that produced it).
 - Calendar is a read-only month grid; no drag-and-drop rescheduling yet (reschedule via
   unschedule + schedule on the draft page).
+- Generated images are not automatically checked against the safety constraints — image models
+  ignore instructions occasionally (stray text most often), so founder review before approval is
+  the control.
 - No automated administrator alert channel (email/Slack) on final publish failure — currently a
   loud log line only.
 - No penetration test, no formal incident-response rehearsal, no load testing.

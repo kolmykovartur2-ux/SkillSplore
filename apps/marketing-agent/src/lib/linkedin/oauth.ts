@@ -60,7 +60,7 @@ async function describeFailure(res: Response, what: string): Promise<Error> {
     /* not JSON — fall back to the raw text above */
   }
   logger.warn({ status: res.status, detail }, `LinkedIn ${what} failed`);
-  return upstreamFailed(`LinkedIn ${what} failed (HTTP ${res.status}): ${detail || 'no detail returned'}`);
+  return upstreamFailed(`LinkedIn ${what} failed (HTTP ${res.status}): ${detail || 'no detail returned'}`, 'linkedin_error');
 }
 
 export interface TokenResponse {

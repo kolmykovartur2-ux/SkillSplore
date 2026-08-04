@@ -162,14 +162,14 @@ model ContentPillar {
 }
 
 model ContentCampaign {
-  id        Int              @id @default(autoincrement())
-  key       String           @unique
+  id        Int            @id @default(autoincrement())
+  key       String         @unique
   name      String
   goal      String
-  status    CampaignStatus   @default(DRAFT)
+  status    CampaignStatus @default(DRAFT)
   startDate DateTime?
   endDate   DateTime?
-  createdAt DateTime         @default(now())
+  createdAt DateTime       @default(now())
   ideas     ContentIdea[]
   drafts    ContentDraft[]
 }
@@ -190,54 +190,54 @@ model ContentIdea {
 
 // Fields exactly per spec §12.
 model ContentBrief {
-  id                           Int            @id @default(autoincrement())
-  ideaId                       Int?
-  idea                         ContentIdea?   @relation(fields: [ideaId], references: [id])
-  pillarId                     Int?
-  pillar                       ContentPillar? @relation(fields: [pillarId], references: [id])
-  objective                    String
-  audience                     String
-  mainIdea                     String
-  evidenceSource               String?
-  productStage                 String
-  desiredReaderAction          String
-  tone                         String
-  format                       ContentFormat  @default(TEXT_ONLY)
-  maxLength                    Int            @default(3000)
-  claimsRequiringVerification  Json?
-  relevantLink                 String?
-  creativeAssetId              Int?
-  discussesPricing             Boolean        @default(false)
-  discussesUsersOrOutcomes     Boolean        @default(false)
-  createdBy                    Int?
-  createdAt                    DateTime       @default(now())
-  drafts                       ContentDraft[]
+  id                          Int            @id @default(autoincrement())
+  ideaId                      Int?
+  idea                        ContentIdea?   @relation(fields: [ideaId], references: [id])
+  pillarId                    Int?
+  pillar                      ContentPillar? @relation(fields: [pillarId], references: [id])
+  objective                   String
+  audience                    String
+  mainIdea                    String
+  evidenceSource              String?
+  productStage                String
+  desiredReaderAction         String
+  tone                        String
+  format                      ContentFormat  @default(TEXT_ONLY)
+  maxLength                   Int            @default(3000)
+  claimsRequiringVerification Json?
+  relevantLink                String?
+  creativeAssetId             Int?
+  discussesPricing            Boolean        @default(false)
+  discussesUsersOrOutcomes    Boolean        @default(false)
+  createdBy                   Int?
+  createdAt                   DateTime       @default(now())
+  drafts                      ContentDraft[]
 }
 
 // Fields exactly per spec §27 "content_drafts".
 model ContentDraft {
-  id                 Int                   @id @default(autoincrement())
+  id                 Int                  @id @default(autoincrement())
   campaignId         Int?
-  campaign           ContentCampaign?      @relation(fields: [campaignId], references: [id])
+  campaign           ContentCampaign?     @relation(fields: [campaignId], references: [id])
   briefId            Int?
-  brief              ContentBrief?         @relation(fields: [briefId], references: [id])
+  brief              ContentBrief?        @relation(fields: [briefId], references: [id])
   contentType        String
   body               String
   title              String?
   destinationUrl     String?
   mediaAssetId       Int?
-  mediaAsset         MediaAsset?           @relation(fields: [mediaAssetId], references: [id])
+  mediaAsset         MediaAsset?          @relation(fields: [mediaAssetId], references: [id])
   generationProvider String
   generationModel    String?
-  status             ContentStatus         @default(IDEA)
+  status             ContentStatus        @default(IDEA)
   createdBy          Int?
   approvedBy         Int?
   approvedAt         DateTime?
   scheduledFor       DateTime?
   publishedAt        DateTime?
   currentVersionId   Int?
-  createdAt          DateTime              @default(now())
-  updatedAt          DateTime              @updatedAt
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
   versions           ContentVersion[]
   approvals          ContentApproval[]
   schedule           ContentSchedule?
@@ -333,18 +333,18 @@ model PostAnalytics {
 // Fields exactly per spec §13. Content generation may only read facts that
 // are isPublic and currently within [validFrom, expiresAt).
 model MarketingFact {
-  id                   Int                    @id @default(autoincrement())
-  factKey              String                 @unique
+  id                   Int                   @id @default(autoincrement())
+  factKey              String                @unique
   value                String
   source               String
   approvedBy           String
   approvalDate         DateTime
-  validFrom            DateTime               @default(now())
+  validFrom            DateTime              @default(now())
   expiresAt            DateTime?
-  isPublic             Boolean                @default(true)
-  containsPersonalInfo Boolean                @default(false)
-  createdAt            DateTime               @default(now())
-  updatedAt            DateTime               @updatedAt
+  isPublic             Boolean               @default(true)
+  containsPersonalInfo Boolean               @default(false)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
   sources              MarketingFactSource[]
 }
 
@@ -370,25 +370,38 @@ model MediaAsset {
   createdBy   Int?
   createdAt   DateTime        @default(now())
   drafts      ContentDraft[]
+
+  // Provenance for AI-generated imagery. A synthetic image must never be
+  // mistakable for a real photo of a real tutor or customer — that would be
+  // fabricated social proof, which the brand rules forbid. Recording the
+  // provider, model and exact prompt keeps every generated asset auditable and
+  // reproducible, and `isAiGenerated` drives the disclosure label in the UI.
+  isAiGenerated      Boolean @default(false)
+  generationProvider String?
+  generationModel    String?
+  generationPrompt   String?
+  personaKey         String?
+
+  @@index([isAiGenerated])
 }
 
 // Fields exactly per spec §14. Withdrawal is recorded (withdrawnAt) rather
 // than deleted, so already-published material can be flagged for review
 // without destroying the consent history.
 model ContentConsent {
-  id                    Int          @id @default(autoincrement())
-  subjectDescription    String
-  scope                 String
-  approvedWording       String?
-  approvedImageAssetId  Int?
-  platformsAllowed      String[]
-  startDate             DateTime     @default(now())
-  expiryDate            DateTime?
-  withdrawnAt           DateTime?
-  evidenceReference     String
-  createdBy             Int?
-  createdAt             DateTime     @default(now())
-  mediaAssets           MediaAsset[]
+  id                   Int          @id @default(autoincrement())
+  subjectDescription   String
+  scope                String
+  approvedWording      String?
+  approvedImageAssetId Int?
+  platformsAllowed     String[]
+  startDate            DateTime     @default(now())
+  expiryDate           DateTime?
+  withdrawnAt          DateTime?
+  evidenceReference    String
+  createdBy            Int?
+  createdAt            DateTime     @default(now())
+  mediaAssets          MediaAsset[]
 }
 
 model GenerationRun {

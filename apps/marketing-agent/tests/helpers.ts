@@ -59,7 +59,9 @@ export async function createPillar(name = 'Building SkillSplore', key = 'buildin
   });
 }
 
-export async function createFact(overrides: Partial<{ factKey: string; value: string; isPublic: boolean; expiresAt: Date | null }> = {}) {
+export async function createFact(
+  overrides: Partial<{ factKey: string; value: string; isPublic: boolean; expiresAt: Date | null; validFrom: Date }> = {},
+) {
   return prisma.marketingFact.create({
     data: {
       factKey: overrides.factKey ?? 'test.fact',
@@ -69,6 +71,13 @@ export async function createFact(overrides: Partial<{ factKey: string; value: st
       approvalDate: new Date(),
       isPublic: overrides.isPublic ?? true,
       expiresAt: overrides.expiresAt ?? null,
+      // Pinned a minute in the past rather than left to the column's
+      // `@default(now())`. That default is evaluated by the *database* clock
+      // while getActiveApprovedFacts() filters with the *Node* clock, and the
+      // two can differ by a few milliseconds — enough for a fact created and
+      // read in the same instant to look as though it starts in the future.
+      // Fixtures mean "a fact that is already active", so say so explicitly.
+      validFrom: overrides.validFrom ?? new Date(Date.now() - 60_000),
     },
   });
 }

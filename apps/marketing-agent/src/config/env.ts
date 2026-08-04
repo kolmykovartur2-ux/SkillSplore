@@ -64,6 +64,15 @@ const schema = z.object({
   OPENAI_COMPATIBLE_BASE_URL: z.string().optional().default(''),
   OLLAMA_BASE_URL: z.string().optional().default('http://localhost:11434'),
 
+  // --- Image generation for post creative (separate from the text provider:
+  // you may well want a local Stable Diffusion for images and no AI at all for
+  // copy, or vice versa). Defaults to "none" so no vendor is ever required. ---
+  IMAGE_AI_PROVIDER: z.enum(['none', 'openai_compatible', 'automatic1111']).default('none'),
+  IMAGE_AI_BASE_URL: z.string().optional().default(''),
+  IMAGE_AI_API_KEY: z.string().optional().default(''),
+  IMAGE_AI_MODEL: z.string().optional().default(''),
+  IMAGE_AI_SIZE: z.string().default('1024x1024'),
+
   DEFAULT_TIMEZONE: z.string().default('Pacific/Auckland'),
   // Only ever applies to already-*approved* content at its scheduled time —
   // never lets ungenerated/unapproved content publish (§7). Defaults to false:
@@ -139,6 +148,11 @@ if (isProduction) {
   if (raw.LINKEDIN_PUBLISHING_ENABLED && (!raw.LINKEDIN_CLIENT_ID || !raw.LINKEDIN_CLIENT_SECRET || !raw.LINKEDIN_REDIRECT_URI)) {
     failures.push('LINKEDIN_PUBLISHING_ENABLED requires LINKEDIN_CLIENT_ID, LINKEDIN_CLIENT_SECRET and LINKEDIN_REDIRECT_URI.');
   }
+  // A selected image provider with nowhere to send the request would fail only
+  // at the moment someone tries to generate creative — better to refuse at boot.
+  if (raw.IMAGE_AI_PROVIDER !== 'none' && !raw.IMAGE_AI_BASE_URL) {
+    failures.push(`IMAGE_AI_PROVIDER=${raw.IMAGE_AI_PROVIDER} requires IMAGE_AI_BASE_URL.`);
+  }
   if (raw.OBJECT_STORAGE_PROVIDER === 's3' && (!raw.OBJECT_STORAGE_ACCESS_KEY || !raw.OBJECT_STORAGE_SECRET_KEY || !raw.OBJECT_STORAGE_ENDPOINT)) {
     failures.push('S3 object storage in production requires OBJECT_STORAGE_ENDPOINT, OBJECT_STORAGE_ACCESS_KEY and OBJECT_STORAGE_SECRET_KEY.');
   }
@@ -162,6 +176,7 @@ export const env = {
   // LinkedIn client — real Posts API publication is a documented Phase 6+
   // extension (docs/marketing-agent/KNOWN_LIMITATIONS.md).
   linkedinRealClientConfigured: Boolean(raw.LINKEDIN_CLIENT_ID && raw.LINKEDIN_CLIENT_SECRET),
+  imageGenerationConfigured: raw.IMAGE_AI_PROVIDER !== 'none' && Boolean(raw.IMAGE_AI_BASE_URL),
 };
 
 export type Env = typeof env;

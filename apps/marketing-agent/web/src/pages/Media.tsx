@@ -4,16 +4,38 @@ import { api, ApiError } from '../lib/api.js';
 import { useToast } from '../lib/toast.js';
 import { Button, Card, Spinner, EmptyState, Field, Input, Select, Badge } from '../components/ui.js';
 
-interface Asset { id: number; filename: string; kind: string; usageRights: string; attribution: string | null; consent: unknown }
+interface Asset { id: number; filename: string; kind: string; usageRights: string; attribution: string | null; consent: unknown; isAiGenerated: boolean; personaKey: string | null }
+interface Persona { key: string; label: string }
+interface PersonaData { personas: Persona[]; imageGenerationConfigured: boolean; provider: string }
 
 export function Media() {
   const { data, loading, reload } = useApi<{ assets: Asset[] }>('/media');
+  const { data: personaData } = useApi<PersonaData>('/media/personas');
   const toast = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
   const [kind, setKind] = useState('SCREENSHOT');
   const [usageRights, setUsageRights] = useState('');
   const [attribution, setAttribution] = useState('');
   const [busy, setBusy] = useState(false);
+  const [personaKey, setPersonaKey] = useState('');
+  const [topic, setTopic] = useState('');
+  const [generating, setGenerating] = useState(false);
+
+  const generate = async () => {
+    const key = personaKey || personaData?.personas[0]?.key;
+    if (!key) return;
+    setGenerating(true);
+    try {
+      await api.post('/media/generate', { personaKey: key, topic: topic || undefined });
+      toast('Image generated.', 'success');
+      setTopic('');
+      await reload();
+    } catch (err) {
+      toast(err instanceof ApiError ? err.message : 'Generation failed.', 'error');
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const upload = async () => {
     const file = fileRef.current?.files?.[0];
@@ -70,6 +92,47 @@ export function Media() {
         </div>
       </Card>
 
+      <Card style={{ margin: '20px 0' }}>
+        <div className="card-body">
+          <h3>Generate post creative</h3>
+          {personaData && !personaData.imageGenerationConfigured ? (
+            <p className="muted">
+              Image generation is switched off. Set <code>IMAGE_AI_PROVIDER</code> and <code>IMAGE_AI_BASE_URL</code> for this
+              service to enable it — everything else here keeps working without it.
+            </p>
+          ) : (
+            <>
+              <p className="muted">
+                Pick who the ad should speak to. Generated images depict no real person, never contain text or statistics, and
+                are always stored labelled as AI-generated.
+              </p>
+              <div className="row-wrap">
+                <Field label="Audience">
+                  <Select value={personaKey} onChange={(e) => setPersonaKey(e.target.value)} style={{ width: 220 }}>
+                    {personaData?.personas.map((p) => (
+                      <option key={p.key} value={p.key}>
+                        {p.label}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+                <Field label="Theme (optional)">
+                  <Input
+                    value={topic}
+                    onChange={(e) => setTopic(e.target.value)}
+                    placeholder="e.g. learning something new after work"
+                    style={{ width: 280 }}
+                  />
+                </Field>
+                <Button variant="primary" onClick={() => void generate()} loading={generating}>
+                  Generate
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      </Card>
+
       {loading ? <Spinner /> : !data?.assets.length ? (
         <EmptyState title="No media yet" />
       ) : (
@@ -77,7 +140,12 @@ export function Media() {
           {data.assets.map((a) => (
             <Card key={a.id}>
               <div className="card-body">
-                <Badge>{a.kind}</Badge>
+                <Badge>{a.kind}</Badge>{' '}
+                {a.isAiGenerated && (
+                  <Badge variant="warning" title="Synthetic image — depicts no real person">
+                    AI-generated
+                  </Badge>
+                )}
                 <p style={{ marginTop: 8 }}>{a.filename}</p>
                 <p className="muted">{a.usageRights}</p>
                 {a.attribution && <p className="muted">Attribution: {a.attribution}</p>}
