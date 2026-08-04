@@ -80,6 +80,35 @@ const schema = z.object({
   // Set only once a qualified lawyer has signed off. Recorded as free text
   // (name + date) so the value itself is the evidence.
   DATA_INSIGHTS_LEGAL_REVIEW_REF: z.string().default(''),
+
+  // -------------------------------------------------------------------------
+  // Tutor signup fee.
+  //
+  // Off by default. When disabled, nothing in the product mentions a fee and
+  // no payment record is ever created -- the platform behaves exactly as it
+  // did before this feature existed.
+  //
+  // SkillSplore never handles card numbers. The provider adapters use hosted
+  // checkout, so card data goes from the payer's browser to the processor and
+  // never touches this server or this database. See src/lib/payments/.
+  // -------------------------------------------------------------------------
+  PAYMENTS_ENABLED: bool(false),
+  // 1299 = NZD 12.99. Stored in cents to avoid float rounding on money.
+  SIGNUP_FEE_CENTS: z.coerce.number().int().min(0).default(1299),
+  SIGNUP_FEE_CURRENCY: z.enum(['NZD', 'AUD']).default('NZD'),
+  // The first N approved tutors pay nothing. Allocation is atomic -- see
+  // claimFreeTierSlot in src/lib/payments/freeTier.ts.
+  FREE_SIGNUP_LIMIT: z.coerce.number().int().min(0).default(50),
+
+  // 'none' is a real, safe provider: it refuses to create a checkout. It is
+  // the default so that turning PAYMENTS_ENABLED on without choosing a
+  // processor fails loudly rather than appearing to charge people.
+  PAYMENT_PROVIDER: z.enum(['none', 'stripe', 'windcave']).default('none'),
+  PAYMENT_PUBLIC_KEY: z.string().default(''),
+  PAYMENT_SECRET_KEY: z.string().default(''),
+  // Shared secret used to verify that a webhook genuinely came from the
+  // processor. Without it, anyone who learns the URL can mark an order paid.
+  PAYMENT_WEBHOOK_SECRET: z.string().default(''),
 });
 
 const parsed = schema.safeParse(process.env);
@@ -148,6 +177,27 @@ if (isProduction) {
     );
   }
 
+  // Charging real money with a half-configured processor is worse than not
+  // charging at all: it produces users who believe they have paid and records
+  // that cannot be reconciled. Fail the boot instead.
+  if (raw.PAYMENTS_ENABLED) {
+    if (raw.PAYMENT_PROVIDER === 'none') {
+      failures.push('PAYMENTS_ENABLED requires PAYMENT_PROVIDER to be a real processor, not "none".');
+    }
+    if (!raw.PAYMENT_SECRET_KEY.trim()) {
+      failures.push('PAYMENTS_ENABLED requires PAYMENT_SECRET_KEY.');
+    }
+    if (!raw.PAYMENT_WEBHOOK_SECRET.trim()) {
+      failures.push(
+        'PAYMENTS_ENABLED requires PAYMENT_WEBHOOK_SECRET. Without it, webhook signatures cannot be '
+        + 'verified and anyone who learns the endpoint URL could mark an order as paid.',
+      );
+    }
+    if (raw.SIGNUP_FEE_CENTS <= 0) {
+      failures.push('PAYMENTS_ENABLED with SIGNUP_FEE_CENTS of 0 would create zero-value charges. Set a real amount or disable payments.');
+    }
+  }
+
   if (failures.length > 0) {
     console.error(
       `\nRefusing to start in production with insecure demonstration settings:\n` +
@@ -180,6 +230,12 @@ export const env = {
   behaviouralAdvertisingEnabled: false as const,
   // The one flag that can genuinely be on, and only for aggregate reports.
   dataInsightsProgramEnabled: raw.DATA_INSIGHTS_PROGRAM_ENABLED && !!raw.DATA_INSIGHTS_LEGAL_REVIEW_REF.trim(),
+
+  // Payments are only "on" when a real processor is configured. Outside
+  // production the guard above does not run, so this derived value is what
+  // every code path must read -- it cannot be true with PAYMENT_PROVIDER
+  // 'none' in any environment.
+  paymentsEnabled: raw.PAYMENTS_ENABLED && raw.PAYMENT_PROVIDER !== 'none',
 };
 
 export type Env = typeof env;

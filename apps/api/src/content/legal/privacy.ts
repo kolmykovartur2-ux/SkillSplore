@@ -134,13 +134,20 @@ audit history of moderation actions.
 
 ### 4.9 Billing information
 
-SkillSplore does not currently charge users, and does not process payment for
-lessons. If we introduce our own fees we would collect billing name, billing
-address, invoice details, payment status, a reference from the payment
-processor, and refund records.
+SkillSplore does not process payment for lessons — that is arranged directly
+between you and the other person.
 
-We would not store full payment card numbers or card security codes. A payment
-processor would handle those directly.
+We intend to charge a one-off fee to publish a tutor profile (see the Terms of
+Use, section 9). Where we do, we collect: the amount, the currency, the payment
+status, an opaque reference issued by the payment processor, a receipt number,
+and any refund record.
+
+> **We never receive or store your card number, expiry date or card security
+> code.** Payment is taken on the processor's own checkout page, so those
+> details go from your browser directly to them and never reach us.
+
+*At the date of this draft, no fee is switched on and no payment has been
+taken.*
 
 ### 4.10 Technical and behavioural information
 

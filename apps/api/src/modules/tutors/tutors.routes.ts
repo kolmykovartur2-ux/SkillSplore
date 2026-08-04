@@ -6,7 +6,8 @@ import { isAdmin } from '../../middleware/auth.js';
 import { uploadDocument } from '../../lib/upload.js';
 import { prisma } from '../../lib/prisma.js';
 import { storage } from '../../lib/storage.js';
-import { badRequest, notFound } from '../../lib/errors.js';
+import { badRequest, notFound, paymentRequired } from '../../lib/errors.js';
+import { entitleForSubmission, formatMoney } from '../../lib/payments/signupFee.js';
 import { writeAudit } from '../../lib/audit.js';
 import {
   updateTutorSchema,
@@ -181,13 +182,37 @@ tutorsRouter.post(
       throw badRequest(`A ${profile.status.toLowerCase()} profile cannot be submitted.`);
     }
     tutors.assertSubmittable(profile);
-    await prisma.tutorProfile.update({
-      where: { id: profile.id },
-      data: { status: 'PENDING', submittedAt: new Date(), changeRequestNote: null },
+
+    // Entitlement and the status change share a transaction so that a failure
+    // after a free-tier slot is claimed releases the slot rather than burning
+    // it. When payments are disabled this is a no-op that always allows.
+    const entitlement = await prisma.$transaction(async (tx) => {
+      const result = await entitleForSubmission(tx, profile.id, req.user!.id);
+      if (!result.allowed) return result;
+
+      await tx.tutorProfile.update({
+        where: { id: profile.id },
+        data: { status: 'PENDING', submittedAt: new Date(), changeRequestNote: null },
+      });
+      return result;
     });
-    await writeAudit({ actorId: req.user!.id, action: 'tutor.submitted', entityType: 'TutorProfile', entityId: profile.id });
+
+    if (!entitlement.allowed) {
+      throw paymentRequired(
+        `Publishing a profile costs ${formatMoney(entitlement.amountCents!, entitlement.currency!)}. `
+        + 'The free places have all been taken.',
+      );
+    }
+
+    await writeAudit({
+      actorId: req.user!.id,
+      action: 'tutor.submitted',
+      entityType: 'TutorProfile',
+      entityId: profile.id,
+      metadata: { feeReason: entitlement.reason, slotNumber: entitlement.slotNumber ?? null },
+    });
     const updated = await tutors.loadFullProfileByUser(req.user!.id);
-    res.json({ profile: tutors.serializeOwnProfile(updated!) });
+    res.json({ profile: tutors.serializeOwnProfile(updated!), fee: entitlement });
   }),
 );
 

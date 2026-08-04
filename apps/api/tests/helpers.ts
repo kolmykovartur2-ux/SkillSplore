@@ -16,6 +16,8 @@ export async function resetDb(): Promise<void> {
     // Restrict reference to LegalDocumentVersion, so it has to go before the
     // documents it points at; everything else here is either cascaded from
     // User or standalone.
+    prisma.freeTierGrant.deleteMany(),
+    prisma.payment.deleteMany(),
     prisma.moderatorAccessLog.deleteMany(),
     prisma.privacyRequestEvent.deleteMany(),
     prisma.privacyRequest.deleteMany(),

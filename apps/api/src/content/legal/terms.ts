@@ -112,13 +112,51 @@ excluded — see section 18.
 
 ## 9. SkillSplore's own fees
 
-SkillSplore does not currently charge users. We may in future introduce profile
-activation fees, subscriptions, promotions, advertising, sponsorships or other
-optional paid services.
+### 9.1 Profile activation fee
 
-If we do, we will tell you clearly **before** you are charged: the price; the
-currency; how tax is treated; whether it is a one-off or recurring charge; when
-and how it renews; how to cancel; and the refund position.
+We intend to charge a **one-off profile activation fee of NZD 12.99** to
+publish a tutor profile. It is a single charge, not a subscription, and it does
+not renew.
+
+**The first 50 tutors to publish a profile pay nothing.** Places are allocated
+in the order profiles are submitted for review, and once they are gone they are
+gone. If you are within the first 50 we will tell you so before you submit, and
+you will not be asked for payment details at all.
+
+*Drafting note: at the date of this draft the fee is NOT switched on. No user
+has been charged and no payment has been taken.*
+
+### 9.2 Before we charge you
+
+We will tell you clearly, before you are charged: the price; the currency;
+whether GST is included; that it is a one-off charge; and the refund position.
+
+You will always be shown the amount and asked to confirm before any payment is
+taken. We will never charge a card without you actively starting a payment.
+
+### 9.3 How payment is handled
+
+Payment is taken through a third-party payment processor's own secure checkout
+page. **SkillSplore never receives or stores your card number, expiry date or
+security code.**
+
+### 9.4 Refunds
+
+If we charge you a profile activation fee and your profile is then rejected at
+review, we will refund the fee.
+
+If you change your mind after paying but before your profile is published,
+contact us at admin@skillsplore.org.
+
+Nothing in this section limits rights you have under consumer law that cannot
+be excluded — see section 18. In particular, a fee paid for a service that is
+not supplied is refundable regardless of what this section says.
+
+### 9.5 Other fees
+
+We may in future introduce subscriptions, promotions, advertising, sponsorships
+or other optional paid services. Each would be disclosed clearly before any
+charge, on the same terms as above.
 
 We make no permanent promise about the level of any future fee.
 

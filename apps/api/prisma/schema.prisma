@@ -148,6 +148,7 @@ model User {
   consents                   UserConsent[]
   privacyRequests            PrivacyRequest[]
   restrictions               AccountRestriction[]
+  payments                   Payment[]
 
   @@index([status])
 }
@@ -329,6 +330,8 @@ model TutorProfile {
   responses      RequestResponse[]
   savedBy        SavedTutor[]
   engagements    Engagement[]
+  payments       Payment[]
+  freeTierGrant  FreeTierGrant?
 
   @@index([status])
   @@index([country, city])
@@ -1045,5 +1048,103 @@ model AccountRestriction {
   createdAt DateTime  @default(now())
 
   @@index([userId, liftedAt])
+}
+
+
+// ===========================================================================
+// Tutor signup fee.
+//
+// SkillSplore NEVER stores card numbers, expiry dates or security codes.
+// There is no column here for them and there must never be one. Payment is
+// taken through the processor's hosted checkout, so card data goes from the
+// payer's browser directly to the processor. Keeping it that way is the
+// difference between a small PCI-DSS self-assessment and a compliance project.
+//
+// What is stored: an amount, a status, and an opaque reference issued by the
+// processor.
+// ===========================================================================
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentKind {
+  TUTOR_SIGNUP
+}
+
+model Payment {
+  id             Int           @id @default(autoincrement())
+  userId         Int
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tutorProfileId Int?
+  tutorProfile   TutorProfile? @relation(fields: [tutorProfileId], references: [id], onDelete: SetNull)
+
+  kind           PaymentKind   @default(TUTOR_SIGNUP)
+  status         PaymentStatus @default(PENDING)
+  // Cents, never a float. 1299 = NZD 12.99.
+  amountCents    Int
+  currency       String        @default("NZD")
+
+  provider       String
+  // The processor's own id for this checkout/charge. Unique so a webhook
+  // replay -- which processors do deliberately, and which also happens when a
+  // retry crosses a timeout -- cannot create a second payment row.
+  providerRef    String?       @unique
+  // Our idempotency key, generated before the processor is called, so a
+  // double-submitted form cannot open two checkouts for the same profile.
+  idempotencyKey String        @unique
+
+  // Human-facing receipt identifier, assigned on success.
+  receiptNumber  String?       @unique
+  failureReason  String?
+
+  createdAt      DateTime      @default(now())
+  paidAt         DateTime?
+  refundedAt     DateTime?
+  refundReason   String?
+  updatedAt      DateTime      @default(now()) @updatedAt
+
+  @@index([userId, status])
+  @@index([status, createdAt])
+}
+
+// Records that a tutor was admitted under the free-tier promotion, and which
+// numbered slot they took.
+//
+// slotNumber is unique, so even if the counter below were somehow bypassed,
+// the database still refuses to issue the same slot twice. Belt and braces on
+// purpose: "the first 50 are free" is a public promise, and quietly giving
+// away 60 is both a revenue leak and a fairness problem.
+model FreeTierGrant {
+  id             Int          @id @default(autoincrement())
+  userId         Int
+  tutorProfileId Int          @unique
+  tutorProfile   TutorProfile @relation(fields: [tutorProfileId], references: [id], onDelete: Cascade)
+  slotNumber     Int          @unique
+  // Copied from config at grant time. If the limit is later raised from 50 to
+  // 100, existing grants still show the promise they were admitted under.
+  limitAtGrant   Int
+  grantedAt      DateTime     @default(now())
+
+  @@index([userId])
+}
+
+// Single-row atomic counters. Postgres takes a row lock for the duration of
+// an UPDATE, so
+//
+//   UPDATE "PlatformCounter" SET value = value + 1
+//   WHERE key = 'free_tutor_signups' AND value < $limit RETURNING value
+//
+// admits exactly $limit callers however many run concurrently, with no retry
+// loop and no read-then-write race. Counting rows in FreeTierGrant instead
+// would be a classic check-then-act bug under concurrency.
+model PlatformCounter {
+  key       String   @id
+  value     Int      @default(0)
+  updatedAt DateTime @default(now()) @updatedAt
 }
 

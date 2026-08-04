@@ -424,6 +424,7 @@ review dates, is maintained in \`docs/SUBPROCESSORS.md\` and mirrored into the
 |---|---|---|---|---|
 | Render | Application hosting and managed PostgreSQL database | All application data | To be confirmed against the deployed region | In use |
 | *(SMTP provider)* | Transactional email delivery — verification, password reset, notifications | Email address, message content of the notification | Not yet selected for production | **Not yet configured** |
+| *(Payment processor)* | Taking the one-off profile activation fee | Amount, currency, payment status, an opaque reference. **Never card numbers** — those are entered on the processor's own checkout page | Not yet selected | **Not yet configured; no fee is currently charged** |
 | *(Object storage)* | Uploaded files: profile photographs, attachments | Uploaded file content | Local disk in current deployment | S3-compatible storage not yet configured |
 
 ## Not in use
@@ -433,7 +434,8 @@ For the avoidance of doubt, SkillSplore currently uses **no**:
 - third-party analytics provider;
 - advertising network or ad-tech vendor;
 - data broker or data enrichment provider;
-- payment processor (we do not process payments);
+- payment processor — no fee is currently charged, and lesson payments are
+  never processed by SkillSplore at all;
 - identity or background-check verification provider;
 - AI or machine-learning provider that receives user content.
 
