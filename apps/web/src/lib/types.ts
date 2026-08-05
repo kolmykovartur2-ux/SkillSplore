@@ -10,6 +10,8 @@ export interface SelfUser {
   avatarUrl: string | null;
   emailVerified: boolean;
   termsAccepted: boolean;
+  /** Self-declared under 18. Lessons this account arranges itself are online only. */
+  isMinor: boolean;
   createdAt: string;
 }
 

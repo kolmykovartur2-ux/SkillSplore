@@ -12,7 +12,6 @@ import { TERMS_OF_USE } from './terms.js';
 import {
   COMMUNITY_GUIDELINES,
   SAFETY_POLICY,
-  ACADEMIC_INTEGRITY_POLICY,
   PROHIBITED_SERVICES_POLICY,
   COOKIE_NOTICE,
   SUBPROCESSOR_NOTICE,
@@ -41,7 +40,6 @@ export const LEGAL_DOCUMENTS: LegalDocumentDef[] = [
   { slug: 'PRIVACY', title: 'Privacy Policy', path: '/privacy', body: PRIVACY_POLICY, requiresAcceptance: true },
   { slug: 'COMMUNITY_GUIDELINES', title: 'Community Guidelines', path: '/community-guidelines', body: COMMUNITY_GUIDELINES, requiresAcceptance: false },
   { slug: 'SAFETY', title: 'Safety Policy', path: '/safety', body: SAFETY_POLICY, requiresAcceptance: false },
-  { slug: 'ACADEMIC_INTEGRITY', title: 'Academic Integrity Policy', path: '/academic-integrity', body: ACADEMIC_INTEGRITY_POLICY, requiresAcceptance: false },
   { slug: 'PROHIBITED_SERVICES', title: 'Prohibited and Restricted Services', path: '/prohibited-services', body: PROHIBITED_SERVICES_POLICY, requiresAcceptance: false },
   { slug: 'COOKIES', title: 'Cookie Notice', path: '/cookies', body: COOKIE_NOTICE, requiresAcceptance: false },
   { slug: 'SUBPROCESSORS', title: 'Subprocessors', path: '/subprocessors', body: SUBPROCESSOR_NOTICE, requiresAcceptance: false },

@@ -43,7 +43,7 @@ describe('payments are disabled by default', () => {
       password: 'password12345',
       displayName: 'No Pay',
       acceptTerms: true,
-      confirmAdult: true,
+      isAdult: true,
     });
     const res = await agent.post('/api/payments/signup-fee/checkout').send({});
     expect(res.status).toBe(400);

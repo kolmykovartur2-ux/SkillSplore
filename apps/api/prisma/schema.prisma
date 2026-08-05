@@ -126,6 +126,16 @@ model User {
   // Per-account brute-force lockout (separate from IP-based rate limiting).
   failedLoginCount Int       @default(0)
   lockedUntil      DateTime?
+  // Self-declared at registration. NOT treated as reliable -- a checkbox stops
+  // nobody determined. Its purpose is that the platform never KNOWINGLY
+  // arranges an in-person meeting between a child and an adult stranger: the
+  // difference between being deceived and having designed for it.
+  //
+  // The only restriction it carries is that a minor's learning requests must
+  // be online. Everything else -- browsing, posting, messaging, arranging
+  // online lessons -- is unrestricted, and no adult has to act for a young
+  // person to use the platform fully.
+  isMinor          Boolean   @default(false)
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 

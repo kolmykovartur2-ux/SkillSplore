@@ -77,7 +77,6 @@ export function App() {
           <Route path="/terms" element={<PolicyPage path="terms" />} />
           <Route path="/privacy" element={<PolicyPage path="privacy" />} />
           <Route path="/community-guidelines" element={<PolicyPage path="community-guidelines" />} />
-          <Route path="/academic-integrity" element={<PolicyPage path="academic-integrity" />} />
           <Route path="/prohibited-services" element={<PolicyPage path="prohibited-services" />} />
           <Route path="/cookies" element={<PolicyPage path="cookies" />} />
           <Route path="/subprocessors" element={<PolicyPage path="subprocessors" />} />

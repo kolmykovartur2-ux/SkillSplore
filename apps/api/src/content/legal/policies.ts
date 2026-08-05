@@ -1,4 +1,4 @@
-// Community Guidelines, Safety, Academic Integrity, Prohibited Services,
+// Community Guidelines, Safety, Prohibited Services,
 // Cookie Notice and the Subprocessor page — LAWYER-REVIEW DRAFTS.
 //
 // The Cookie Notice and Subprocessor page are the two documents here that must
@@ -183,68 +183,6 @@ not agree to.
 - **Anything else:** use the report button, or email admin@skillsplore.org.
 
 We aim to review reports involving a risk to a child ahead of everything else.
-`;
-
-export const ACADEMIC_INTEGRITY_POLICY = `
-# Academic Integrity Policy
-
-**Status: draft for legal review. Not yet in force.**
-
-Last updated: [[LAST_UPDATED_DATE]]
-
-SkillSplore is for **learning**. It is not for buying work to hand in as your
-own.
-
-## What is fine
-
-- Teaching a topic, from first principles or at any level.
-- Explaining a concept the learner did not understand.
-- Working through examples and past papers together.
-- Practice, drilling and revision.
-- Feedback on a draft the learner wrote themselves.
-- Helping a learner plan their study, or break down how to approach a task.
-- Explaining what a marking rubric is asking for.
-- Proofreading guidance that teaches the learner to find their own errors.
-
-## What is not
-
-- Writing, or substantially writing, assessed work for a learner to submit as
-  their own.
-- Completing a take-home test, online quiz or examination on someone's behalf.
-- Sitting an examination as someone else, or being present to supply answers.
-- Logging into a learner's institutional account.
-- Fabricating research, sources or citations.
-- Falsifying or inventing data or results.
-- Helping anyone circumvent an academic institution's rules, including its
-  rules about acceptable use of AI tools.
-- Selling or distributing exam papers or assessment material you are not
-  entitled to distribute.
-
-## The grey area, honestly
-
-The line is whether the work submitted represents the learner's own
-understanding.
-
-Feedback that makes a learner rewrite their own paragraph is teaching. Handing
-back a paragraph you wrote for them is not, however it is labelled.
-
-If you are unsure, ask the learner what their institution's rules say. If they
-do not know, the safe answer is to teach the skill and let them do the work.
-
-## Consequences
-
-Academic misconduct is a breach of the Terms of Use. We may remove the content,
-restrict or suspend the account, and — where an institution asks us and we are
-lawfully able — respond to a formal enquiry.
-
-Institutions may treat a learner's use of these services as misconduct with
-serious consequences for the learner, up to exclusion. Providers should not put
-learners in that position.
-
-## Reporting
-
-Report suspected academic misconduct with the report button, or email
-admin@skillsplore.org.
 `;
 
 export const PROHIBITED_SERVICES_POLICY = `

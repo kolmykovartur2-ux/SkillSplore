@@ -151,7 +151,6 @@ export function Layout({ children }: { children: ReactNode }) {
                 <h3>Teach</h3>
                 <Link to="/tutor/onboarding">Start teaching</Link>
                 <Link to="/community-guidelines">Community Guidelines</Link>
-                <Link to="/academic-integrity">Academic Integrity</Link>
                 <Link to="/prohibited-services">Prohibited Services</Link>
               </div>
 

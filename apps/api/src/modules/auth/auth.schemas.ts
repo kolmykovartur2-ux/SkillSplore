@@ -5,16 +5,15 @@ export const registerSchema = z.object({
   password: z.string().min(1).max(200),
   displayName: z.string().min(2).max(80).trim(),
   acceptTerms: z.literal(true, { errorMap: () => ({ message: 'You must accept the terms and privacy policy.' }) }),
-  // Account holders must be 18+. A parent or guardian arranges learning for a
-  // child through their own adult account -- see the Terms, section 2.
+  // Declared, not verified. A checkbox stops nobody determined, and this is
+  // not presented as anything stronger.
   //
-  // This is a self-declaration, not a verified age check, and it is not
-  // presented as one. Its purpose is that the platform never knowingly holds
-  // a child's account, which is what keeps the children's-privacy surface
-  // limited to "information an adult chose to share about their child".
-  confirmAdult: z.literal(true, {
-    errorMap: () => ({ message: 'You must confirm you are 18 or over to create an account.' }),
-  }),
+  // Its purpose is that the platform never KNOWINGLY arranges an in-person
+  // meeting between a child and an adult stranger. A young person can hold an
+  // account and use everything -- search, requests, messaging, online lessons.
+  // The single restriction is that their requests must be online; see
+  // requests.routes.ts.
+  isAdult: z.boolean(),
   // Optional and separate from acceptTerms. Bundling marketing into account
   // creation is exactly what makes the consent invalid, so it is its own
   // field, defaults to false, and nothing fails if it is omitted.

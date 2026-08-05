@@ -18,7 +18,7 @@ export function Register() {
     email: '',
     password: '',
     acceptTerms: false,
-    confirmAdult: false,
+    isAdult: false,
     marketingOptIn: false,
   });
   const [error, setError] = useState<string | null>(null);
@@ -79,11 +79,15 @@ export function Register() {
               <Link to="/privacy" target="_blank">Read the privacy policy</Link>.
             </div>
 
+            {/* Not a barrier -- an under-18 can tick "no" and still create a
+                full account. It only determines whether in-person lessons are
+                offered. */}
             <label className="check" style={{ marginBottom: 10 }}>
-              <input type="checkbox" checked={form.confirmAdult} onChange={(e) => setForm({ ...form, confirmAdult: e.target.checked })} required />
+              <input type="checkbox" checked={form.isAdult} onChange={(e) => setForm({ ...form, isAdult: e.target.checked })} />
               <span>
-                I am 18 or over. <span className="muted">If you are arranging learning for a
-                child, use your own account and stay responsible for it.</span>
+                I am 18 or over. <span className="muted">If you are under 18 you can still use
+                SkillSplore — leave this unticked. You can search, post what you want to learn and
+                message teachers; lessons are arranged online.</span>
               </span>
             </label>
 

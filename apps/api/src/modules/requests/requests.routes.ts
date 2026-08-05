@@ -181,6 +181,24 @@ requestsRouter.post(
     if (b.budgetMinCents != null && b.budgetMaxCents != null && b.budgetMinCents > b.budgetMaxCents) {
       throw badRequest('Minimum budget cannot exceed maximum budget.');
     }
+    // A young person can post requests freely, but only for online lessons.
+    // This is the single restriction a minor account carries: the platform
+    // will not be the thing that arranges a child meeting an adult stranger
+    // in person. Enforced here as well as hidden in the UI, because a hidden
+    // form field is not a control.
+    if (b.deliveryMode !== 'ONLINE') {
+      const poster = await prisma.user.findUnique({
+        where: { id: req.user!.id },
+        select: { isMinor: true },
+      });
+      if (poster?.isMinor) {
+        throw badRequest(
+          'Accounts held by under-18s can post requests for online lessons only. '
+          + 'For in-person lessons, ask a parent or guardian to post the request from their own account.',
+        );
+      }
+    }
+
     const { subjectId, customSubjectLabel } = await resolveSubject(b);
 
     const created = await prisma.tutoringRequest.create({

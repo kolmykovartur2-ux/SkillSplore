@@ -67,19 +67,6 @@ export function Contact() {
             a postal address.
           </p>
 
-          <div className="divider" />
-
-          <h2>Reporting something urgent</h2>
-          <p>
-            <strong>If someone is in immediate danger, contact your local emergency services
-            first.</strong> If you are worried about the safety of a child, contact your local
-            police or child protection authority, and then tell us.
-          </p>
-          <p>
-            For anything on the platform — a profile, a message, a review, a request — use the
-            report button attached to it. That reaches the moderation queue with the surrounding
-            context attached, which an email does not.
-          </p>
         </div>
       </Card>
     </div>

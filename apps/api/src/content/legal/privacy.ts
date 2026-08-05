@@ -72,8 +72,8 @@ This summary is here to be readable. It does not replace the rest of the policy.
 - You can ask us for a copy of your information, ask us to correct it, or ask
   us to delete your account. See section 14.
 - Marketing email is opt-in and separate from creating an account.
-- Account holders must be at least 18. A parent or guardian arranges learning
-  for a child through their own adult account. See section 16.
+- Anyone can hold an account, including under-18s. If you are under 18, the
+  lessons you arrange yourself are online only. See section 16.
 
 ## 4. Information we collect
 
@@ -386,27 +386,31 @@ Whether any particular incident is notifiable is assessed case by case against
 the applicable legal threshold. We do not claim in advance that every breach
 will or will not be reported.
 
-## 16. Children
+## 16. Young people
 
-Account holders must be at least 18.
+Anyone may hold an account, including people under 18.
 
-A parent or legal guardian may arrange learning for a child through their own
-adult account. Where they do:
+If you tell us you are under 18 when you register, we record that on your
+account and it changes one thing: **lessons you arrange yourself are online
+only.** In-person lessons are arranged by a parent or guardian from their own
+account.
 
-- the adult account holder controls the communication;
-- the child's contact details are not published;
-- the child's exact location is not published;
-- the child's school and timetable are not published;
-- children's information is never included in any data programme;
-- we do not conduct behavioural advertising to children.
+We ask your age; we do not verify it. We are not claiming this is a reliable
+age check, and it is not presented as one. Its purpose is that we never
+knowingly arrange a face-to-face meeting between a young person and an adult
+through that young person's own account.
 
-If you are concerned about the safety of a child on the platform, contact
-admin@skillsplore.org immediately, and contact your local police or child protection
-authority if a child may be at immediate risk. Our child-safety escalation
-process is maintained in \`docs/CHILD_SAFETY.md\`.
+For anyone under 18, whether they hold an account or a parent arranges on
+their behalf:
 
-Any future change allowing accounts for people under 18 requires separate legal
-and product review before it is built.
+- contact details are not published;
+- exact location is not published;
+- school and timetable are not published;
+- information is never included in any data programme;
+- we do not conduct behavioural advertising (we do not do this for anyone).
+
+If you are worried about a young person's safety on the platform, contact
+admin@skillsplore.org.
 
 ## 17. Marketing
 

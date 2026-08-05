@@ -28,11 +28,16 @@ materially different version, we will ask you to accept it again.
 
 ## 2. Eligibility
 
-You must be at least 18 to hold a SkillSplore account.
+Anyone may hold a SkillSplore account, including people under 18.
 
-A parent or legal guardian may use their own adult account to arrange learning
-for a child. The adult account holder remains responsible for the account, for
-the communications sent from it, and for supervising the child appropriately.
+If you are under 18, one thing works differently: **lessons you arrange
+yourself are online only.** You can search, post what you want to learn,
+message people who teach, and arrange online lessons, all on your own.
+
+For an **in-person** lesson, a parent or guardian posts the request from their
+own account and stays responsible for it. We will not arrange a face-to-face
+meeting between a young person and an adult through an account held by that
+young person.
 
 ## 3. What SkillSplore is
 
@@ -190,19 +195,6 @@ extort someone; or include another person's private information in a review.
 
 We may remove a review that breaches these rules. We do not remove a review
 simply because its subject dislikes it.
-
-## 12. Academic integrity
-
-**Allowed:** teaching, explanation, worked examples, practice, revision,
-feedback on a learner's own draft, study planning, and legitimate guidance on
-how to approach an assignment.
-
-**Not allowed:** completing assessed work for a learner to submit as their own;
-sitting or impersonating a learner in an examination or assessment; fabricating
-research; falsifying data; and helping anyone circumvent an academic
-institution's rules.
-
-Our full position is in the Academic Integrity Policy.
 
 ## 13. Prohibited conduct
 

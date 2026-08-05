@@ -68,7 +68,7 @@ export function PolicyPage({ path }: { path: string }) {
             Other policies:{' '}
             <Link to="/terms">Terms</Link> · <Link to="/privacy">Privacy</Link> ·{' '}
             <Link to="/community-guidelines">Community Guidelines</Link> ·{' '}
-            <Link to="/safety">Safety</Link> · <Link to="/academic-integrity">Academic Integrity</Link> ·{' '}
+            <Link to="/safety">Safety</Link> ·{' '}
             <Link to="/prohibited-services">Prohibited Services</Link> ·{' '}
             <Link to="/cookies">Cookies</Link> · <Link to="/subprocessors">Subprocessors</Link>
           </p>

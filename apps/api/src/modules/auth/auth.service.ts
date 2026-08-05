@@ -86,6 +86,7 @@ export async function register(input: {
   email: string;
   password: string;
   displayName: string;
+  isAdult: boolean;
   marketingOptIn?: boolean;
   ipAddress?: string | null;
   userAgent?: string | null;
@@ -101,6 +102,7 @@ export async function register(input: {
       passwordHash,
       displayName: input.displayName,
       roles: ['STUDENT'],
+      isMinor: !input.isAdult,
       termsAcceptedAt: new Date(),
     },
   });

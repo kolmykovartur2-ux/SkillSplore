@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, ApiError } from '../../lib/api.js';
 import { useApi } from '../../lib/useApi.js';
+import { useAuth } from '../../lib/auth.js';
 import { useToast } from '../../lib/toast.js';
 import { Alert, Button, Card, Field, Input, Select, Textarea } from '../../components/ui.js';
 import { SuggestSubjectModal } from '../../components/SuggestSubjectModal.js';
@@ -12,6 +13,11 @@ interface Level { id: number; name: string }
 export function CreateRequest() {
   const navigate = useNavigate();
   const toast = useToast();
+  const { user } = useAuth();
+  // Under-18 accounts can arrange online lessons only, so in-person is not
+  // offered rather than offered and then rejected. The API enforces the same
+  // rule -- a hidden option is not a control.
+  const onlineOnly = !!user?.isMinor;
   const { data: cats, reload: reloadCats } = useApi<{ categories: Category[] }>('/taxonomy/categories');
   const { data: lvls } = useApi<{ levels: Level[] }>('/taxonomy/levels');
   const [form, setForm] = useState({ kind: 'LEARNING', subjectId: '', levelId: '', title: '', description: '', deliveryMode: 'BOTH', country: '', city: '', budgetMin: '', budgetMax: '', timing: '' });
@@ -30,7 +36,7 @@ export function CreateRequest() {
         levelId: form.levelId ? Number(form.levelId) : null,
         title: form.title,
         description: form.description,
-        deliveryMode: form.deliveryMode,
+        deliveryMode: onlineOnly ? 'ONLINE' : form.deliveryMode,
         country: form.country || undefined,
         city: form.city || undefined,
         budgetMinCents: form.budgetMin ? Math.round(Number(form.budgetMin) * 100) : null,
@@ -101,14 +107,23 @@ export function CreateRequest() {
           </Field>
           <Field label="Title"><Input value={form.title} onChange={(e) => set({ title: e.target.value })} required minLength={4} placeholder={isLearning ? "e.g. Help with NCEA Level 3 calculus, or beginner saxophone lessons" : "e.g. I need help painting my living room, or website design for my small business"} /></Field>
           <Field label={isLearning ? "What help do you need?" : "What would you like help with?"}><Textarea value={form.description} onChange={(e) => set({ description: e.target.value })} required minLength={10} placeholder={isLearning ? "Describe what you want to learn..." : "Describe the task or project in detail..."} /></Field>
-          <Field label="Format">
-            <Select value={form.deliveryMode} onChange={(e) => set({ deliveryMode: e.target.value })}>
-              <option value="BOTH">Online or in person</option>
+          <Field
+            label="Format"
+            hint={onlineOnly
+              ? 'Your account is set to under 18, so lessons you arrange yourself are online. For an in-person lesson, ask a parent or guardian to post it from their own account.'
+              : undefined}
+          >
+            <Select
+              value={onlineOnly ? 'ONLINE' : form.deliveryMode}
+              disabled={onlineOnly}
+              onChange={(e) => set({ deliveryMode: e.target.value })}
+            >
+              {!onlineOnly && <option value="BOTH">Online or in person</option>}
               <option value="ONLINE">Online</option>
-              <option value="IN_PERSON">In person</option>
+              {!onlineOnly && <option value="IN_PERSON">In person</option>}
             </Select>
           </Field>
-          {form.deliveryMode !== 'ONLINE' && (
+          {!onlineOnly && form.deliveryMode !== 'ONLINE' && (
             <div className="grid grid-2">
               <Field label="Country">
                 <Select value={form.country} onChange={(e) => set({ country: e.target.value })}>

@@ -17,7 +17,7 @@ async function registerUser(email: string, extra: Record<string, unknown> = {}) 
     password: 'password12345',
     displayName: 'Test Person',
     acceptTerms: true,
-    confirmAdult: true,
+    isAdult: true,
     ...extra,
   });
   return res;
@@ -179,22 +179,35 @@ describe('registration, age gate and consent', () => {
     await syncLegalDocuments(prisma);
   });
 
-  it('blocks registration without an adult confirmation', async () => {
+  it('lets an under-18 register and marks the account as a minor', async () => {
+    // The age gate was removed deliberately: a young person can hold a full
+    // account. What changes is what they can arrange -- see the request tests
+    // below.
     const res = await anon().post('/api/auth/register').send({
-      email: 'minor@test.local',
+      email: 'young@test.local',
       password: 'password12345',
-      displayName: 'Too Young',
+      displayName: 'Younger Person',
       acceptTerms: true,
-      confirmAdult: false,
+      isAdult: false,
     });
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(201);
+
+    const user = await prisma.user.findUniqueOrThrow({ where: { email: 'young@test.local' } });
+    expect(user.isMinor).toBe(true);
   });
 
-  it('blocks registration when the adult confirmation is omitted entirely', async () => {
+  it('marks an adult account as not a minor', async () => {
+    await registerUser('grownup@test.local');
+    const user = await prisma.user.findUniqueOrThrow({ where: { email: 'grownup@test.local' } });
+    expect(user.isMinor).toBe(false);
+  });
+
+  it('still requires the age question to be answered', async () => {
+    // Omitting it entirely is a malformed request, not an implicit "no".
     const res = await anon().post('/api/auth/register').send({
       email: 'missing@test.local',
       password: 'password12345',
-      displayName: 'No Confirmation',
+      displayName: 'No Answer',
       acceptTerms: true,
     });
     expect(res.status).toBe(400);
@@ -247,7 +260,7 @@ describe('consent API', () => {
       password: 'password12345',
       displayName: 'Consent Tester',
       acceptTerms: true,
-      confirmAdult: true,
+      isAdult: true,
     });
   });
 
@@ -379,7 +392,7 @@ describe('privacy requests', () => {
       password: 'password12345',
       displayName: 'Nosy',
       acceptTerms: true,
-      confirmAdult: true,
+      isAdult: true,
     });
 
     const res = await agent.get('/api/privacy-requests');
@@ -496,5 +509,70 @@ describe('migrations are non-destructive', () => {
     }
 
     expect(offenders, `Destructive statements found:\n${offenders.join('\n')}`).toEqual([]);
+  });
+});
+
+describe('under-18 accounts are limited to online lessons', () => {
+  let minor: ReturnType<typeof supertest.agent>;
+  let adult: ReturnType<typeof supertest.agent>;
+  let subjectId: number;
+
+  beforeEach(async () => {
+    await resetDb();
+    await syncLegalDocuments(prisma);
+
+    const category = await prisma.category.create({
+      data: { name: 'Test Category', normalizedName: 'test category', slug: 'test-category' },
+    });
+    const subject = await prisma.subject.create({
+      data: { name: 'Test Subject', normalizedName: 'test subject', slug: 'test-subject', categoryId: category.id },
+    });
+    subjectId = subject.id;
+
+    minor = supertest.agent(app);
+    await minor.post('/api/auth/register').send({
+      email: 'minor.poster@test.local',
+      password: 'password12345',
+      displayName: 'Minor Poster',
+      acceptTerms: true,
+      isAdult: false,
+    });
+
+    adult = supertest.agent(app);
+    await adult.post('/api/auth/register').send({
+      email: 'adult.poster@test.local',
+      password: 'password12345',
+      displayName: 'Adult Poster',
+      acceptTerms: true,
+      isAdult: true,
+    });
+  });
+
+  const body = (deliveryMode: string) => ({
+    subjectId,
+    title: 'Help me with this',
+    description: 'I would like some help learning this subject, please.',
+    deliveryMode,
+  });
+
+  it('lets a minor post an online request', async () => {
+    const res = await minor.post('/api/requests').send(body('ONLINE'));
+    expect(res.status).toBe(201);
+  });
+
+  it('refuses an in-person request from a minor', async () => {
+    const res = await minor.post('/api/requests').send(body('IN_PERSON'));
+    expect(res.status).toBe(400);
+    expect(JSON.stringify(res.body)).toMatch(/online lessons only/i);
+  });
+
+  it('refuses a "both" request from a minor, since that includes in person', async () => {
+    const res = await minor.post('/api/requests').send(body('BOTH'));
+    expect(res.status).toBe(400);
+  });
+
+  it('lets an adult post an in-person request', async () => {
+    const res = await adult.post('/api/requests').send(body('IN_PERSON'));
+    expect(res.status).toBe(201);
   });
 });

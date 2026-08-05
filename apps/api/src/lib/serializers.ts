@@ -21,6 +21,9 @@ export function selfUser(user: User) {
     avatarUrl: avatarUrl(user),
     emailVerified: !!user.emailVerifiedAt,
     termsAccepted: !!user.termsAcceptedAt,
+    // Lets the request form offer only online delivery, so a young person is
+    // not shown an option the API will reject.
+    isMinor: user.isMinor,
     createdAt: user.createdAt,
   };
 }
