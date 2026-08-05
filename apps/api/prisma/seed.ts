@@ -36,12 +36,11 @@ async function main() {
   const subjectRows = await prisma.subject.findMany({ select: { id: true, name: true } });
   const subjects: Record<string, number> = Object.fromEntries(subjectRows.map((s) => [s.name, s.id]));
 
-  const levelDefs = ['Primary', 'Intermediate', 'NCEA Level 1', 'NCEA Level 2', 'NCEA Level 3', 'Undergraduate', 'Postgraduate', 'Adult / Hobby'];
-  const levels: Record<string, number> = {};
-  for (let i = 0; i < levelDefs.length; i++) {
-    const l = await prisma.teachingLevel.create({ data: { name: levelDefs[i]!, slug: slug(levelDefs[i]!), sortOrder: i } });
-    levels[levelDefs[i]!] = l.id;
-  }
+  // Teaching levels are created by syncTaxonomy above, not here -- they are
+  // reference data that a production database needs too, and this seed refuses
+  // to run in production. Read back what it created.
+  const levelRows = await prisma.teachingLevel.findMany({ select: { id: true, name: true } });
+  const levels: Record<string, number> = Object.fromEntries(levelRows.map((l) => [l.name, l.id]));
 
   // --- Users ---------------------------------------------------------------
   console.log('Seeding users...');

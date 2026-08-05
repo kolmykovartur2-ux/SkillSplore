@@ -29,11 +29,31 @@ function slug(name: string): string {
   return name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
+/**
+ * Teaching levels are reference data, not demo data.
+ *
+ * They used to be created only by seed.ts, which refuses to run in
+ * production -- so a real production database would have had none at all,
+ * leaving providers unable to state what level they teach and the level
+ * filter in search permanently empty.
+ */
+export const TEACHING_LEVELS = [
+  'Primary',
+  'Intermediate',
+  'NCEA Level 1',
+  'NCEA Level 2',
+  'NCEA Level 3',
+  'Undergraduate',
+  'Postgraduate',
+  'Adult / Hobby',
+];
+
 export interface SyncResult {
   categoriesAdded: number;
   subjectsAdded: number;
   iconsBackfilled: number;
   aliasesAdded: number;
+  levelsAdded: number;
 }
 
 export async function syncTaxonomy(prisma: PrismaClient): Promise<SyncResult> {
@@ -41,6 +61,18 @@ export async function syncTaxonomy(prisma: PrismaClient): Promise<SyncResult> {
   let subjectsAdded = 0;
   let iconsBackfilled = 0;
   let aliasesAdded = 0;
+  let levelsAdded = 0;
+
+  // Additive and order-preserving, like everything else here. An admin who
+  // renamed a level keeps their rename; only genuinely missing levels are
+  // inserted.
+  for (let i = 0; i < TEACHING_LEVELS.length; i++) {
+    const name = TEACHING_LEVELS[i]!;
+    const existing = await prisma.teachingLevel.findFirst({ where: { slug: slug(name) } });
+    if (existing) continue;
+    await prisma.teachingLevel.create({ data: { name, slug: slug(name), sortOrder: i } });
+    levelsAdded++;
+  }
 
   // name -> id, used below to resolve alias targets without a second query
   // per alias.
@@ -106,7 +138,7 @@ export async function syncTaxonomy(prisma: PrismaClient): Promise<SyncResult> {
     aliasesAdded++;
   }
 
-  return { categoriesAdded, subjectsAdded, iconsBackfilled, aliasesAdded };
+  return { categoriesAdded, subjectsAdded, iconsBackfilled, aliasesAdded, levelsAdded };
 }
 
 // Allow running directly: `npx tsx apps/api/prisma/syncTaxonomy.ts`
@@ -116,7 +148,7 @@ if (process.argv[1] && process.argv[1].endsWith('syncTaxonomy.ts')) {
     .then((r) => {
       console.log(
         `[taxonomy] sync complete: +${r.categoriesAdded} categories, +${r.subjectsAdded} subjects, `
-        + `+${r.aliasesAdded} aliases, ${r.iconsBackfilled} icon(s) backfilled.`,
+        + `+${r.aliasesAdded} aliases, +${r.levelsAdded} levels, ${r.iconsBackfilled} icon(s) backfilled.`,
       );
     })
     .catch((err) => {
