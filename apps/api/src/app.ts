@@ -17,6 +17,7 @@ import { apiLimiter } from './middleware/rateLimit.js';
 import { asyncHandler } from './lib/asyncHandler.js';
 import { prisma } from './lib/prisma.js';
 import { renderShell } from './lib/seoShell.js';
+import { buildSitemap } from './lib/sitemap.js';
 
 const { Pool } = pgPkg;
 
@@ -87,6 +88,13 @@ export function createApp() {
     // index:false so that "/" falls through to the handler below rather than
     // being served straight off disk -- otherwise the crawler shell would
     // never run for the homepage, which is the page that matters most.
+    // Ahead of express.static: the sitemap is generated from the database so
+    // it can include tutor profiles and subject landing pages, which a
+    // hand-written file never could.
+    app.get('/sitemap.xml', asyncHandler(async (_req, res) => {
+      res.type('application/xml').send(await buildSitemap(prisma));
+    }));
+
     app.use(express.static(webDist, { index: false }));
 
     // Read once: the file does not change while the process runs, and this is
@@ -97,8 +105,14 @@ export function createApp() {
       if (req.path.startsWith('/api/')) return next();
       // Injects real content and per-route metadata for crawlers. Returns the
       // file unchanged for app-shaped routes. See lib/seoShell.ts.
-      const html = await renderShell(prisma, req.path, indexHtml);
-      res.type('html').send(html);
+      //
+      // The status matters: a tutor profile that does not exist or is not
+      // approved must 404 rather than 200, or crawlers index dead URLs and
+      // treat the site as full of soft-404s. The SPA still renders its own
+      // not-found page over the top for a human.
+      const query = new URLSearchParams(req.query as Record<string, string>);
+      const { html, status } = await renderShell(prisma, req.path, indexHtml, query);
+      res.status(status).type('html').send(html);
     }));
   }
 

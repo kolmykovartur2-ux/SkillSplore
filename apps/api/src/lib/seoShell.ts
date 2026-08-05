@@ -47,6 +47,25 @@ export interface ShellContent {
   description: string;
   /** HTML placed inside #root. Already escaped by the builder. */
   body: string;
+  /**
+   * HTTP status to send. A missing or unpublished tutor profile must be a
+   * genuine 404, not a 200 with an apologetic page -- otherwise crawlers index
+   * dead URLs and treat the whole site as full of soft-404s.
+   */
+  status?: number;
+  /**
+   * False for pages that should be crawled but not indexed. Filtered search
+   * results are the case that matters: they are near-duplicates of each other
+   * and dilute the pages that are actually worth ranking.
+   */
+  indexable?: boolean;
+  /** Page-specific JSON-LD, in addition to the site-wide Organization block. */
+  jsonLd?: Record<string, unknown>;
+}
+
+export interface ShellResult {
+  html: string;
+  status: number;
 }
 
 const SITE_NAME = 'SkillSplore';
@@ -169,9 +188,160 @@ function policyContent(path: string): ShellContent | null {
   };
 }
 
-async function contentFor(prisma: PrismaClient, path: string): Promise<ShellContent | null> {
+
+/**
+ * A published tutor profile.
+ *
+ * Only APPROVED profiles are described. A draft, pending, rejected, paused or
+ * suspended profile returns a real 404 -- exposing one to a crawler would
+ * publish a page its owner has not published, and returning 200 for a profile
+ * that is not there teaches crawlers the site is full of soft-404s.
+ *
+ * Everything rendered here is already public on the profile page. No email, no
+ * exact address, no qualification documents.
+ */
+async function tutorProfileContent(prisma: PrismaClient, id: number): Promise<ShellContent> {
+  const profile = await prisma.tutorProfile.findFirst({
+    where: { id, status: 'APPROVED' },
+    include: {
+      user: { select: { displayName: true } },
+      subjects: { include: { subject: { select: { name: true } } } },
+    },
+  });
+
+  if (!profile) {
+    return {
+      title: `Not found | ${SITE_NAME}`,
+      description: 'This page could not be found.',
+      body: `<h1>Not found</h1><p>This profile is not available. <a href="/search">Browse people who teach</a>.</p>`,
+      status: 404,
+      indexable: false,
+    };
+  }
+
+  const name = profile.user.displayName;
+  const subjects = profile.subjects.map((s) => s.subject.name);
+  const place = [profile.city, profile.country].filter(Boolean).join(', ');
+  const mode = profile.deliveryMode === 'ONLINE'
+    ? 'Online'
+    : profile.deliveryMode === 'IN_PERSON' ? 'In person' : 'Online or in person';
+
+  const description = [
+    `${name} teaches ${subjects.slice(0, 4).join(', ') || 'on SkillSplore'}`,
+    place ? `in ${place}` : null,
+    `(${mode.toLowerCase()}).`,
+  ].filter(Boolean).join(' ');
+
+  const parts = [`<h1>${esc(name)}</h1>`];
+  if (profile.headline) parts.push(`<p>${esc(profile.headline)}</p>`);
+  if (subjects.length) parts.push(`<h2>Teaches</h2><p>${subjects.map(esc).join(', ')}</p>`);
+  parts.push(`<p>Format: ${esc(mode)}${place ? ` · ${esc(place)}` : ''}</p>`);
+  if (profile.yearsExperience) parts.push(`<p>${profile.yearsExperience} years of experience.</p>`);
+  if (profile.experience) parts.push(`<h2>Experience</h2><p>${esc(profile.experience)}</p>`);
+  if (profile.teachingStyle) parts.push(`<h2>Teaching approach</h2><p>${esc(profile.teachingStyle)}</p>`);
+  if (profile.ratingCount > 0) {
+    parts.push(`<p>Rated ${profile.averageRating.toFixed(1)} from ${profile.ratingCount} review${profile.ratingCount === 1 ? '' : 's'}.</p>`);
+  }
+
+  // Person rather than a commercial Offer: SkillSplore does not sell the
+  // lesson and does not set the price, so describing it as a purchasable
+  // product would misrepresent what the page is.
+  const jsonLd: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name,
+    description: profile.headline ?? description,
+    knowsAbout: subjects,
+    url: `${siteOrigin().replace(/\/$/, '')}/tutors/${profile.id}`,
+  };
+  if (place) jsonLd.homeLocation = { '@type': 'Place', name: place };
+  if (profile.ratingCount > 0) {
+    jsonLd.aggregateRating = {
+      '@type': 'AggregateRating',
+      ratingValue: profile.averageRating,
+      reviewCount: profile.ratingCount,
+    };
+  }
+
+  return {
+    title: `${name} — ${subjects[0] ?? 'teaching'} | ${SITE_NAME}`,
+    description,
+    body: parts.join('\n'),
+    jsonLd,
+  };
+}
+
+/**
+ * Search, optionally filtered by a single category or subject.
+ *
+ * A bare /search and a single-facet filter are genuine landing pages worth
+ * indexing -- "maths tutors" is what somebody actually searches for. Anything
+ * with a free-text query or several facets is marked noindex: those pages are
+ * near-duplicates of one another and dilute the ones worth ranking.
+ */
+async function searchContent(prisma: PrismaClient, query: URLSearchParams): Promise<ShellContent> {
+  const subjectId = Number(query.get('subjectId'));
+  const categoryId = Number(query.get('categoryId'));
+  const facets = [...query.keys()].filter((k) => query.get(k));
+  const singleFacet = facets.length === 1;
+
+  if (Number.isInteger(subjectId) && subjectId > 0) {
+    const subject = await prisma.subject.findFirst({
+      where: { id: subjectId, isActive: true },
+      select: { name: true, category: { select: { name: true } } },
+    });
+    if (subject) {
+      const count = await prisma.tutorSubject.count({
+        where: { subjectId, tutorProfile: { status: 'APPROVED' } },
+      });
+      return {
+        title: `${subject.name} — find someone to teach you | ${SITE_NAME}`,
+        description: `People who teach ${subject.name}${subject.category ? ` (${subject.category.name})` : ''} on ${SITE_NAME}.`,
+        body: `<h1>${esc(subject.name)}</h1>
+<p>Find someone to teach you ${esc(subject.name)}${subject.category ? ` — part of ${esc(subject.category.name)}` : ''}.</p>
+${count > 0 ? `<p>${count} ${count === 1 ? 'person teaches' : 'people teach'} this.</p>` : '<p>Nobody is listed for this yet. <a href="/requests/new">Post what you want to learn</a> and let someone come to you.</p>'}`,
+        indexable: singleFacet,
+      };
+    }
+  }
+
+  if (Number.isInteger(categoryId) && categoryId > 0) {
+    const category = await prisma.category.findFirst({
+      where: { id: categoryId, isActive: true },
+      select: {
+        name: true,
+        subjects: { where: { isActive: true }, orderBy: { name: 'asc' }, select: { name: true } },
+      },
+    });
+    if (category) {
+      return {
+        title: `${category.name} — find someone to teach you | ${SITE_NAME}`,
+        description: `People who teach ${category.name} on ${SITE_NAME}. ${category.subjects.length} subjects.`,
+        body: `<h1>${esc(category.name)}</h1>
+<p>${category.subjects.length} subjects in this category.</p>
+<p>${category.subjects.map((x) => esc(x.name)).join(', ')}</p>`,
+        indexable: singleFacet,
+      };
+    }
+  }
+
+  const base = STATIC_ROUTES['/search']!;
+  // A bare /search is indexable; any filtered variant that got here did not
+  // resolve to a real facet, so it is not worth indexing.
+  return { ...base, indexable: facets.length === 0 };
+}
+
+async function contentFor(
+  prisma: PrismaClient,
+  path: string,
+  query: URLSearchParams,
+): Promise<ShellContent | null> {
   if (path === '/') return homeContent(prisma);
   if (path === '/categories') return categoriesContent(prisma);
+  if (path === '/search') return searchContent(prisma, query);
+
+  const tutor = /^\/tutors\/(\d+)$/.exec(path);
+  if (tutor) return tutorProfileContent(prisma, Number(tutor[1]));
 
   const staticRoute = STATIC_ROUTES[path];
   if (staticRoute) return staticRoute;
@@ -203,16 +373,17 @@ export async function renderShell(
   prisma: PrismaClient,
   path: string,
   html: string,
-): Promise<string> {
+  query: URLSearchParams = new URLSearchParams(),
+): Promise<ShellResult> {
   let content: ShellContent | null = null;
   try {
-    content = await contentFor(prisma, path);
+    content = await contentFor(prisma, path, query);
   } catch {
     // A crawler getting the plain SPA shell is a far better outcome than a
     // 500, so a database hiccup here must never break page delivery.
-    return html;
+    return { html, status: 200 };
   }
-  if (!content) return html;
+  if (!content) return { html, status: 200 };
 
   const origin = siteOrigin();
   const canonical = `${origin.replace(/\/$/, '')}${path}`;
@@ -227,7 +398,9 @@ export async function renderShell(
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="${SITE_NAME}" />
     <meta name="twitter:card" content="summary" />
+    ${content.indexable === false ? '<meta name="robots" content="noindex,follow" />' : ''}
     <script type="application/ld+json">${organisationJsonLd()}</script>
+    ${content.jsonLd ? `<script type="application/ld+json">${JSON.stringify(content.jsonLd)}</script>` : ''}
   `.trim();
 
   // Replace the static title/description/canonical/OG that index.html ships
@@ -237,7 +410,8 @@ export async function renderShell(
     .replace(/<meta\s+name="description"[^>]*>\s*/i, '')
     .replace(/<link\s+rel="canonical"[^>]*>\s*/i, '')
     .replace(/<meta\s+property="og:[^"]*"[^>]*>\s*/gi, '')
-    .replace(/<meta\s+name="twitter:[^"]*"[^>]*>\s*/gi, '');
+    .replace(/<meta\s+name="twitter:[^"]*"[^>]*>\s*/gi, '')
+    .replace(/<meta\s+name="robots"[^>]*>\s*/gi, '');
 
   out = out.replace('</head>', `${head}\n  </head>`);
 
@@ -248,5 +422,5 @@ export async function renderShell(
     `<div id="root">${content.body}</div>`,
   );
 
-  return out;
+  return { html: out, status: content.status ?? 200 };
 }

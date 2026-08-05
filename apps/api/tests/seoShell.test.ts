@@ -46,7 +46,7 @@ describe('crawler shell', () => {
   });
 
   it('injects readable content on the homepage', async () => {
-    const html = await renderShell(prisma, '/', SHELL);
+    const { html } = await renderShell(prisma, '/', SHELL);
     const body = rootContent(html);
     expect(body).toContain('<h1>');
     // The featured fixture category must appear, proving live data reaches
@@ -55,7 +55,7 @@ describe('crawler shell', () => {
   });
 
   it('lists the catalogue on /categories', async () => {
-    const html = await renderShell(prisma, '/categories', SHELL);
+    const { html } = await renderShell(prisma, '/categories', SHELL);
     const body = rootContent(html);
     expect(body).toContain('SEO Fixture');
     expect(body).toContain('Fixture Subject 0');
@@ -63,7 +63,7 @@ describe('crawler shell', () => {
   });
 
   it('renders policy text for a policy route', async () => {
-    const html = await renderShell(prisma, '/privacy', SHELL);
+    const { html } = await renderShell(prisma, '/privacy', SHELL);
     const body = rootContent(html);
     expect(body).toContain('Privacy Policy');
     // The no-sale statement is the sentence most worth being crawlable.
@@ -74,19 +74,20 @@ describe('crawler shell', () => {
     // Dashboard, messages and admin are behind a login and must not be
     // described to a crawler at all.
     for (const route of ['/dashboard', '/messages', '/admin', '/account']) {
-      const html = await renderShell(prisma, route, SHELL);
+      const { html, status } = await renderShell(prisma, route, SHELL);
       expect(html, `${route} should be served unchanged`).toBe(SHELL);
+      expect(status).toBe(200);
     }
   });
 
   it('sets a route-specific title and canonical', async () => {
-    const html = await renderShell(prisma, '/categories', SHELL);
+    const { html } = await renderShell(prisma, '/categories', SHELL);
     expect(html).toMatch(/<title>Everything you can learn/);
     expect(html).toMatch(/rel="canonical"/);
   });
 
   it('does not leave duplicate titles or descriptions', async () => {
-    const html = await renderShell(prisma, '/', SHELL);
+    const { html } = await renderShell(prisma, '/', SHELL);
     expect(html.match(/<title>/g) ?? []).toHaveLength(1);
     expect(html.match(/name="description"/g) ?? []).toHaveLength(1);
     // The original og:title must be replaced, not appended to.
@@ -94,12 +95,90 @@ describe('crawler shell', () => {
   });
 
   it('escapes content rather than injecting raw HTML', async () => {
-    const html = await renderShell(prisma, '/privacy', SHELL);
+    const { html } = await renderShell(prisma, '/privacy', SHELL);
     const body = rootContent(html);
     // Policy text contains markdown and angle-bracket-ish characters; none of
     // it should become live markup beyond the paragraph tags we emit.
     const allowed = body.replace(/<\/?(p|h1|h2|ul|li|a|strong)\b[^>]*>/g, '');
     expect(allowed).not.toMatch(/<script/i);
     expect(allowed).not.toMatch(/<[a-z]+\s/i);
+  });
+});
+
+describe('crawler shell: dynamic routes', () => {
+  let approvedId: number;
+  let draftId: number;
+
+  beforeAll(async () => {
+    const mk = async (email: string, status: 'APPROVED' | 'DRAFT') => {
+      const user = await prisma.user.create({
+        data: { email, passwordHash: 'x', displayName: `Teacher ${status}` },
+      });
+      const profile = await prisma.tutorProfile.create({
+        data: {
+          userId: user.id,
+          status,
+          headline: `I teach ${status.toLowerCase()} things`,
+          city: 'Auckland',
+          country: 'New Zealand',
+          deliveryMode: 'ONLINE',
+        },
+      });
+      return profile.id;
+    };
+    approvedId = await mk(`seo.approved.${Date.now()}@test.local`, 'APPROVED');
+    draftId = await mk(`seo.draft.${Date.now()}@test.local`, 'DRAFT');
+  });
+
+  it('describes an approved tutor profile', async () => {
+    const { html, status } = await renderShell(prisma, `/tutors/${approvedId}`, SHELL);
+    expect(status).toBe(200);
+    expect(html).toContain('Teacher APPROVED');
+    expect(html).toContain('I teach approved things');
+    expect(html).toMatch(/"@type":\s*"Person"/);
+  });
+
+  it('404s an unapproved profile instead of publishing it', async () => {
+    // A draft profile is one its owner has not published. Serving it to a
+    // crawler would publish it on their behalf.
+    const { html, status } = await renderShell(prisma, `/tutors/${draftId}`, SHELL);
+    expect(status).toBe(404);
+    expect(html).not.toContain('I teach draft things');
+    expect(html).toContain('noindex');
+  });
+
+  it('404s a profile that does not exist', async () => {
+    const { status } = await renderShell(prisma, '/tutors/99999999', SHELL);
+    expect(status).toBe(404);
+  });
+
+  it('ignores a non-numeric profile id', async () => {
+    const { html } = await renderShell(prisma, '/tutors/not-a-number', SHELL);
+    expect(html).toBe(SHELL);
+  });
+
+  it('indexes a single-facet subject search as a landing page', async () => {
+    const subject = await prisma.subject.findFirstOrThrow({ where: { isActive: true } });
+    const { html } = await renderShell(
+      prisma, '/search', SHELL, new URLSearchParams({ subjectId: String(subject.id) }),
+    );
+    expect(html).toContain(subject.name);
+    expect(html).not.toContain('noindex');
+  });
+
+  it('marks a multi-facet search as noindex', async () => {
+    // Near-duplicates of each other; indexing them dilutes the pages that
+    // are actually worth ranking.
+    const subject = await prisma.subject.findFirstOrThrow({ where: { isActive: true } });
+    const { html } = await renderShell(
+      prisma, '/search', SHELL,
+      new URLSearchParams({ subjectId: String(subject.id), city: 'Auckland', mode: 'online' }),
+    );
+    expect(html).toContain('noindex');
+  });
+
+  it('indexes a bare /search', async () => {
+    const { html } = await renderShell(prisma, '/search', SHELL);
+    expect(html).not.toContain('noindex');
   });
 });

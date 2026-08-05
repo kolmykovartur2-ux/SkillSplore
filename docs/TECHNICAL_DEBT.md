@@ -114,12 +114,21 @@ data is live.
 Measured after the change: `/` 1.2KB, `/categories` 10.7KB, `/privacy`
 12.4KB, `/dashboard` 0 bytes (app routes deliberately untouched).
 
+### Extended to dynamic routes (same day)
+
+- `/tutors/:id` renders approved profiles with Person JSON-LD. Unapproved or
+  missing profiles return a genuine **404**, not a 200 — a draft profile is one
+  its owner has not published, and serving it would publish it on their behalf.
+- `/search?subjectId=` and `?categoryId=` render real landing pages. These are
+  the long-tail queries people actually type.
+- Multi-facet and free-text searches are `noindex,follow`: they are
+  near-duplicates of each other and dilute the pages worth ranking.
+- `sitemap.xml` is now generated from the database (549 URLs at time of
+  writing, including every approved profile and subject page) rather than the
+  hand-written 14-URL file, which could never include the pages that matter.
+
 ### What is still outstanding
 
-- **Tutor profiles are not covered.** They are dynamic and per-record; the
-  shell currently handles fixed routes only. Extending it to `/tutors/:id`
-  is straightforward but was deferred until there are profiles worth indexing.
-- **Search result pages are not covered**, for the same reason.
 - If the public surface ever grows past what a hand-written shell can
   reasonably describe, that is the point to reconsider a real SSR framework —
   not before.
