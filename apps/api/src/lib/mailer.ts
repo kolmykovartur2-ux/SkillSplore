@@ -19,6 +19,24 @@ function getTransport(): Transporter {
   return transporter;
 }
 
+/**
+ * Whether the SMTP settings look like the local-development default rather
+ * than a real provider.
+ *
+ * A deployment pointing at localhost:1025 has no mail server, so every send
+ * fails. That matters more than it sounds: nobody can verify an email address
+ * (and verification gates messaging), and a forgotten password becomes a
+ * permanent lockout.
+ *
+ * Deliberately a heuristic on the host. There is no way to know a remote SMTP
+ * server actually works without sending to it, and doing that at boot would
+ * make startup depend on a third party being reachable.
+ */
+export function mailLooksUnconfigured(): boolean {
+  const host = env.SMTP_HOST.trim().toLowerCase();
+  return host === '' || host === 'localhost' || host === '127.0.0.1' || host === '::1';
+}
+
 export interface Mail {
   to: string;
   subject: string;
@@ -26,13 +44,39 @@ export interface Mail {
   html?: string;
 }
 
-export async function sendMail(mail: Mail): Promise<void> {
+export interface SendResult {
+  delivered: boolean;
+  /** Set when delivery failed. Never shown to an end user verbatim. */
+  error?: string;
+}
+
+/**
+ * Sends a message and reports whether it actually went out.
+ *
+ * Still does not throw: a mail failure must not roll back an account that was
+ * otherwise created successfully. But it no longer swallows the outcome
+ * either. Callers need to know, so the interface can tell the user the truth
+ * rather than "check your inbox" for a message that was never sent.
+ */
+export async function sendMail(mail: Mail): Promise<SendResult> {
+  // Short-circuit rather than waiting for a connection refusal. On a host with
+  // nothing on port 25/1025 this otherwise blocks the request for the length
+  // of the TCP timeout.
+  if (mailLooksUnconfigured()) {
+    logger.error(
+      { to: mail.to, subject: mail.subject, smtpHost: env.SMTP_HOST },
+      'email NOT sent: no SMTP server configured (SMTP_HOST is still the local default)',
+    );
+    return { delivered: false, error: 'no-smtp-configured' };
+  }
+
   try {
     const info = await getTransport().sendMail({ from: env.MAIL_FROM, ...mail });
     logger.info({ to: mail.to, subject: mail.subject, messageId: info.messageId }, 'email sent');
+    return { delivered: true };
   } catch (err) {
-    // Never let a mail failure break a user flow; log for follow-up.
     logger.error({ err, to: mail.to, subject: mail.subject }, 'email send failed');
+    return { delivered: false, error: err instanceof Error ? err.message : 'unknown' };
   }
 }
 

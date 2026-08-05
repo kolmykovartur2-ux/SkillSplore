@@ -26,12 +26,33 @@ const VALID_PROD_BASE = {
   SESSION_SECRET: 'a'.repeat(48),
   ENABLE_DEMO_LOGIN: '0',
   STORAGE_DRIVER: 'local',
+  // A working mail provider is now part of what a valid production config
+  // means: without one, email verification and password reset both fail, and
+  // verification gates messaging.
+  SMTP_HOST: 'smtp.example-provider.test',
+  MAIL_FROM: 'SkillSplore <no-reply@skillsplore.org>',
 };
 
 describe('production boot guard (apps/api/src/config/env.ts)', () => {
   it('boots successfully with a genuinely secure production config', () => {
     const res = runEnv(VALID_PROD_BASE);
     expect(res.status).toBe(0);
+  });
+
+  it('refuses to boot in production without a real mail provider', () => {
+    // The default is localhost:1025, which is a local mail-capture tool. A
+    // deployment left on that default cannot verify anyone's email address,
+    // and verification is what gates messaging -- so the marketplace does not
+    // function, silently.
+    const res = runEnv({ ...VALID_PROD_BASE, SMTP_HOST: 'localhost' });
+    expect(res.status).not.toBe(0);
+    expect(res.stderr).toContain('local development default');
+  });
+
+  it('refuses to boot in production with an undeliverable .local sender', () => {
+    const res = runEnv({ ...VALID_PROD_BASE, MAIL_FROM: 'SkillSplore <no-reply@skillsplore.local>' });
+    expect(res.status).not.toBe(0);
+    expect(res.stderr).toContain('not a real domain');
   });
 
   it('refuses to boot in production with demo login enabled', () => {

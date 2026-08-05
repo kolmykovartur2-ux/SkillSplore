@@ -149,6 +149,23 @@ if (isProduction) {
     failures.push('S3 storage in production requires S3_ENDPOINT, S3_ACCESS_KEY and S3_SECRET_KEY.');
   }
 
+  // Without a real mail server nobody can verify an email address, and email
+  // verification gates messaging -- so the marketplace does not function. A
+  // forgotten password also becomes a permanent lockout. A production
+  // deployment that cannot send email is not a working deployment.
+  const smtpHost = raw.SMTP_HOST.trim().toLowerCase();
+  if (smtpHost === '' || smtpHost === 'localhost' || smtpHost === '127.0.0.1' || smtpHost === '::1') {
+    failures.push(
+      `SMTP_HOST is "${raw.SMTP_HOST}", which is the local development default. Production needs a real `
+      + 'mail provider: without one, email verification and password reset both fail silently.',
+    );
+  }
+  // A .local address is not deliverable and most providers will reject it
+  // outright, so mail would fail even with a correct SMTP host.
+  if (/@[^\s>]*\.local\b/i.test(raw.MAIL_FROM)) {
+    failures.push(`MAIL_FROM is "${raw.MAIL_FROM}". A .local address is not a real domain and will be rejected.`);
+  }
+
   // Data monetisation guards. These are hard failures rather than warnings:
   // the cost of booting with one of them silently on is a privacy breach and
   // a regulator complaint, which is not recoverable by fixing the config

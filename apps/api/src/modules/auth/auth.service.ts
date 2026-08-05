@@ -1,7 +1,7 @@
 import { prisma } from '../../lib/prisma.js';
 import { hashPassword, verifyPassword, assertPasswordStrength } from '../../lib/password.js';
 import { generateToken, hashToken } from '../../lib/tokens.js';
-import { sendMail, verificationEmail } from '../../lib/mailer.js';
+import { sendMail, verificationEmail, mailLooksUnconfigured } from '../../lib/mailer.js';
 import { writeAudit } from '../../lib/audit.js';
 import { badRequest, conflict, unauthorized } from '../../lib/errors.js';
 import { env } from '../../config/env.js';
@@ -89,7 +89,7 @@ export async function register(input: {
   marketingOptIn?: boolean;
   ipAddress?: string | null;
   userAgent?: string | null;
-}): Promise<User> {
+}): Promise<{ user: User; emailDelivered: boolean }> {
   assertPasswordStrength(input.password);
   const existing = await prisma.user.findUnique({ where: { email: input.email } });
   if (existing) throw conflict('An account with that email already exists.');
@@ -126,19 +126,21 @@ export async function register(input: {
       expiresAt: new Date(Date.now() + VERIFY_TTL_MS),
     },
   });
-  await sendMail({
+  // Reported back to the caller so the interface can tell the truth rather
+  // than saying "check your inbox" for a message that was never sent.
+  const sent = await sendMail({
     to: user.email,
     subject: 'Confirm your SkillSplore email',
     text: verificationEmail(user.displayName, link('/verify-email', token)),
   });
   await writeAudit({ actorId: user.id, action: 'user.register', entityType: 'User', entityId: user.id });
-  return user;
+  return { user, emailDelivered: sent.delivered };
 }
 
 // Verification tokens expire after 24 hours, and messaging is gated behind a
 // confirmed address. Without a resend, anyone who loses or outlasts that first
 // email is permanently unable to message anybody, with no way back.
-export async function resendVerification(userId: number): Promise<void> {
+export async function resendVerification(userId: number): Promise<{ emailDelivered: boolean }> {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user || user.deletedAt) throw badRequest('Account not found.');
   if (user.emailVerifiedAt) throw badRequest('Your email address is already confirmed.');
@@ -159,12 +161,13 @@ export async function resendVerification(userId: number): Promise<void> {
       expiresAt: new Date(Date.now() + VERIFY_TTL_MS),
     },
   });
-  await sendMail({
+  const sent = await sendMail({
     to: user.email,
     subject: 'Confirm your SkillSplore email',
     text: verificationEmail(user.displayName, link('/verify-email', token)),
   });
   await writeAudit({ actorId: user.id, action: 'user.verification_resent', entityType: 'User', entityId: user.id });
+  return { emailDelivered: sent.delivered };
 }
 
 export async function verifyEmail(token: string): Promise<void> {
@@ -211,10 +214,20 @@ export async function authenticate(email: string, password: string): Promise<Use
   return user;
 }
 
-export async function requestPasswordReset(email: string): Promise<void> {
+/**
+ * Reports whether mail is configured at all -- deliberately NOT whether this
+ * particular message was delivered.
+ *
+ * `mailConfigured` is a property of the deployment and is identical for every
+ * address, so it cannot be used to work out whether an account exists.
+ * Reporting per-message delivery here would leak precisely that, which is the
+ * enumeration hole the silent-success behaviour below exists to avoid.
+ */
+export async function requestPasswordReset(email: string): Promise<{ mailConfigured: boolean }> {
+  const mailConfigured = !mailLooksUnconfigured();
   const user = await prisma.user.findUnique({ where: { email } });
   // Always succeed silently to prevent account enumeration.
-  if (!user || user.deletedAt) return;
+  if (!user || user.deletedAt) return { mailConfigured };
   const { token, tokenHash } = generateToken();
   await prisma.emailToken.create({
     data: {
@@ -229,6 +242,7 @@ export async function requestPasswordReset(email: string): Promise<void> {
     subject: 'Reset your SkillSplore password',
     text: `Reset your password using this link (valid for one hour):\n${link('/reset-password', token)}\n\nIf you did not request this, you can ignore it.`,
   });
+  return { mailConfigured };
 }
 
 export async function resetPassword(token: string, newPassword: string): Promise<void> {

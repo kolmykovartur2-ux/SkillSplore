@@ -34,13 +34,16 @@ authRouter.post(
   authLimiter,
   validate({ body: registerSchema }),
   asyncHandler(async (req, res) => {
-    const user = await auth.register({
+    const { user, emailDelivered } = await auth.register({
       ...req.body,
       ipAddress: req.ip ?? null,
       userAgent: req.get('user-agent') ?? null,
     });
     await loginSession(req, user.id);
-    res.status(201).json({ user: selfUser(user) });
+    // The account exists either way. `emailDelivered` lets the interface say
+    // so honestly instead of telling someone to check an inbox that will
+    // never receive anything.
+    res.status(201).json({ user: selfUser(user), emailDelivered });
   }),
 );
 
@@ -60,8 +63,8 @@ authRouter.post(
   authLimiter,
   requireAuth,
   asyncHandler(async (req, res) => {
-    await auth.resendVerification(req.user!.id);
-    res.json({ ok: true });
+    const { emailDelivered } = await auth.resendVerification(req.user!.id);
+    res.json({ ok: true, emailDelivered });
   }),
 );
 
@@ -90,8 +93,11 @@ authRouter.post(
   authLimiter,
   validate({ body: requestResetSchema }),
   asyncHandler(async (req, res) => {
-    await auth.requestPasswordReset(req.body.email);
-    res.json({ ok: true });
+    const { mailConfigured } = await auth.requestPasswordReset(req.body.email);
+    // Deployment-wide fact, identical for every address, so returning it
+    // cannot be used to discover whether an account exists. Lets the page warn
+    // that no reset email can arrive rather than leaving someone waiting.
+    res.json({ ok: true, mailConfigured });
   }),
 );
 

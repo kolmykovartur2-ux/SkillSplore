@@ -28,9 +28,23 @@ export function Register() {
     e.preventDefault();
     setBusy(true); setError(null);
     try {
-      const { user } = await api.post<{ user: SelfUser }>('/auth/register', form);
+      const { user, emailDelivered } = await api.post<{ user: SelfUser; emailDelivered: boolean }>(
+        '/auth/register',
+        form,
+      );
       setUser(user);
-      toast('Account created. Check the mail capture inbox to confirm your email.', 'success');
+      // Do not tell someone to check an inbox when the message was never sent.
+      // Confirming an address is what unlocks messaging, so silently failing
+      // here leaves the account unable to do the main thing the site is for.
+      if (emailDelivered) {
+        toast('Account created. Check your email to confirm your address.', 'success');
+      } else {
+        toast(
+          'Account created, but we could not send your confirmation email. '
+          + 'Contact admin@skillsplore.org and we will confirm your address manually.',
+          'error',
+        );
+      }
       navigate('/dashboard', { replace: true });
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Registration failed.');
