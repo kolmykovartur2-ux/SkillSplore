@@ -111,20 +111,24 @@ services:
       # --- Content generation: template needs no AI provider or API key ---
       - key: CONTENT_AI_PROVIDER
         value: template
-      # Image generation for post creative. Endpoint and model are public
-      # configuration and live here; only the key is a secret, so it stays
-      # sync: false and is added once via the dashboard. Until that key exists
-      # generation returns the provider's own 401 rather than failing silently.
+      # Image generation is off on the deployed service, deliberately.
       #
-      # Note this is a paid API billed per image. To turn generation off again,
-      # set IMAGE_AI_PROVIDER back to "none" — everything else keeps working.
+      # The free option (automatic1111) runs Stable Diffusion on your own
+      # machine, which Render cannot reach — so it only works when the agent is
+      # run locally. The hosted option is billed per image. Rather than leave
+      # this pointing at a paid endpoint with no key, which would surface a 401
+      # on every attempt, it stays "none" and the dashboard says so honestly.
+      #
+      # To enable hosted generation later: set IMAGE_AI_PROVIDER to
+      # openai_compatible, IMAGE_AI_BASE_URL to https://api.openai.com/v1, and
+      # add IMAGE_AI_API_KEY via the dashboard.
       - key: IMAGE_AI_PROVIDER
-        value: openai_compatible
+        value: none
       - key: IMAGE_AI_BASE_URL
-        value: https://api.openai.com/v1
-      - key: IMAGE_AI_MODEL
-        value: gpt-image-1
+        sync: false
       - key: IMAGE_AI_API_KEY
+        sync: false
+      - key: IMAGE_AI_MODEL
         sync: false
       - key: DEFAULT_TIMEZONE
         value: Pacific/Auckland
