@@ -30,7 +30,7 @@ export function Contact() {
           <h2>Privacy</h2>
           <p>
             Access, correction, deletion, consent withdrawal, and privacy complaints. Our Privacy
-            Officer is <code>[[PRIVACY_OFFICER_NAME]]</code>.<br />
+            Officer is <code>Artur Kolmykov</code>.<br />
             <code>admin@skillsplore.org</code>
           </p>
           <p className="muted">
@@ -53,10 +53,18 @@ export function Contact() {
             <code>admin@skillsplore.org</code>
           </p>
 
-          <h2>Postal</h2>
+          <h2>Who operates SkillSplore</h2>
           <p>
-            <code>[[LEGAL_ENTITY_NAME]]</code><br />
-            <code>[[REGISTERED_ADDRESS]]</code>
+            <strong>SkillSplore Limited</strong>, a New Zealand registered company, company
+            number <strong>9449842</strong>.
+          </p>
+          <p className="muted">
+            {/* The registered office is on the public Companies Register, so pointing there
+                identifies the operator without republishing an address on a site where
+                strangers arrange in-person meetings. */}
+            Our registered office address is recorded on the New Zealand Companies Register and
+            can be looked up by company number. For formal notices, email us and we will provide
+            a postal address.
           </p>
 
           <div className="divider" />

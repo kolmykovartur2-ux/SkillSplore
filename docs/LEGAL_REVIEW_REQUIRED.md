@@ -17,32 +17,47 @@ accidentally go live with a half-filled policy.
 
 | Placeholder | What it needs | Why it matters |
 |---|---|---|
-| `[[LEGAL_ENTITY_NAME]]` | Registered company or sole-trader name | This is the entity that would be named in a claim. Getting it wrong makes the contract unenforceable against the right party. |
-| `[[TRADING_NAME]]` | Public-facing name | |
-| `[[COMPANY_NUMBER]]` | Companies Office number or equivalent | |
-| `[[BUSINESS_IDENTIFIER]]` | NZBN / ABN | Lets a user or regulator identify the operator. |
-| `[[REGISTERED_ADDRESS]]` | Real service address | Formal notices and regulator correspondence go here. A PO box may not be sufficient. |
-| `[[GOVERNING_JURISDICTION]]` | Governing law and courts | See question 6 below — do not choose this casually. |
-| `[[PRIVACY_OFFICER_NAME]]` | A named person | **New Zealand agencies must appoint a Privacy Officer.** Name an individual, not "the privacy team". |
+| `[[BUSINESS_IDENTIFIER]]` | NZBN | Issued on incorporation; not present in the Form 2 director consent. Lets a user or regulator identify the operator unambiguously. |
 | `[[EFFECTIVE_DATE]]` | Date | Must not predate legal review. |
-| `[[LAST_UPDATED_DATE]]` | Date | |
+| `[[LAST_UPDATED_DATE]]` | Date | Shown at the top of every policy page. |
 
 ### Already resolved
 
-`skillsplore.org` and `admin@skillsplore.org` were registered on 2026-08-04.
-All four contact placeholders — privacy, support, security and disputes — now
-resolve to `admin@skillsplore.org` throughout the documents.
+**Confirmed 2026-08-05** from the Companies Office Form 2 director consent, and
+by the founder confirming incorporation has completed:
 
-**Worth changing before launch:** pointing all four at one mailbox is workable
-for a solo founder, but role aliases (`privacy@`, `security@`, `support@`,
-`disputes@`) cost nothing on a domain you already own and are worth setting up
-because:
+| Detail | Value |
+|---|---|
+| Legal entity | SkillSplore Limited |
+| Trading name | SkillSplore |
+| Company number | 9449842 |
+| Privacy Officer | Artur Kolmykov |
+| Governing jurisdiction | New Zealand — still question 6 for the lawyer, on exclusive vs non-exclusive |
+| Contact addresses | `admin@skillsplore.org` (privacy, support, security, disputes) |
+
+**Registered address: deliberately NOT published.** The only address in the
+incorporation paperwork is the director's *residential* address, and the
+founder decided against publishing it. That is the right call for a platform
+where strangers arrange in-person meetings, some involving children.
+
+The policies instead state the company name and number and point at the New
+Zealand Companies Register, where the registered office is public and can be
+looked up. That keeps the operator identifiable — which consumer law expects —
+without republishing a home address on the site itself.
+
+**No residential address is recorded anywhere in this repository.** If a
+registered office service is arranged later, the wording in `privacy.ts`,
+`terms.ts` and `Contact.tsx` can be updated to name it directly.
+
+**Worth changing before launch:** all four contact roles point at one mailbox.
+Role aliases (`privacy@`, `security@`, `support@`, `disputes@`) cost nothing on
+a domain you already own:
 
 - a security researcher expects `security@` and may not find `admin@`;
 - a privacy complaint mixed into general support is easier to lose, and the
-  response is the thing a regulator would later ask about;
-- if anyone else ever helps with support, you can hand over `support@` without
-  also handing over the mailbox that receives legal correspondence.
+  response is what a regulator would later ask about;
+- you can hand over `support@` without also handing over the mailbox that
+  receives legal correspondence.
 
 Each alias can forward to the same inbox today. Update
 `apps/api/src/content/legal/` when they exist.

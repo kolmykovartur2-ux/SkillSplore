@@ -20,10 +20,12 @@ Last updated: [[LAST_UPDATED_DATE]]
 
 ## 1. Who operates SkillSplore
 
-SkillSplore is operated by [[LEGAL_ENTITY_NAME]] (trading as [[TRADING_NAME]]),
-company number [[COMPANY_NUMBER]], business identifier [[BUSINESS_IDENTIFIER]],
-registered at [[REGISTERED_ADDRESS]]. In this policy "SkillSplore", "we" and
+SkillSplore is operated by **SkillSplore Limited** (trading as SkillSplore), a
+New Zealand registered company, company number **9449842**, New Zealand
+Business Number [[BUSINESS_IDENTIFIER]]. In this policy "SkillSplore", "we" and
 "us" mean that entity.
+
+Our registered office address is recorded on the New Zealand Companies Register and can be looked up by company number.
 
 SkillSplore is a **moderated online noticeboard**. It helps people find someone
 who may be able to teach them a subject or skill. We provide the platform:
@@ -430,7 +432,7 @@ signed in. Non-essential categories are opt-in.
 ## 19. Complaints
 
 If you are unhappy with how we have handled your personal information, contact
-our Privacy Officer, [[PRIVACY_OFFICER_NAME]], at admin@skillsplore.org.
+our Privacy Officer, Artur Kolmykov, at admin@skillsplore.org.
 
 Please include: your name and contact details; what happened; when it happened;
 what you would like us to do; and any reference number we have given you.
@@ -450,9 +452,9 @@ telling you and, where required, obtaining your consent.
 
 ## 21. Contact
 
-- Privacy: admin@skillsplore.org (Privacy Officer: [[PRIVACY_OFFICER_NAME]])
+- Privacy: admin@skillsplore.org (Privacy Officer: Artur Kolmykov)
 - Support: admin@skillsplore.org
 - Security: admin@skillsplore.org
 - Disputes: admin@skillsplore.org
-- Postal: [[REGISTERED_ADDRESS]]
+- Postal: write to us at admin@skillsplore.org and we will provide a postal address for formal notices.
 `;

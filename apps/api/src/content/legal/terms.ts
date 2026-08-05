@@ -16,9 +16,11 @@ Last updated: [[LAST_UPDATED_DATE]]
 
 ## 1. Agreement and acceptance
 
-These Terms are between you and [[LEGAL_ENTITY_NAME]] (trading as
-[[TRADING_NAME]]), company number [[COMPANY_NUMBER]], business identifier
-[[BUSINESS_IDENTIFIER]], of [[REGISTERED_ADDRESS]].
+These Terms are between you and **SkillSplore Limited** (trading as
+SkillSplore), a New Zealand registered company, company number **9449842**,
+New Zealand Business Number [[BUSINESS_IDENTIFIER]].
+
+Our registered office address is recorded on the New Zealand Companies Register and can be looked up by company number.
 
 You accept these Terms by ticking the acceptance box when you create an
 account. We record which version you accepted and when. If we publish a
@@ -298,7 +300,7 @@ Subject to section 18, and to the extent permitted by law:
   arising from your use of the platform;
 - our total aggregate liability to you in connection with the platform in any
   12-month period is limited to the greater of (a) the total amount you paid
-  **to SkillSplore** in that period, and (b) [[GOVERNING_JURISDICTION]]-appropriate
+  **to SkillSplore** in that period, and (b) New Zealand-appropriate
   minimum figure to be set on legal advice.
 
 **Nothing in this section limits our liability for:** fraud; wilful misconduct;
@@ -335,8 +337,8 @@ court, or prevents you from contacting a regulator at any time.
 
 ## 23. Governing law
 
-These Terms are governed by the laws of [[GOVERNING_JURISDICTION]], and the
-courts of [[GOVERNING_JURISDICTION]] have non-exclusive jurisdiction.
+These Terms are governed by the laws of New Zealand, and the
+courts of New Zealand have non-exclusive jurisdiction.
 
 This clause does not deprive you of the protection of mandatory consumer laws of
 the country where you live.
@@ -373,7 +375,7 @@ bound by the privacy and consumer obligations that applied before the transfer.
 ## 27. Intellectual property
 
 The SkillSplore software, branding, design, documentation and database rights
-belong to [[LEGAL_ENTITY_NAME]] or its licensors. You may not copy, mirror,
+belong to SkillSplore Limited or its licensors. You may not copy, mirror,
 reverse-engineer, scrape or build a derivative or competing dataset from the
 platform without our prior written permission.
 
@@ -391,5 +393,5 @@ they reference, are the entire agreement between us about the platform.
 - Privacy: admin@skillsplore.org
 - Security: admin@skillsplore.org
 - Disputes: admin@skillsplore.org
-- Postal: [[REGISTERED_ADDRESS]]
+- Postal: write to us at admin@skillsplore.org and we will provide a postal address for formal notices.
 `;

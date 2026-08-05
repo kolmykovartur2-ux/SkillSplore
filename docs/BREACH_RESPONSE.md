@@ -83,7 +83,7 @@ Where notification is required or appropriate, tell people plainly:
 - what we have done;
 - what they should do (change a password, watch for phishing);
 - how to contact us — `admin@skillsplore.org`, Privacy Officer
-  `[[PRIVACY_OFFICER_NAME]]`.
+  `Artur Kolmykov`.
 
 No minimising language. If we do not yet know the scope, say that.
 
@@ -115,7 +115,7 @@ such. Nominate a backup before launch.
 
 | | |
 |---|---|
-| Privacy Officer | `[[PRIVACY_OFFICER_NAME]]` |
+| Privacy Officer | `Artur Kolmykov` |
 | Privacy | `admin@skillsplore.org` |
 | Security | `admin@skillsplore.org` |
 | NZ regulator | Office of the Privacy Commissioner |
