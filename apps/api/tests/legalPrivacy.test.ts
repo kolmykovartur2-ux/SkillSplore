@@ -463,3 +463,38 @@ describe('public policy documents', () => {
     expect(res.body.body).toContain('does not sell personal information');
   });
 });
+
+describe('migrations are non-destructive', () => {
+  // `prisma migrate diff` repeatedly proposes dropping things that exist in the
+  // database but cannot be expressed in schema.prisma -- the pg_trgm GIN
+  // indexes, and the `user_sessions` table that connect-pg-simple creates at
+  // runtime. Two of those drops were caught by review; one reached a committed
+  // migration and would have signed out every logged-in user on deploy.
+  //
+  // This test is the thing that catches the next one.
+  it('contains no DROP, DELETE or TRUNCATE in any migration', async () => {
+    const { readdir, readFile } = await import('node:fs/promises');
+    const { join } = await import('node:path');
+
+    const root = join(process.cwd(), 'prisma', 'migrations');
+    const dirs = (await readdir(root, { withFileTypes: true }))
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name);
+
+    expect(dirs.length).toBeGreaterThan(0);
+
+    const offenders: string[] = [];
+    for (const dir of dirs) {
+      const sql = await readFile(join(root, dir, 'migration.sql'), 'utf8');
+      for (const line of sql.split('\n')) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('--')) continue; // commented-out drops are fine
+        if (/^(DROP|DELETE\s+FROM|TRUNCATE)\b/i.test(trimmed)) {
+          offenders.push(`${dir}: ${trimmed}`);
+        }
+      }
+    }
+
+    expect(offenders, `Destructive statements found:\n${offenders.join('\n')}`).toEqual([]);
+  });
+});

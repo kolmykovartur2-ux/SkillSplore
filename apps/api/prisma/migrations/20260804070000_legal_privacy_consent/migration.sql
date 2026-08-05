@@ -19,8 +19,14 @@ CREATE TYPE "PrivacyIncidentStatus" AS ENUM ('DETECTED', 'CONTAINED', 'ASSESSING
 -- Prisma cannot represent a GIN/trgm index in schema.prisma, so every future
 -- diff will keep proposing the same drop. Leave them alone.
 
--- DropTable
-DROP TABLE "user_sessions";
+-- NOTE: prisma migrate diff also proposed DROP TABLE "user_sessions" here.
+-- That table is the express-session store, created at runtime by
+-- connect-pg-simple (see src/app.ts, createTableIfMissing: true). It is not
+-- in schema.prisma, so every diff will keep proposing to drop it -- exactly
+-- like the pg_trgm indexes above.
+--
+-- Dropping it would sign out every logged-in user, and any request in flight
+-- before connect-pg-simple recreated the table would fail. Left in place.
 
 -- CreateTable
 CREATE TABLE "LegalDocument" (
