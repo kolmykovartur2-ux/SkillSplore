@@ -16,7 +16,7 @@ same review process as the code they describe.
 |---|---|
 | `privacy.ts` | Privacy Policy |
 | `terms.ts` | Terms of Use |
-| `policies.ts` | Community Guidelines, Safety, Academic Integrity, Prohibited Services, Cookie Notice, Subprocessors |
+| `policies.ts` | Community Guidelines, Safety, Prohibited Services, Cookie Notice, Subprocessors |
 | `consents.ts` | Consent wording (separate lifecycle — see `CONSENT_MANAGEMENT.md`) |
 | `index.ts` | Registry: slug → title → public path → body |
 

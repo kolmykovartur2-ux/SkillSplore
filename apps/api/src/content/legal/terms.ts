@@ -75,7 +75,6 @@ You must:
 - protect information learners give you, and not use it for anything else;
 - avoid misleading claims about outcomes, results or affiliations;
 - not claim or imply a verification you do not hold;
-- not complete assessed work for a learner (see section 12);
 - comply with the child-safety rules in our Safety Policy.
 
 ## 6. If you are learning, or arranging learning for a child
@@ -89,7 +88,6 @@ You should:
 - supervise a child appropriately, and not leave a child alone with someone you
   have not satisfied yourself about;
 - not request anything unlawful;
-- not ask anyone to complete assessed work for you;
 - avoid disclosing sensitive information you do not need to disclose.
 
 ## 7. Agreements between users
@@ -196,6 +194,14 @@ extort someone; or include another person's private information in a review.
 We may remove a review that breaches these rules. We do not remove a review
 simply because its subject dislikes it.
 
+## 12. Academic work
+
+SkillSplore is for learning. We do not encourage using it to obtain work to
+submit as your own, and we may remove listings that openly advertise doing so.
+
+Institutions treat that as misconduct, and the consequences fall on the
+learner. What you agree with another user is between the two of you.
+
 ## 13. Prohibited conduct
 
 You must not use SkillSplore for: fraud or deception; impersonation; harassment;
@@ -204,7 +210,7 @@ abuse of children; sexual services; unsafe private contact with a minor;
 supplying drugs; facilitating violence; extremist violence; facilitating
 self-harm; distributing malware; unauthorised access to systems; harvesting
 personal data; spam; fake profiles; fake reviews; infringing someone's
-intellectual property; academic cheating; providing a regulated service without
+intellectual property; providing a regulated service without
 the required licence; misrepresenting qualifications; or circumventing our
 safety, moderation or enforcement controls.
 

@@ -72,7 +72,6 @@ These validate the approach rather than requiring action.
 | Prohibited services list | Not addressed | Full policy, prohibited + restricted + judgement-call tiers |
 | Provider licensing/registration requirements | Not addressed | Terms s15 + Prohibited Services Part B |
 | Children's privacy specifically | Only capacity-to-contract | 18+ account holders, child data never published, never in any data programme |
-| Academic integrity | Not addressed | Full policy |
 | Retention schedule | "until the purpose is achieved" | Documented per-category schedule, marked for approval |
 | User-rights procedure | Email address only | Nine request types, tracked workflow, event history, DB-backed |
 | Moderator access to private messages | Not addressed | Mandatory ground + written reason + audit log |
