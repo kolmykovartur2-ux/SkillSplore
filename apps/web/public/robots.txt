@@ -1,0 +1,24 @@
+# SkillSplore
+
+User-agent: *
+
+# Signed-in and administrative areas. No value in an index, and several would
+# 401 or redirect anyway.
+Disallow: /account
+Disallow: /dashboard
+Disallow: /messages
+Disallow: /notifications
+Disallow: /engagements
+Disallow: /admin
+Disallow: /requests
+Disallow: /tutor/feed
+Disallow: /tutor/responses
+Disallow: /verify-email
+Disallow: /reset-password
+Disallow: /forgot-password
+
+# Everything else -- the homepage, search, category browse, public profiles and
+# the policy pages -- is crawlable.
+Allow: /
+
+Sitemap: https://skillsplore.org/sitemap.xml

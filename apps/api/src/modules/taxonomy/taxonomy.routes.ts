@@ -95,6 +95,55 @@ taxonomyRouter.get(
   }),
 );
 
+/**
+ * The full catalogue, for the browse-all page.
+ *
+ * Exists because /overview returns only featured categories. Without this the
+ * non-featured categories would be reachable only by someone who thought to
+ * open the search page's filter dropdown -- which is not discovery, it is a
+ * scavenger hunt.
+ */
+taxonomyRouter.get(
+  '/browse',
+  asyncHandler(async (_req, res) => {
+    const [categories, grouped] = await Promise.all([
+      prisma.category.findMany({
+        where: { isActive: true },
+        orderBy: [{ isFeatured: 'desc' }, { displayOrder: 'asc' }, { name: 'asc' }],
+        include: {
+          subjects: {
+            where: { isActive: true },
+            orderBy: { name: 'asc' },
+            select: { id: true, name: true, slug: true },
+          },
+        },
+      }),
+      prisma.tutorSubject.groupBy({
+        by: ['subjectId'],
+        where: { tutorProfile: { status: 'APPROVED' } },
+        _count: { tutorProfileId: true },
+      }),
+    ]);
+
+    const countBySubject = new Map(grouped.map((g) => [g.subjectId, g._count.tutorProfileId]));
+
+    res.json({
+      categories: categories.map((c) => ({
+        id: c.id,
+        name: c.name,
+        icon: c.icon,
+        description: c.description,
+        isFeatured: c.isFeatured,
+        subjectCount: c.subjects.length,
+        tutorCount: c.subjects.reduce((n, s) => n + (countBySubject.get(s.id) ?? 0), 0),
+        subjects: c.subjects.map((s) => ({ ...s, tutorCount: countBySubject.get(s.id) ?? 0 })),
+      })),
+      totalCategories: categories.length,
+      totalSubjects: categories.reduce((n, c) => n + c.subjects.length, 0),
+    });
+  }),
+);
+
 const suggestSchema = z.object({ q: z.string().min(1).max(120) });
 
 // Typeahead for subject pickers: matches on name and on the alias table, so

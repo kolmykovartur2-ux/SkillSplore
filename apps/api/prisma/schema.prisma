@@ -149,6 +149,7 @@ model User {
   privacyRequests            PrivacyRequest[]
   restrictions               AccountRestriction[]
   payments                   Payment[]
+  feedback                   Feedback[]
 
   @@index([status])
 }
@@ -1148,3 +1149,56 @@ model PlatformCounter {
   updatedAt DateTime @default(now()) @updatedAt
 }
 
+// ===========================================================================
+// Feedback and contact messages.
+//
+// Deliberately a database table rather than a mailto: link. A mailto: opens
+// the visitor's mail client, which many people on a phone or a shared computer
+// do not have configured -- the message is simply lost, and nobody knows it
+// was lost. A stored row can be queued, triaged and counted.
+//
+// Separate from Report: a Report is about a specific user or piece of content
+// and feeds moderation. Feedback is about the product itself.
+// ===========================================================================
+
+enum FeedbackKind {
+  BUG
+  SUGGESTION
+  COMPLAINT
+  PRAISE
+  QUESTION
+  OTHER
+}
+
+enum FeedbackStatus {
+  NEW
+  TRIAGED
+  ACTIONED
+  CLOSED
+}
+
+model Feedback {
+  id        Int            @id @default(autoincrement())
+  // Null for a signed-out visitor. SetNull rather than Cascade so closing an
+  // account does not silently delete a bug report that is still unfixed.
+  userId    Int?
+  user      User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  // Optional even when signed out -- someone reporting a broken page should
+  // not be forced to identify themselves. Without it we simply cannot reply.
+  email     String?
+  kind      FeedbackKind   @default(OTHER)
+  message   String
+  // Where they were when they hit the problem. Far more useful for a bug
+  // report than asking the reporter to describe the page.
+  pageUrl   String?
+  userAgent String?
+  status    FeedbackStatus @default(NEW)
+  adminNote String?
+  handledBy Int?
+  resolvedAt DateTime?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @default(now()) @updatedAt
+
+  @@index([status, createdAt])
+  @@index([userId])
+}

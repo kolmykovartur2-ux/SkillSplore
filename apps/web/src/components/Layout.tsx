@@ -4,6 +4,8 @@ import { useAuth } from '../lib/auth.js';
 import { api } from '../lib/api.js';
 import { Avatar } from './ui.js';
 import { ARRANGEMENT_DISCLAIMER } from '../lib/pricingCopy.js';
+import { LINKEDIN_URL } from '../lib/siteLinks.js';
+import { FeedbackWidget } from './FeedbackWidget.js';
 
 function useBadgeCounts(loggedIn: boolean) {
   const [messages, setMessages] = useState(0);
@@ -133,27 +135,52 @@ export function Layout({ children }: { children: ReactNode }) {
                 find each other. {ARRANGEMENT_DISCLAIMER}
               </p>
             </div>
-            <nav className="footer-links">
-              <Link to="/about">About</Link>
-              <Link to="/#how-it-works">How it works</Link>
-              <Link to="/search">Browse skills</Link>
-              <Link to="/requests/new">Post a request</Link>
-              <Link to="/tutor/onboarding">Teach on SkillSplore</Link>
-              <Link to="/safety">Safety</Link>
-              <Link to="/community-guidelines">Community Guidelines</Link>
-              <Link to="/academic-integrity">Academic Integrity</Link>
-              <Link to="/prohibited-services">Prohibited Services</Link>
-              <Link to="/terms">Terms</Link>
-              <Link to="/privacy">Privacy</Link>
-              <Link to="/cookies">Cookies</Link>
-              <Link to="/subprocessors">Subprocessors</Link>
-              <Link to="/privacy-request">Privacy requests</Link>
-              <Link to="/contact">Contact</Link>
+            {/* Split by audience. A learner and someone offering to teach
+                want completely different things, and a single flat list of
+                fifteen links serves neither. */}
+            <nav className="footer-groups" aria-label="Footer">
+              <div className="footer-group">
+                <h3>Learn</h3>
+                <Link to="/search">Browse skills</Link>
+                <Link to="/categories">All categories</Link>
+                <Link to="/requests/new">Post a request</Link>
+                <Link to="/safety">Safety</Link>
+              </div>
+
+              <div className="footer-group">
+                <h3>Teach</h3>
+                <Link to="/tutor/onboarding">Start teaching</Link>
+                <Link to="/community-guidelines">Community Guidelines</Link>
+                <Link to="/academic-integrity">Academic Integrity</Link>
+                <Link to="/prohibited-services">Prohibited Services</Link>
+              </div>
+
+              <div className="footer-group">
+                <h3>Company</h3>
+                <Link to="/about">About</Link>
+                <Link to="/#how-it-works">How it works</Link>
+                <Link to="/contact">Contact</Link>
+                {/* Rendered only when the URL is actually configured. A social
+                    icon pointing at a 404 is worse than no icon. */}
+                {LINKEDIN_URL && (
+                  <a href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer">LinkedIn</a>
+                )}
+              </div>
+
+              <div className="footer-group">
+                <h3>Legal</h3>
+                <Link to="/terms">Terms</Link>
+                <Link to="/privacy">Privacy</Link>
+                <Link to="/cookies">Cookies</Link>
+                <Link to="/subprocessors">Subprocessors</Link>
+                <Link to="/privacy-request">Privacy requests</Link>
+              </div>
             </nav>
           </div>
           <div className="footer-bottom muted">© {new Date().getFullYear()} SkillSplore</div>
         </div>
       </footer>
+      <FeedbackWidget />
     </>
   );
 }

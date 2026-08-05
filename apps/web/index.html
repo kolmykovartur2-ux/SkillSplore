@@ -5,6 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SkillSplore | Find Someone to Learn From</title>
     <meta name="description" content="Search for people who teach academic subjects, music, art, languages, technology and more. Learn online or in person, or post what you want to learn." />
+
+    <!--
+      Open Graph and Twitter card tags. Without these, a link shared to
+      LinkedIn, WhatsApp or Slack renders as a bare URL with no title or
+      description, which reads as broken.
+
+      These are static: the app is a client-rendered SPA, so a crawler sees
+      this file for every route rather than per-page tags. Per-page previews
+      (a specific tutor profile, say) would need server-side rendering or
+      prerendering -- worth doing later, but a correct site-wide card beats no
+      card at all.
+
+      No og:image yet. A tag pointing at an image that does not exist produces
+      a broken preview, which is worse than a text-only one. Add the file to
+      public/ and the tag together.
+    -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="SkillSplore" />
+    <meta property="og:title" content="SkillSplore | Find Someone to Learn From" />
+    <meta property="og:description" content="A moderated noticeboard for finding someone who can teach you a subject or skill. Learn online or in person, or post what you want to learn." />
+    <meta property="og:url" content="https://skillsplore.org/" />
+    <meta property="og:locale" content="en_NZ" />
+
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="SkillSplore | Find Someone to Learn From" />
+    <meta name="twitter:description" content="A moderated noticeboard for finding someone who can teach you a subject or skill." />
+
+    <meta name="theme-color" content="#ffffff" />
+    <link rel="canonical" href="https://skillsplore.org/" />
   </head>
   <body>
     <div id="root"></div>
