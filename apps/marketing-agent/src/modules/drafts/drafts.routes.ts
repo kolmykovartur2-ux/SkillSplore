@@ -21,6 +21,7 @@ import { getLaunchContext } from '../../lib/launch.js';
 import { getActiveApprovedFacts } from '../../lib/facts.js';
 import { evaluateDraftContent } from '../../lib/contentValidation.js';
 import { CREATIVE_ANGLES, buildAnglePrompt, findCreativeAngle } from '../../lib/creativeAngles.js';
+import { REEL_FORMATS, buildReelFormatPrompt, findReelFormat, renderScriptToBody } from '../../lib/reelFormats.js';
 import { addVersion, EDITABLE_STATUSES } from './drafts.service.js';
 
 export const draftsRouter = Router();
@@ -75,6 +76,23 @@ draftsRouter.get(
       // sentence banks — so the dashboard can say so instead of the founder
       // wondering why the setting had no effect.
       anglesEffective: env.CONTENT_AI_PROVIDER !== 'template',
+      contentProvider: env.CONTENT_AI_PROVIDER,
+    });
+  }),
+);
+
+// Also before '/:id', for the same route-shadowing reason.
+draftsRouter.get(
+  '/reel-formats',
+  asyncHandler(async (_req, res) => {
+    res.json({
+      formats: REEL_FORMATS.map((f) => ({
+        key: f.key,
+        label: f.label,
+        aspectRatio: f.aspectRatio,
+        targetDurationSeconds: f.targetDurationSeconds,
+      })),
+      scriptsEffective: env.CONTENT_AI_PROVIDER !== 'template',
       contentProvider: env.CONTENT_AI_PROVIDER,
     });
   }),
@@ -156,6 +174,111 @@ draftsRouter.post(
       entityType: 'ContentBrief',
       entityId: brief.id,
       metadata: { count: createdDrafts.length, providerUsed, fellBackToTemplate },
+    });
+
+    res.status(201).json({ drafts: createdDrafts, providerUsed, fellBackToTemplate });
+  }),
+);
+
+
+const reelSchema = z.object({
+  briefId: z.number().int(),
+  platformKeys: z.array(z.string().min(1)).min(1),
+  angleKey: z.string().min(1).optional(),
+});
+
+// One script per requested platform. Stored as ordinary ContentDrafts so they
+// inherit versioning, warnings, the approval gate and the audit trail rather
+// than needing a parallel review system — the difference is contentType.
+draftsRouter.post(
+  '/generate-reel',
+  validate({ body: reelSchema }),
+  asyncHandler(async (req, res) => {
+    const brief = await prisma.contentBrief.findUnique({
+      where: { id: req.body.briefId },
+      include: { pillar: true, idea: true },
+    });
+    if (!brief) throw notFound('Brief not found.');
+
+    const formats = req.body.platformKeys.map((key: string) => {
+      const format = findReelFormat(key);
+      if (!format) throw badRequest(`Unknown platform "${key}".`);
+      return format;
+    });
+
+    const angle = req.body.angleKey ? findCreativeAngle(req.body.angleKey) : undefined;
+    if (req.body.angleKey && !angle) throw badRequest(`Unknown creative angle "${req.body.angleKey}".`);
+
+    const facts = await getActiveApprovedFacts();
+    const base = {
+      angleInstruction: angle ? buildAnglePrompt(angle) : undefined,
+      objective: brief.objective,
+      audience: brief.audience,
+      pillarName: brief.pillar?.name ?? 'Building SkillSplore',
+      mainIdea: brief.mainIdea,
+      productStage: brief.productStage,
+      desiredReaderAction: brief.desiredReaderAction,
+      tone: brief.tone,
+      format: brief.format,
+      maxLength: brief.maxLength,
+      facts,
+      launch: getLaunchContext(),
+    };
+
+    const createdDrafts = [];
+    let providerUsed = 'template';
+    let fellBackToTemplate = false;
+
+    for (const format of formats) {
+      const outcome = await withProviderFallback((provider) =>
+        provider.generateShortFormScript({
+          ...base,
+          platformKey: format.key,
+          formatInstruction: buildReelFormatPrompt(format),
+        }),
+      );
+      providerUsed = outcome.providerUsed;
+      fellBackToTemplate = fellBackToTemplate || outcome.fellBackToTemplate;
+
+      const body = renderScriptToBody(outcome.result, format);
+      const draft = await prisma.contentDraft.create({
+        data: {
+          briefId: brief.id,
+          campaignId: brief.idea?.campaignId ?? null,
+          contentType: 'NATIVE_VIDEO_BRIEF',
+          body,
+          title: `${format.label}: ${brief.mainIdea}`,
+          generationProvider: outcome.providerUsed,
+          generationModel: process.env.CONTENT_AI_MODEL || null,
+          status: 'AWAITING_REVIEW',
+          createdBy: req.adminUser!.id,
+        },
+      });
+      const run = await prisma.generationRun.create({
+        data: {
+          draftId: draft.id,
+          provider: outcome.providerUsed,
+          model: process.env.CONTENT_AI_MODEL || null,
+          promptSummary: `${format.label} script: ${brief.mainIdea}`,
+          status: 'success',
+        },
+      });
+      await addVersion({
+        draftId: draft.id,
+        content: body,
+        editorType: 'AI',
+        generationRunId: run.id,
+        changeSummary: `Initial ${format.label} script`,
+      });
+      createdDrafts.push(draft);
+    }
+
+    await writeAudit({
+      actorId: req.adminUser!.id,
+      action: 'draft.generateReel',
+      entityType: 'ContentBrief',
+      entityId: brief.id,
+      metadata: { platforms: formats.map((f: { key: string }) => f.key), providerUsed, fellBackToTemplate },
     });
 
     res.status(201).json({ drafts: createdDrafts, providerUsed, fellBackToTemplate });

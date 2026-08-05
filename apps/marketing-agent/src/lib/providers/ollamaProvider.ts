@@ -1,6 +1,7 @@
 import { env } from '../../config/env.js';
 import { logger } from '../logger.js';
 import { BRAND_VOICE_SYSTEM_PROMPT, buildUserPrompt, parseJsonResponse } from './promptUtils.js';
+import type { ShortFormScript } from '../reelFormats.js';
 import type {
   BriefInput,
   BriefSeed,
@@ -78,6 +79,17 @@ export const ollamaProvider: ContentGenerationProvider = {
       buildUserPrompt('Write a visual brief (not an image) as JSON {description, mustInclude, mustAvoid}. Never invent fake data on screen.', input),
     );
     return parseJsonResponse<ImageBrief>(text);
+  },
+
+  async generateShortFormScript(input) {
+    const text = await call(
+      buildUserPrompt(
+        'Write a short-form video script as a JSON object {hook, beats, caption, hashtags, filmingNotes}. beats is an array of {spoken, onScreenText, shot}. The hook is the very first line and must earn the rest. Ground every claim only in the facts provided.',
+        input,
+      ),
+    );
+    const parsed = parseJsonResponse<Omit<ShortFormScript, 'platformKey'>>(text);
+    return { ...parsed, platformKey: input.platformKey };
   },
 
   async createCampaignPlan(input) {

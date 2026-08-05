@@ -1,3 +1,4 @@
+import type { ShortFormScript } from '../reelFormats.js';
 import type {
   BriefInput,
   BriefSeed,
@@ -223,6 +224,48 @@ export const templateProvider: ContentGenerationProvider = {
       description: `A real, unedited screenshot or photo illustrating "${topic}" (pillar: ${pillarName}). No mockups of features that do not exist yet.`,
       mustInclude: ['SkillSplore logo mark or wordmark', 'Genuine product UI or a real, consented photo'],
       mustAvoid: ['Fabricated user counts, reviews, or testimonials', 'Stock photography that misrepresents the team or product'],
+    };
+  },
+
+  // Template mode cannot invent a hook, so it does the next most useful thing:
+  // emits a correctly-structured filming scaffold with the platform's own
+  // constraints filled in. Useless as finished copy, genuinely useful as a
+  // checklist to film against — and it keeps the reel flow working with no AI
+  // provider configured at all.
+  async generateShortFormScript(input): Promise<ShortFormScript> {
+    const { launch, mainIdea, desiredReaderAction, audience } = input;
+    return {
+      platformKey: input.platformKey,
+      hook: `[Write the hook here — one concrete line about "${mainIdea}". No greeting, no introduction.]`,
+      beats: [
+        {
+          spoken: `[State the specific situation for ${audience}, in one sentence.]`,
+          onScreenText: '[3-5 words]',
+          shot: 'Talking head, chest up, natural light, plain background.',
+        },
+        {
+          spoken: '[Give one concrete detail that proves you actually know this.]',
+          onScreenText: '[3-5 words]',
+          shot: 'Cutaway to the thing being talked about — hands, tools, or the object itself.',
+        },
+        {
+          spoken: '[Name the honest limit, or the part people get wrong.]',
+          onScreenText: '[3-5 words]',
+          shot: 'Back to talking head.',
+        },
+        {
+          spoken: `[Close: ${desiredReaderAction}.]`,
+          onScreenText: '[Short call to action]',
+          shot: 'Talking head, slightly closer.',
+        },
+      ],
+      caption: `[Caption: one or two lines expanding the hook, ending on a real question. ${launch.category} in ${launch.city}, ${launch.country}. ${launch.stage}.]`,
+      hashtags: [],
+      filmingNotes: [
+        'Template mode produced this scaffold — it is a structure to film against, not finished copy.',
+        'Set CONTENT_AI_PROVIDER to anthropic or openai_compatible for a written hook and script.',
+        'Film vertically. Check the hook works with the sound off.',
+      ],
     };
   },
 

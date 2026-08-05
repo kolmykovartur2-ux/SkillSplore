@@ -1,4 +1,5 @@
 import { env } from '../config/env.js';
+import type { ShortFormScript } from './reelFormats.js';
 import { logger } from './logger.js';
 import { templateProvider } from './providers/templateProvider.js';
 import { anthropicProvider } from './providers/anthropicProvider.js';
@@ -73,6 +74,12 @@ export interface ImageBrief {
   mustAvoid: string[];
 }
 
+export interface ShortFormScriptInput extends BriefInput {
+  /** Platform constraints from reelFormats.ts, pre-rendered by the caller. */
+  formatInstruction: string;
+  platformKey: string;
+}
+
 export interface ContentGenerationProvider {
   readonly name: string;
   generateIdeas(input: { pillarName: string; count: number; launch: LaunchContext }): Promise<IdeaSeed[]>;
@@ -81,6 +88,7 @@ export interface ContentGenerationProvider {
   generateVariants(input: BriefInput, count?: number): Promise<GeneratedDraft[]>;
   rewriteDraft(input: { body: string; instruction: string; maxLength: number }): Promise<GeneratedDraft>;
   createImageBrief(input: { topic: string; pillarName: string }): Promise<ImageBrief>;
+  generateShortFormScript(input: ShortFormScriptInput): Promise<ShortFormScript>;
   createCampaignPlan(input: {
     goal: string;
     pillarNames: string[];

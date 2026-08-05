@@ -84,3 +84,41 @@ Added alongside the prohibitions, because modesty was being read as licence to b
 - End with a genuine question or one specific ask — not "thoughts?".
 - No emoji strings, no hashtag walls, no engagement-bait openers.
 - Being unable to cite numbers is not a reason to be generic.
+
+## Short-form video scripts (reels)
+
+Generated from the Brief page, using the same angle you picked for written posts. Produces a
+**script and shot list, not a video** — the deliberate choice being that the hard part of a reel is
+the hook and the beat structure, not the footage, and a founder filming themselves on a phone
+outperforms synthetic video for a personal-brand-led launch.
+
+Each selected platform produces its own draft, because the formats genuinely differ:
+
+| | LinkedIn native video | Instagram Reels / TikTok |
+| --- | --- | --- |
+| Hook window | 3s | **1.5s** |
+| Length | 30–90s | 15–45s |
+| Aspect | 9:16 (1:1 acceptable) | 9:16 |
+| Watched | Muted, in a professional feed, slightly more patience | Fast consumer scroll, sound sometimes on |
+| Style | Talking head beats heavy editing | Cut on the beat; captions carry the story alone |
+
+Each script contains a hook, numbered beats (`SHOT` / `SAY` / `ON SCREEN`), a caption, hashtags and
+filming notes. Scripts are stored as ordinary `ContentDraft` rows with `contentType`
+`NATIVE_VIDEO_BRIEF`, so they inherit versioning, warnings, the approval gate and the audit trail
+rather than needing a separate review path.
+
+### Safety in motion
+
+Video makes some rules easier to break than text does — an actor delivering a line reads as a
+testimonial far more strongly than the same words typed. So every script request carries hard
+constraints: never script anyone presenting themselves as a SkillSplore user, tutor or success
+story; no on-screen statistics, ratings or user counts; no screen recordings implying activity that
+does not exist; no income, outcome or health claims; every spoken claim must trace to a supplied
+Fact; and any generated imagery used in a shot must be labelled illustrative on screen.
+
+### Template mode
+
+With `CONTENT_AI_PROVIDER=template` you get a correctly structured **filming scaffold** with the
+hook left blank — useless as finished copy, genuinely useful as a checklist to film against. The
+Brief page says so rather than letting you wonder why the hook is a placeholder. Switch to
+`anthropic` or `openai_compatible` for a written hook and script.
