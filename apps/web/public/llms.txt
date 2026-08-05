@@ -1,0 +1,53 @@
+# SkillSplore
+
+> A moderated noticeboard that helps people in New Zealand and Australia find
+> someone who can teach them a subject or skill. Lessons happen online or in
+> person, and are arranged directly between the two people.
+
+SkillSplore is operated by SkillSplore Limited (NZ company 9449842).
+
+## What it does
+
+- Search people who teach, by subject, category, location and format
+- Post what you want to learn and let teachers respond
+- Message directly, then arrange a lesson between yourselves
+- Reviews after a genuine interaction
+- Profiles are reviewed by a moderator before they are published
+
+## What it does not do
+
+- It does not employ the people listed, or act as their agent
+- It does not process payment for lessons
+- It does not guarantee anyone's identity, qualifications or safety
+- Reviewing a profile is not a criminal background check
+
+## Who can use it
+
+Anyone can hold an account, including people under 18. Lessons a young person
+arranges themselves are online only; in-person lessons are arranged by a
+parent or guardian from their own account.
+
+## Data
+
+SkillSplore does not sell personal information or user-level behavioural
+profiles. See /privacy.
+
+## Pages
+
+- /: home
+- /search: find someone to learn from
+- /categories: the full catalogue of categories and subjects
+- /about: what SkillSplore is
+- /contact: how to reach us
+- /safety: safety guidance
+- /community-guidelines: how people are expected to behave
+- /prohibited-services: what may not be offered
+- /terms: terms of use
+- /privacy: privacy policy
+- /cookies: cookie notice
+- /subprocessors: third parties that process data
+- /privacy-request: request access, correction or deletion of your data
+
+## Contact
+
+admin@skillsplore.org

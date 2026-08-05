@@ -14,6 +14,9 @@ import { apiRouter } from './routes.js';
 import { loadUser } from './middleware/auth.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { apiLimiter } from './middleware/rateLimit.js';
+import { asyncHandler } from './lib/asyncHandler.js';
+import { prisma } from './lib/prisma.js';
+import { renderShell } from './lib/seoShell.js';
 
 const { Pool } = pgPkg;
 
@@ -81,11 +84,22 @@ export function createApp() {
   // Vite dev server serves the client instead.
   const webDist = path.resolve(here, '../../web/dist');
   if (fs.existsSync(webDist)) {
-    app.use(express.static(webDist));
-    app.get('*', (req, res, next) => {
+    // index:false so that "/" falls through to the handler below rather than
+    // being served straight off disk -- otherwise the crawler shell would
+    // never run for the homepage, which is the page that matters most.
+    app.use(express.static(webDist, { index: false }));
+
+    // Read once: the file does not change while the process runs, and this is
+    // on the path of every page request.
+    const indexHtml = fs.readFileSync(path.join(webDist, 'index.html'), 'utf8');
+
+    app.get('*', asyncHandler(async (req, res, next) => {
       if (req.path.startsWith('/api/')) return next();
-      res.sendFile(path.join(webDist, 'index.html'));
-    });
+      // Injects real content and per-route metadata for crawlers. Returns the
+      // file unchanged for app-shaped routes. See lib/seoShell.ts.
+      const html = await renderShell(prisma, req.path, indexHtml);
+      res.type('html').send(html);
+    }));
   }
 
   app.use(errorHandler);

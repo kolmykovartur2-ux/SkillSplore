@@ -66,3 +66,60 @@ observed in this checkout._
 - Polling instead of WebSockets for messaging — deliberate MVP simplification.
 - No payment processing — deliberate, arrangements happen off-platform (§ product definition).
 - In-memory rate limiting — deliberate single-node MVP choice, documented exit path to Redis.
+
+---
+
+## Client-rendered SPA vs discoverability (recorded 2026-08-05)
+
+**The tradeoff was never written down when the stack was chosen.** This entry
+exists because the founder asked why the site was built this way and the honest
+answer was that nobody had recorded a reason.
+
+### What was chosen
+
+React 18 + Vite, client-rendered. The built `index.html` body is
+`<div id="root"></div>` and everything is drawn by JavaScript.
+
+### Why that was defensible
+
+- The project's constraint is self-hostability with a small dependency surface
+  — no Tailwind, no component library, no Redis, no proprietary services. A
+  Vite SPA plus an Express API that serves the built files is a single
+  container anyone can run. Next.js or Remix would have added a server runtime
+  and more coupling.
+- Most of the product is app-shaped and behind a login: dashboard, messages,
+  requests, admin. Server rendering buys nothing there.
+
+### What it cost
+
+The **public** surface — homepage, categories, tutor profiles, policies — is
+discovery content, and a marketplace depends on being found. Anything that
+does not execute JavaScript saw an empty page. That includes most AI crawlers
+and, unreliably, Google.
+
+Treating the whole app as one uniform SPA meant the public half silently
+inherited a decision that only suited the private half.
+
+### What was done about it
+
+`src/lib/seoShell.ts` hooks the point where the API already serves
+`index.html` and injects, per route: title, description, canonical, Open Graph
+tags, JSON-LD, and real readable content inside `#root`.
+
+React's `createRoot` clears the container on mount, so a person with
+JavaScript never sees it and a crawler without JavaScript gets the whole page.
+No second rendering path to drift, no build step, no headless browser, and the
+data is live.
+
+Measured after the change: `/` 1.2KB, `/categories` 10.7KB, `/privacy`
+12.4KB, `/dashboard` 0 bytes (app routes deliberately untouched).
+
+### What is still outstanding
+
+- **Tutor profiles are not covered.** They are dynamic and per-record; the
+  shell currently handles fixed routes only. Extending it to `/tutors/:id`
+  is straightforward but was deferred until there are profiles worth indexing.
+- **Search result pages are not covered**, for the same reason.
+- If the public surface ever grows past what a hand-written shell can
+  reasonably describe, that is the point to reconsider a real SSR framework —
+  not before.

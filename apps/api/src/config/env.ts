@@ -18,6 +18,10 @@ const schema = z.object({
   APP_ENV: z.enum(['development', 'demo', 'production']).default('development'),
   API_PORT: z.coerce.number().int().positive().default(4000),
   WEB_ORIGIN: z.string().url().default('http://localhost:5173'),
+  // Canonical public URL, used for canonical/Open Graph tags in the crawler
+  // shell. Separate from WEB_ORIGIN, which is the CORS origin -- they are the
+  // same in most deployments but not necessarily.
+  PUBLIC_SITE_URL: z.string().default(''),
 
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
 
