@@ -61,6 +61,23 @@ services:
           type: web
           name: skillsplore
           envVarKey: RENDER_EXTERNAL_URL
+      # Canonical public URL, used for <link rel="canonical">, Open Graph tags
+      # and every entry in sitemap.xml.
+      #
+      # Tracks Render's own service URL, so it is correct from first deploy.
+      # RENDER_EXTERNAL_URL does NOT change when a custom domain is attached,
+      # so once skillsplore.org points here, replace this whole block with:
+      #
+      #   - key: PUBLIC_SITE_URL
+      #     value: https://skillsplore.org
+      #
+      # Leaving it pointing at onrender.com after that would split ranking
+      # between two hostnames for the same content.
+      - key: PUBLIC_SITE_URL
+        fromService:
+          type: web
+          name: skillsplore
+          envVarKey: RENDER_EXTERNAL_URL
       - key: FORCE_SECURE_COOKIES
         value: 1
       - key: STORAGE_DRIVER
