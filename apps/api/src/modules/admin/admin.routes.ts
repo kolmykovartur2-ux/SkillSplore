@@ -533,12 +533,28 @@ function slugify(name: string): string {
 
 adminRouter.post(
   '/categories',
-  validate({ body: z.object({ name: z.string().min(2).max(80) }) }),
+  validate({
+    body: z.object({
+      name: z.string().min(2).max(80),
+      // Which level vocabulary the category uses. Defaults to the skill ladder
+      // rather than the school one: most of this catalogue is not school
+      // subjects, and the failure that matters is asking a tradesperson for
+      // their NCEA level, not the reverse.
+      levelTracks: z.array(z.enum(['ACADEMIC', 'PROFESSIONAL'])).min(1).default(['PROFESSIONAL']),
+    }),
+  }),
   asyncHandler(async (req, res) => {
     const normalizedName = normalizeName(req.body.name);
     const existing = await prisma.category.findUnique({ where: { normalizedName } });
     if (existing) throw conflict(`"${existing.name}" already exists as a category.`);
-    const category = await prisma.category.create({ data: { name: req.body.name, normalizedName, slug: slugify(req.body.name) } });
+    const category = await prisma.category.create({
+      data: {
+        name: req.body.name,
+        normalizedName,
+        slug: slugify(req.body.name),
+        levelTracks: req.body.levelTracks,
+      },
+    });
     res.status(201).json({ category });
   }),
 );

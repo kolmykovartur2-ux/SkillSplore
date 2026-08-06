@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, ApiError } from '../../lib/api.js';
 import { useApi } from '../../lib/useApi.js';
@@ -7,8 +7,9 @@ import { useToast } from '../../lib/toast.js';
 import { Alert, Button, Card, Field, Input, Select, Textarea } from '../../components/ui.js';
 import { SuggestSubjectModal } from '../../components/SuggestSubjectModal.js';
 
-interface Category { id: number; name: string; subjects: Array<{ id: number; name: string }> }
-interface Level { id: number; name: string }
+type LevelTrack = 'ACADEMIC' | 'PROFESSIONAL';
+interface Category { id: number; name: string; levelTracks: LevelTrack[]; subjects: Array<{ id: number; name: string }> }
+interface Level { id: number; name: string; track: LevelTrack }
 
 export function CreateRequest() {
   const navigate = useNavigate();
@@ -26,6 +27,19 @@ export function CreateRequest() {
   const [suggesting, setSuggesting] = useState(false);
 
   const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }));
+
+  // Only offer levels that mean something for the chosen subject. Asking
+  // someone looking for SEO help whether they want NCEA Level 2 is the same
+  // mismatch tutors hit on their own profile.
+  const levelOptions = useMemo(() => {
+    const all = lvls?.levels ?? [];
+    if (!form.subjectId) return all;
+    const owner = (cats?.categories ?? []).find(
+      (c) => c.subjects.some((sub) => String(sub.id) === form.subjectId),
+    );
+    if (!owner) return all;
+    return all.filter((l) => owner.levelTracks.includes(l.track));
+  }, [lvls, cats, form.subjectId]);
 
   const submit = async (publish: boolean) => {
     setError(null); setBusy(true);
@@ -75,7 +89,7 @@ export function CreateRequest() {
             <p className="muted" style={{ fontSize: '0.9rem', marginBottom: 16 }}>You're looking for someone with a specific skill to provide a service or help you with a project.</p>
           )}
           <Field label="Subject or skill">
-            <Select value={form.subjectId} onChange={(e) => set({ subjectId: e.target.value })} required>
+            <Select value={form.subjectId} onChange={(e) => set({ subjectId: e.target.value, levelId: '' })} required>
               <option value="">Choose a subject or skill…</option>
               {cats?.categories.map((c) => (
                 <optgroup key={c.id} label={c.name}>
@@ -94,7 +108,7 @@ export function CreateRequest() {
               onClose={() => setSuggesting(false)}
               onResolved={(subject) => {
                 setSuggesting(false);
-                set({ subjectId: String(subject.id) });
+                set({ subjectId: String(subject.id), levelId: '' });
                 reloadCats();
               }}
             />
@@ -102,7 +116,7 @@ export function CreateRequest() {
           <Field label="Level (optional)">
             <Select value={form.levelId} onChange={(e) => set({ levelId: e.target.value })}>
               <option value="">Any level</option>
-              {lvls?.levels.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+              {levelOptions.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
             </Select>
           </Field>
           <Field label="Title"><Input value={form.title} onChange={(e) => set({ title: e.target.value })} required minLength={4} placeholder={isLearning ? "e.g. Help with NCEA Level 3 calculus, or beginner saxophone lessons" : "e.g. I need help painting my living room, or website design for my small business"} /></Field>

@@ -22,7 +22,7 @@
  * file's value on every boot would silently overturn that decision.
  */
 import { PrismaClient } from '@prisma/client';
-import { TAXONOMY, ALIASES } from './taxonomy.data.js';
+import { TAXONOMY, ALIASES, type LevelTrack } from './taxonomy.data.js';
 import { normalizeName } from '../src/lib/normalize.js';
 
 function slug(name: string): string {
@@ -37,15 +37,35 @@ function slug(name: string): string {
  * leaving providers unable to state what level they teach and the level
  * filter in search permanently empty.
  */
-export const TEACHING_LEVELS = [
-  'Primary',
-  'Intermediate',
-  'NCEA Level 1',
-  'NCEA Level 2',
-  'NCEA Level 3',
-  'Undergraduate',
-  'Postgraduate',
-  'Adult / Hobby',
+export const TEACHING_LEVELS: Array<{ name: string; track: LevelTrack }> = [
+  // Academic: the original list, which is right for the handful of categories
+  // that follow a school curriculum and wrong for everything else.
+  { name: 'Primary', track: 'ACADEMIC' },
+  { name: 'Intermediate', track: 'ACADEMIC' },
+  { name: 'NCEA Level 1', track: 'ACADEMIC' },
+  { name: 'NCEA Level 2', track: 'ACADEMIC' },
+  { name: 'NCEA Level 3', track: 'ACADEMIC' },
+  { name: 'Undergraduate', track: 'ACADEMIC' },
+  { name: 'Postgraduate', track: 'ACADEMIC' },
+
+  // Professional: a skill ladder, for the ~30 categories that are not school
+  // subjects at all.
+  //
+  // Names avoid colliding with the academic ones on purpose. `name` is unique
+  // across the whole table, and in New Zealand "Intermediate" already means
+  // intermediate school (Years 7-8) -- so a second, unrelated "Intermediate"
+  // would be both a constraint violation and genuinely ambiguous to a reader.
+  // "Some experience" also describes the learner better than "Intermediate"
+  // does for a skill with no syllabus behind it.
+  { name: 'Complete beginner', track: 'PROFESSIONAL' },
+  { name: 'Some experience', track: 'PROFESSIONAL' },
+  { name: 'Advanced', track: 'PROFESSIONAL' },
+  { name: 'Professional / career', track: 'PROFESSIONAL' },
+
+  // Predates the split. Kept rather than renamed or removed, because tutors
+  // have already selected it and it is the closest existing thing to a
+  // non-academic audience.
+  { name: 'Adult / Hobby', track: 'PROFESSIONAL' },
 ];
 
 export interface SyncResult {
@@ -67,10 +87,10 @@ export async function syncTaxonomy(prisma: PrismaClient): Promise<SyncResult> {
   // renamed a level keeps their rename; only genuinely missing levels are
   // inserted.
   for (let i = 0; i < TEACHING_LEVELS.length; i++) {
-    const name = TEACHING_LEVELS[i]!;
+    const { name, track } = TEACHING_LEVELS[i]!;
     const existing = await prisma.teachingLevel.findFirst({ where: { slug: slug(name) } });
     if (existing) continue;
-    await prisma.teachingLevel.create({ data: { name, slug: slug(name), sortOrder: i } });
+    await prisma.teachingLevel.create({ data: { name, slug: slug(name), sortOrder: i, track } });
     levelsAdded++;
   }
 
@@ -91,6 +111,10 @@ export async function syncTaxonomy(prisma: PrismaClient): Promise<SyncResult> {
           slug: slug(cat.name),
           icon: cat.icon,
           isFeatured: !!cat.featured,
+          // Like isFeatured, set only at creation. Re-applying every boot would
+          // overturn an admin who decided their category needs a different
+          // level vocabulary than the one shipped here.
+          levelTracks: cat.levelTracks ?? ['PROFESSIONAL'],
         },
       });
       categoriesAdded++;

@@ -13,6 +13,7 @@ export function AdminTaxonomy() {
   const { data: cats, loading, reload } = useApi<{ categories: Category[] }>('/taxonomy/categories');
   const { data: levels, reload: reloadLevels } = useApi<{ levels: Level[] }>('/taxonomy/levels');
   const [catName, setCatName] = useState('');
+  const [catTracks, setCatTracks] = useState('PROFESSIONAL');
   const [subName, setSubName] = useState('');
   const [subCat, setSubCat] = useState('');
   const [levelName, setLevelName] = useState('');
@@ -38,7 +39,21 @@ export function AdminTaxonomy() {
             </div>
           ))}
           <div className="divider" />
-          <Field label="New category"><div className="row"><Input value={catName} onChange={(e) => setCatName(e.target.value)} /><Button disabled={catName.length < 2} onClick={wrap(async () => { await api.post('/admin/categories', { name: catName }); setCatName(''); })}>Add</Button></div></Field>
+          <Field label="New category">
+            <div className="row">
+              <Input value={catName} onChange={(e) => setCatName(e.target.value)} />
+              {/* Decides which levels tutors are offered for every subject in
+                  the category. Defaults to the skill ladder, because most of
+                  this catalogue is not school subjects. */}
+              <Select value={catTracks} onChange={(e) => setCatTracks(e.target.value)} style={{ width: 210 }}>
+                <option value="PROFESSIONAL">Experience levels</option>
+                <option value="ACADEMIC">School &amp; university levels</option>
+                <option value="ACADEMIC,PROFESSIONAL">Both</option>
+              </Select>
+              <Button disabled={catName.length < 2} onClick={wrap(async () => { await api.post('/admin/categories', { name: catName, levelTracks: catTracks.split(',') }); setCatName(''); setCatTracks('PROFESSIONAL'); })}>Add</Button>
+            </div>
+            <p className="hint">Which levels tutors pick from for subjects in this category.</p>
+          </Field>
           <Field label="New subject">
             <div className="row">
               <Input value={subName} onChange={(e) => setSubName(e.target.value)} placeholder="Subject name" />

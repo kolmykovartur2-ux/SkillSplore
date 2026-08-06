@@ -194,6 +194,12 @@ model Category {
   // handful are featured there, and the rest are reached through search and
   // the browse page.
   isFeatured     Boolean   @default(false)
+  /// Which level vocabularies apply here. An array because plenty of
+  /// categories genuinely span both: Music is taught for NCEA and as a hobby,
+  /// Computer Science covers Digital Technologies and professional
+  /// engineering. Defaults to PROFESSIONAL -- a category someone submits at
+  /// runtime is far more often a skill than a school subject.
+  levelTracks    LevelTrack[] @default([PROFESSIONAL])
   // Archived rather than deleted, so historical requests and profiles that
   // reference a retired category keep working.
   isActive       Boolean   @default(true)
@@ -290,11 +296,29 @@ model SubjectSuggestion {
   @@index([normalizedName])
 }
 
+/// Which vocabulary of levels a subject is described with.
+///
+/// The catalogue started NCEA-shaped, which fits about five of the 37
+/// categories. Everyone else -- SEO, welding, tattooing, dog training -- had to
+/// describe themselves with "Adult / Hobby" or a school year, because a level
+/// was mandatory to submit a profile. Calling professional SEO consulting a
+/// hobby is not a small wording problem; it is the platform mis-describing what
+/// is on offer.
+enum LevelTrack {
+  /// School and university: Primary through Postgraduate.
+  ACADEMIC
+  /// Skill ladder: complete beginner through working professional.
+  PROFESSIONAL
+}
+
 model TeachingLevel {
   id        Int    @id @default(autoincrement())
   name      String @unique
   slug      String @unique
   sortOrder Int    @default(0)
+  /// Levels are offered per track; a tutor sees only the tracks their chosen
+  /// subjects actually use.
+  track     LevelTrack @default(ACADEMIC)
 
   tutorProfiles TutorProfile[] @relation("TutorLevels")
   requests      TutoringRequest[]

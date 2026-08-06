@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError } from '../../lib/api.js';
 import { useApi } from '../../lib/useApi.js';
@@ -17,8 +17,22 @@ interface OwnProfile {
   availability: Array<{ dayOfWeek: number; startMinute: number; endMinute: number }>;
   qualifications: Array<{ id: number; title: string; institution: string | null; year: number | null; documentName: string | null; hasDocument: boolean; documentUrl: string | null; verified: boolean }>;
 }
-interface Subject { id: number; name: string; category: { name: string } | null }
-interface Level { id: number; name: string }
+type LevelTrack = 'ACADEMIC' | 'PROFESSIONAL';
+interface Subject { id: number; name: string; category: { name: string; levelTracks: LevelTrack[] } | null }
+interface Level { id: number; name: string; track: LevelTrack }
+
+// Mirrors applicableLevelTracks in the API. A tutor is shown only the ladders
+// their chosen subjects actually use, and the union when they teach across
+// both -- so someone who teaches NCEA calculus and SEO sees school levels for
+// the first and experience levels for the second.
+const TRACK_LABEL: Record<LevelTrack, string> = {
+  ACADEMIC: 'School & university levels',
+  PROFESSIONAL: 'Experience levels',
+};
+const TRACK_HINT: Record<LevelTrack, string> = {
+  ACADEMIC: 'For subjects that follow a school or university curriculum.',
+  PROFESSIONAL: 'How much experience your learners start with.',
+};
 
 const STEPS = ['Profile', 'Subjects & levels', 'Availability', 'Qualifications', 'Review'];
 
@@ -172,6 +186,23 @@ function SubjectsStep({ profile, onSaved }: { profile: OwnProfile; onSaved: () =
     finally { setBusy(false); }
   };
 
+  // Derived from `selected` rather than from the saved profile, so ticking a
+  // subject updates the level list immediately instead of after a save.
+  const activeTracks = useMemo<LevelTrack[]>(() => {
+    const tracks = new Set<LevelTrack>();
+    for (const s of subs?.subjects ?? []) {
+      if (!(s.id in selected)) continue;
+      for (const t of s.category?.levelTracks ?? []) tracks.add(t);
+    }
+    return (['ACADEMIC', 'PROFESSIONAL'] as const).filter((t) => tracks.has(t));
+  }, [subs, selected]);
+
+  // Ticked levels that no longer belong to any applicable track.
+  const staleLevels = useMemo(
+    () => (lvls?.levels ?? []).filter((l) => levelIds.has(l.id) && !activeTracks.includes(l.track)),
+    [lvls, levelIds, activeTracks],
+  );
+
   const q = filter.trim().toLowerCase();
   const visible = (subs?.subjects ?? []).filter((s) => !q || s.name.toLowerCase().includes(q) || selected[s.id] !== undefined);
   const byCategory = new Map<string, Subject[]>();
@@ -225,14 +256,49 @@ function SubjectsStep({ profile, onSaved }: { profile: OwnProfile; onSaved: () =
         />
       )}
       <div className="divider" />
-      <h3>Teaching levels</h3>
-      <div className="row-wrap">
-        {lvls?.levels.map((l) => (
-          <label key={l.id} className={`step ${levelIds.has(l.id) ? 'active' : ''}`} style={{ cursor: 'pointer' }}>
-            <input type="checkbox" hidden checked={levelIds.has(l.id)} onChange={() => toggleLevel(l.id)} />{l.name}
-          </label>
-        ))}
-      </div>
+      <h3>Levels you teach</h3>
+      {activeTracks.length === 0 ? (
+        <p className="muted">Choose your subjects above and the relevant levels will appear here.</p>
+      ) : (
+        activeTracks.map((track) => {
+          const levels = (lvls?.levels ?? []).filter((l) => l.track === track);
+          if (levels.length === 0) return null;
+          return (
+            <div key={track} style={{ marginBottom: 18 }}>
+              {/* Headed even when only one track applies: "Experience levels"
+                  tells an SEO tutor the question is about their learners, not
+                  about a school year. */}
+              <h4 style={{ margin: '0 0 2px' }}>{TRACK_LABEL[track]}</h4>
+              <p className="hint" style={{ marginTop: 0 }}>{TRACK_HINT[track]}</p>
+              <div className="row-wrap">
+                {levels.map((l) => (
+                  <label key={l.id} className={`step ${levelIds.has(l.id) ? 'active' : ''}`} style={{ cursor: 'pointer' }}>
+                    <input type="checkbox" hidden checked={levelIds.has(l.id)} onChange={() => toggleLevel(l.id)} />{l.name}
+                  </label>
+                ))}
+              </div>
+            </div>
+          );
+        })
+      )}
+      {staleLevels.length > 0 && (
+        // Selections kept from before the academic/professional split, or from
+        // a subject since removed. Hiding them would make them silently
+        // unremovable, so they stay visible and deselectable until cleared.
+        <div style={{ marginBottom: 18 }}>
+          <h4 style={{ margin: '0 0 2px' }}>Previously selected</h4>
+          <p className="hint" style={{ marginTop: 0 }}>
+            These do not match your current subjects. Untick any that no longer apply.
+          </p>
+          <div className="row-wrap">
+            {staleLevels.map((l) => (
+              <label key={l.id} className={`step ${levelIds.has(l.id) ? 'active' : ''}`} style={{ cursor: 'pointer' }}>
+                <input type="checkbox" hidden checked={levelIds.has(l.id)} onChange={() => toggleLevel(l.id)} />{l.name}
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
       <div style={{ marginTop: 16 }}><Button variant="primary" loading={busy} onClick={save}>Save progress</Button></div>
     </div></Card>
   );

@@ -160,13 +160,56 @@ export async function serializePublicProfile(p: FullProfile) {
 }
 
 // Enforces a minimum complete profile before it can be submitted for review.
+type LevelTrack = 'ACADEMIC' | 'PROFESSIONAL';
+
+/**
+ * Which level vocabularies this profile's subjects actually use.
+ *
+ * Levels are stored per profile, not per subject, so a tutor who teaches both
+ * NCEA calculus and SEO needs both ladders offered to them. Returning the union
+ * is what makes that work; picking one track per profile would force them to
+ * mis-describe half of what they teach.
+ *
+ * Empty when no subjects are chosen yet -- the caller decides what that means,
+ * because "you have not got there yet" and "this subject needs no levels" are
+ * different situations.
+ */
+export function applicableLevelTracks(
+  // category is nullable: a subject can be archived out of its category and
+  // still be attached to a profile. Such a subject contributes no tracks
+  // rather than defaulting to one, so it cannot silently reintroduce the
+  // school ladder for a professional profile.
+  subjects: Array<{ subject: { category: { levelTracks: LevelTrack[] } | null } }>,
+): LevelTrack[] {
+  const tracks = new Set<LevelTrack>();
+  for (const s of subjects) for (const t of s.subject.category?.levelTracks ?? []) tracks.add(t);
+  // Academic first, matching the order levels are displayed in.
+  return (['ACADEMIC', 'PROFESSIONAL'] as const).filter((t) => tracks.has(t));
+}
+
 export function assertSubmittable(p: FullProfile): void {
   const problems: string[] = [];
   if (!p.headline?.trim()) problems.push('Add a headline.');
   if (!p.experience?.trim()) problems.push('Describe your experience.');
   if (!p.teachingStyle?.trim()) problems.push('Describe your teaching style.');
   if (p.subjects.length === 0) problems.push('Add at least one subject.');
-  if (p.levels.length === 0) problems.push('Add at least one teaching level.');
+  if (p.levels.length === 0) {
+    // Worded for the ladder they were actually shown. "Add at least one
+    // teaching level" reads as a demand for a school year to someone teaching
+    // welding, which is how the NCEA-only list went unnoticed for so long.
+    const tracks = applicableLevelTracks(p.subjects);
+    const onlyProfessional = tracks.length === 1 && tracks[0] === 'PROFESSIONAL';
+    problems.push(
+      onlyProfessional
+        ? 'Add at least one experience level you teach.'
+        : 'Add at least one level you teach.',
+    );
+  }
+  // Deliberately NOT rejecting levels from a track the subjects do not use.
+  // Every tutor who signed up before this split had only the academic list to
+  // choose from, so enforcing a match would make their existing profile
+  // unsubmittable the next time they edited it -- punishing them for a
+  // limitation that was ours.
   if (p.hourlyRateCents == null) problems.push('Set your default hourly rate.');
   if ((p.deliveryMode === 'IN_PERSON' || p.deliveryMode === 'BOTH') && (!p.country || !p.city)) {
     problems.push('Add your country and city for in-person lessons.');

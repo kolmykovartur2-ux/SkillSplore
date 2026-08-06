@@ -9,6 +9,10 @@
 import { OTHER_SUBJECT_NAME } from '../src/lib/taxonomyConstants.js';
 export { OTHER_SUBJECT_NAME };
 
+// Mirrors the LevelTrack enum in schema.prisma. Kept as a string union so
+// this data file stays importable without the generated Prisma client.
+export type LevelTrack = 'ACADEMIC' | 'PROFESSIONAL';
+
 export interface CategoryDef {
   name: string;
   icon: string; // emoji used on category tiles
@@ -17,11 +21,17 @@ export interface CategoryDef {
   // reached through search and the full browse page. Without this the
   // homepage would need to render three dozen tiles.
   featured?: boolean;
+  // Which level vocabulary this category uses. Omitted means PROFESSIONAL,
+  // which is correct for most of this catalogue -- only a handful of these
+  // categories are school curriculum, and asking a tattoo artist for their
+  // NCEA level is the bug this exists to prevent.
+  levelTracks?: LevelTrack[];
 }
 
 export const TAXONOMY: CategoryDef[] = [
   {
     name: 'Languages',
+    levelTracks: ['ACADEMIC', 'PROFESSIONAL'],
     icon: '🗣️',
     featured: true,
     subjects: [
@@ -71,6 +81,7 @@ export const TAXONOMY: CategoryDef[] = [
   },
   {
     name: 'Mathematics',
+    levelTracks: ['ACADEMIC'],
     icon: '➗',
     featured: true,
     subjects: [
@@ -87,6 +98,7 @@ export const TAXONOMY: CategoryDef[] = [
   },
   {
     name: 'Sciences',
+    levelTracks: ['ACADEMIC'],
     icon: '🔬',
     subjects: [
       'Physics',
@@ -100,6 +112,7 @@ export const TAXONOMY: CategoryDef[] = [
   },
   {
     name: 'English & Humanities',
+    levelTracks: ['ACADEMIC'],
     icon: '📚',
     subjects: [
       'English literature',
@@ -113,6 +126,7 @@ export const TAXONOMY: CategoryDef[] = [
   },
   {
     name: 'Computer Science & IT',
+    levelTracks: ['ACADEMIC', 'PROFESSIONAL'],
     icon: '💻',
     featured: true,
     subjects: [
@@ -131,6 +145,7 @@ export const TAXONOMY: CategoryDef[] = [
   },
   {
     name: 'Engineering & CAD',
+    levelTracks: ['ACADEMIC', 'PROFESSIONAL'],
     icon: '📐',
     subjects: [
       'SolidWorks',
@@ -144,6 +159,7 @@ export const TAXONOMY: CategoryDef[] = [
   },
   {
     name: 'Music',
+    levelTracks: ['ACADEMIC', 'PROFESSIONAL'],
     icon: '🎵',
     featured: true,
     subjects: [
@@ -162,6 +178,7 @@ export const TAXONOMY: CategoryDef[] = [
   },
   {
     name: 'Exam & Test Prep',
+    levelTracks: ['ACADEMIC'],
     icon: '📝',
     subjects: [
       'NCEA exam preparation',
@@ -175,6 +192,7 @@ export const TAXONOMY: CategoryDef[] = [
   },
   {
     name: 'Business & Economics',
+    levelTracks: ['ACADEMIC', 'PROFESSIONAL'],
     icon: '📈',
     featured: true,
     subjects: [
@@ -188,6 +206,7 @@ export const TAXONOMY: CategoryDef[] = [
   },
   {
     name: 'Arts & Design',
+    levelTracks: ['ACADEMIC', 'PROFESSIONAL'],
     icon: '🎨',
     featured: true,
     subjects: [
@@ -212,6 +231,7 @@ export const TAXONOMY: CategoryDef[] = [
   },
   {
     name: 'Sports & Fitness',
+    levelTracks: ['ACADEMIC', 'PROFESSIONAL'],
     icon: '⚽',
     featured: true,
     subjects: [
@@ -275,6 +295,7 @@ export const TAXONOMY: CategoryDef[] = [
   },
   {
     name: 'Writing & Content',
+    levelTracks: ['ACADEMIC', 'PROFESSIONAL'],
     icon: '✍️',
     subjects: [
       'Creative writing',
@@ -298,6 +319,7 @@ export const TAXONOMY: CategoryDef[] = [
   },
   {
     name: 'Performing Arts & Dance',
+    levelTracks: ['ACADEMIC', 'PROFESSIONAL'],
     icon: '🎭',
     subjects: [
       'Dance',
@@ -592,6 +614,7 @@ export const TAXONOMY: CategoryDef[] = [
   },
   {
     name: 'Learning Accessibility & Support',
+    levelTracks: ['ACADEMIC', 'PROFESSIONAL'],
     icon: '🧩',
     subjects: [
       'Adult literacy',

@@ -60,7 +60,7 @@ rather than seeded:
 | Data | Repopulates automatically? |
 |---|---|
 | Categories, subjects, aliases | Yes — `syncTaxonomy` |
-| Teaching levels | Yes — `syncTaxonomy` |
+| Teaching levels (both tracks) | Yes — `syncTaxonomy` |
 | Legal documents, consent wording | Yes — `syncLegal` |
 | Demo users, profiles, requests, reviews | **No, and that is the point** |
 
@@ -69,8 +69,8 @@ and policies rebuild themselves with no fictional accounts.
 
 - [ ] Provision a fresh production database
 - [ ] Point `DATABASE_URL` at it
-- [ ] Confirm on first boot: 37 categories, 489 subjects, 8 teaching levels,
-      8 legal documents, **0 users**
+- [ ] Confirm on first boot: 37 categories, 489 subjects, 12 teaching levels
+      (7 academic + 5 professional), 8 legal documents, **0 users**
 
 *If you would rather keep the existing database, the demo accounts must be
 removed by hand. There is no tool for partial cleanup, and writing one that
