@@ -46,5 +46,12 @@ run('npx', ['tsx', 'apps/api/prisma/syncTaxonomy.ts']);
 console.log('[bootstrap] syncing legal documents and consent wording...');
 run('npx', ['tsx', 'apps/api/prisma/syncLegal.ts']);
 
+// Grants ADMIN to the addresses in ADMIN_EMAILS. Runs on every boot because
+// the account usually does not exist yet on the first deploy -- the operator
+// sets the variable, registers, and the next restart picks it up. Additive
+// only: it never creates an account, never revokes, and never fails the boot.
+console.log('[bootstrap] syncing administrators...');
+run('npx', ['tsx', 'apps/api/prisma/syncAdmins.ts']);
+
 console.log('[bootstrap] starting server...');
 await import('../dist/index.js');

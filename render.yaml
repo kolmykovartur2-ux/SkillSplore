@@ -73,6 +73,11 @@ services:
       # instead. That is why the site was not discoverable under its own name.
       - key: PUBLIC_SITE_URL
         value: https://skillsplore.org
+      # Comma-separated addresses granted ADMIN on boot. The account must
+      # already exist -- register on the site first, then redeploy. Nothing
+      # here creates an account or revokes anyone.
+      - key: ADMIN_EMAILS
+        value: admin@skillsplore.org
       - key: FORCE_SECURE_COOKIES
         value: 1
       - key: STORAGE_DRIVER
