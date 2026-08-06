@@ -84,12 +84,21 @@ services:
         value: local
       - key: STORAGE_LOCAL_DIR
         value: /app/storage-data
+      # Demo trappings off: no banner, no one-click role login. The site now
+      # looks and behaves like a real deployment.
+      #
+      # APP_ENV stays "demo" for one reason only: production refuses to boot
+      # without a real SMTP host (see config/env.ts). Flipping it before email
+      # is configured would take the site OFFLINE, not harden it. Change it in
+      # the same commit that sets SMTP_HOST/SMTP_USER/SMTP_PASS.
       - key: SHOW_DEMO_BANNER
-        value: 1
+        value: 0
       - key: ENABLE_DEMO_LOGIN
-        value: 1
+        value: 0
+      # .local is not a real TLD and every mail provider rejects it. Correct
+      # now regardless of when a provider is chosen.
       - key: MAIL_FROM
-        value: "SkillSplore <no-reply@skillsplore.local>"
+        value: "SkillSplore <no-reply@skillsplore.org>"
       - key: RATE_LIMIT_WINDOW_MS
         value: 900000
       - key: RATE_LIMIT_MAX
