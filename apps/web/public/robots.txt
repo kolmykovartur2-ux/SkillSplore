@@ -10,7 +10,12 @@ Disallow: /messages
 Disallow: /notifications
 Disallow: /engagements
 Disallow: /admin
+# Individual requests and the "my requests" list are private. /requests/new is
+# a public landing page and is in sitemap.xml, so it is allowed back in --
+# blanket-blocking /requests contradicted the sitemap and had Google fetch a
+# URL it was told not to crawl. The longer, more specific rule wins.
 Disallow: /requests
+Allow: /requests/new
 Disallow: /tutor/feed
 Disallow: /tutor/responses
 Disallow: /verify-email

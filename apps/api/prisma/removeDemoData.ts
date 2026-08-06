@@ -62,6 +62,24 @@ async function main() {
   const realUsers = await prisma.user.count({ where: { email: { not: { endsWith: DEMO_EMAIL_SUFFIX } } } });
   console.log(`\nReal accounts that will NOT be touched: ${realUsers}`);
 
+  // The demo seed creates the only ADMIN account that exists in a fresh
+  // database. Deleting it with no real administrator behind it locks everyone
+  // out of /admin permanently -- no tutor approvals, no report handling, no
+  // privacy requests -- and the only way back is database access.
+  const survivingAdmins = await prisma.user.count({
+    where: { roles: { has: 'ADMIN' }, email: { not: { endsWith: DEMO_EMAIL_SUFFIX } } },
+  });
+  if (survivingAdmins === 0) {
+    console.error('\nSTOPPING. Every administrator here is a demo account, so this would leave');
+    console.error('nobody able to reach /admin.\n');
+    console.error('Register your real account on the site, then grant it admin:');
+    console.error('  npx tsx apps/api/prisma/grantAdmin.ts you@example.com --commit\n');
+    console.error('Then re-run this.\n');
+    process.exitCode = 1;
+    return;
+  }
+  console.log(`Real administrators who will remain: ${survivingAdmins}`);
+
   if (!commit) {
     console.log('\nDry run. Nothing deleted. Re-run with --commit to apply.\n');
     return;

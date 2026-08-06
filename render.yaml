@@ -51,11 +51,11 @@ services:
         generateValue: true
       - key: API_PORT
         value: 4000
+      # The origin users actually visit. Drives CORS and the links in
+      # verification and password-reset emails -- while this pointed at
+      # RENDER_EXTERNAL_URL, those emails sent people to onrender.com.
       - key: WEB_ORIGIN
-        fromService:
-          type: web
-          name: skillsplore
-          envVarKey: RENDER_EXTERNAL_URL
+        value: https://skillsplore.org
       - key: VITE_API_URL
         fromService:
           type: web
@@ -64,20 +64,15 @@ services:
       # Canonical public URL, used for <link rel="canonical">, Open Graph tags
       # and every entry in sitemap.xml.
       #
-      # Tracks Render's own service URL, so it is correct from first deploy.
-      # RENDER_EXTERNAL_URL does NOT change when a custom domain is attached,
-      # so once skillsplore.org points here, replace this whole block with:
-      #
-      #   - key: PUBLIC_SITE_URL
-      #     value: https://skillsplore.org
-      #
-      # Leaving it pointing at onrender.com after that would split ranking
-      # between two hostnames for the same content.
+      # Hard-coded to the custom domain, NOT RENDER_EXTERNAL_URL, which stays
+      # ".onrender.com" forever even after a domain is attached. While this
+      # tracked RENDER_EXTERNAL_URL, every page served from skillsplore.org
+      # carried <link rel="canonical" href="https://skillsplore.onrender.com/">
+      # and all 549 sitemap URLs pointed at the Render host -- which tells
+      # Google the real domain is a duplicate and to index the other one
+      # instead. That is why the site was not discoverable under its own name.
       - key: PUBLIC_SITE_URL
-        fromService:
-          type: web
-          name: skillsplore
-          envVarKey: RENDER_EXTERNAL_URL
+        value: https://skillsplore.org
       - key: FORCE_SECURE_COOKIES
         value: 1
       - key: STORAGE_DRIVER
