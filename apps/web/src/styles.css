@@ -262,10 +262,17 @@ small { color: var(--muted); }
 .footer-links a { color: var(--muted); font-weight: 600; font-size: 0.9rem; }
 .footer-links a:hover { color: var(--primary); }
 
-/* Footer split by audience. auto-fit keeps the four groups on one row on a
-   desktop and collapses them to two, then one, on narrower screens without a
-   media query. */
-.footer-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 24px 32px; flex: 1; max-width: 640px; }
+/* Footer split by audience. auto-fit keeps the groups on one row on a desktop
+   and collapses them to two, then one, on narrower screens without a media
+   query.
+
+   min-width: 0 is load-bearing, not tidying. This is a flex item, and flex
+   items default to min-width:auto, which refuses to shrink below the content's
+   intrinsic minimum -- three 150px tracks plus gaps, 514px. That made the whole
+   page 534px wide inside a 375px viewport, so phones shrank the entire layout
+   to fit. auto-fit can only collapse tracks once the item is allowed to be
+   narrower than its content. */
+.footer-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 24px 32px; flex: 1; min-width: 0; max-width: 640px; }
 .footer-group { display: flex; flex-direction: column; gap: 8px; }
 .footer-group h3 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text); margin: 0 0 2px; font-weight: 700; }
 .footer-group a { color: var(--muted); font-weight: 500; font-size: 0.88rem; }

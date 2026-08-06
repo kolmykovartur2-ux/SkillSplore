@@ -98,8 +98,9 @@ describe('crawler shell', () => {
     const { html } = await renderShell(prisma, '/privacy', SHELL);
     const body = rootContent(html);
     // Policy text contains markdown and angle-bracket-ish characters; none of
-    // it should become live markup beyond the paragraph tags we emit.
-    const allowed = body.replace(/<\/?(p|h1|h2|ul|li|a|strong)\b[^>]*>/g, '');
+    // it should become live markup beyond the tags we emit ourselves -- the
+    // inline-styled wrapper div, and the elements the content builders use.
+    const allowed = body.replace(/<\/?(div|p|h1|h2|ul|li|a|strong)\b[^>]*>/g, '');
     expect(allowed).not.toMatch(/<script/i);
     expect(allowed).not.toMatch(/<[a-z]+\s/i);
   });

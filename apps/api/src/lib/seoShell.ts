@@ -417,9 +417,24 @@ export async function renderShell(
 
   // React's createRoot clears the container on mount, so this is invisible to
   // anyone running JavaScript and is the whole page to anyone who is not.
+  //
+  // The wrapper carries INLINE styles rather than class names on purpose. The
+  // browser paints this markup before the stylesheet has loaded and before
+  // React has mounted, so anything depending on styles.css would flash as raw
+  // unstyled HTML -- worst on mobile, where JavaScript takes longest to parse.
+  // Inline styles cannot arrive late.
+  //
+  // Deliberately NOT hidden with display:none. Showing crawlers content that
+  // users cannot see is cloaking, and search engines treat it as such. This
+  // renders the same words a person would read, just plainer.
+  const wrapper =
+    'max-width:46rem;margin:0 auto;padding:2rem 1.25rem;'
+    + "font-family:system-ui,-apple-system,'Segoe UI',sans-serif;"
+    + 'line-height:1.6;color:#1a1a1a;';
+
   out = out.replace(
     '<div id="root"></div>',
-    `<div id="root">${content.body}</div>`,
+    `<div id="root"><div style="${wrapper}">${content.body}</div></div>`,
   );
 
   return { html: out, status: content.status ?? 200 };
